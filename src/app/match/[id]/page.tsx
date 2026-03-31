@@ -4,6 +4,10 @@ import { use } from "react";
 import { Navbar } from "@/components/Navbar";
 import { AdSlot } from "@/components/AdSlot";
 import { AiAnalysis } from "@/components/AiAnalysis";
+import { RecentResults } from "@/components/RecentResults";
+import { KeyPlayers } from "@/components/KeyPlayers";
+import { MatchCountdown } from "@/components/MatchCountdown";
+import { ShareButton } from "@/components/ShareButton";
 import {
   useMatchCore,
   useMatchForm,
@@ -274,6 +278,18 @@ export default function MatchPage({ params }: { params: Promise<{ id: string }> 
           </div>
           {/* Form loads independently */}
           <FormSection matchId={id} />
+
+          {/* Countdown */}
+          {match.status !== "FINISHED" && (
+            <div className="mt-4">
+              <MatchCountdown matchDate={match.date} matchTime={match.time} />
+            </div>
+          )}
+
+          {/* Share */}
+          <div className="flex justify-center mt-3">
+            <ShareButton homeTeam={match.homeTeam.shortName} awayTeam={match.awayTeam.shortName} matchId={match.id} />
+          </div>
         </div>
 
         <AdSlot size="leaderboard" className="mb-6" />
@@ -337,6 +353,22 @@ export default function MatchPage({ params }: { params: Promise<{ id: string }> 
                 </div>
               </section>
             )}
+
+            {/* Recent Results — loads independently */}
+            <RecentResults
+              matchId={id}
+              homeTeamId={match.homeTeam.id}
+              awayTeamId={match.awayTeam.id}
+              homeTeamName={match.homeTeam.shortName}
+              awayTeamName={match.awayTeam.shortName}
+            />
+
+            {/* Key Players — loads independently */}
+            <KeyPlayers
+              matchId={id}
+              homeTeam={{ name: match.homeTeam.name, shortName: match.homeTeam.shortName, crest: match.homeTeam.crest }}
+              awayTeam={{ name: match.awayTeam.name, shortName: match.awayTeam.shortName, crest: match.awayTeam.crest }}
+            />
 
             {/* AI Analysis */}
             <AiAnalysis matchId={id} />
