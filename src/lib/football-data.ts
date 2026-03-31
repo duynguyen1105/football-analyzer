@@ -25,46 +25,32 @@ const CACHE_30_MIN = 30 * 60 * 1000;
 const CACHE_2_HR = 2 * 60 * 60 * 1000;
 
 // ---------------------------------------------------------------------------
-// Rate limiter — token bucket (10 requests per minute for free tier)
+// Rate limiter — sequential queue (max 9 req/min to stay safe under 10 limit)
 // ---------------------------------------------------------------------------
-const RATE_LIMIT = 10;
-const RATE_WINDOW_MS = 60_000;
+const MIN_DELAY_MS = 7000; // ~8.5 req/min, safe margin under 10/min
+let lastRequestTime = 0;
+let requestQueue: Promise<void> = Promise.resolve();
 
-let tokenBucket = RATE_LIMIT;
-let lastRefill = Date.now();
-
-async function waitForRateLimit(): Promise<void> {
-  const now = Date.now();
-  const elapsed = now - lastRefill;
-
-  // Refill tokens proportionally
-  if (elapsed > 0) {
-    const refill = (elapsed / RATE_WINDOW_MS) * RATE_LIMIT;
-    tokenBucket = Math.min(RATE_LIMIT, tokenBucket + refill);
-    lastRefill = now;
-  }
-
-  if (tokenBucket < 1) {
-    // Wait until at least one token is available
-    const waitMs = ((1 - tokenBucket) / RATE_LIMIT) * RATE_WINDOW_MS;
-    await new Promise((resolve) => setTimeout(resolve, Math.ceil(waitMs)));
-    tokenBucket = 1;
-    lastRefill = Date.now();
-  }
-
-  tokenBucket -= 1;
+function enqueueRequest(): Promise<void> {
+  requestQueue = requestQueue.then(async () => {
+    const now = Date.now();
+    const elapsed = now - lastRequestTime;
+    if (elapsed < MIN_DELAY_MS) {
+      await new Promise((r) => setTimeout(r, MIN_DELAY_MS - elapsed));
+    }
+    lastRequestTime = Date.now();
+  });
+  return requestQueue;
 }
 
 // ---------------------------------------------------------------------------
-// Generic fetch helper
+// Generic fetch helper with retry on 429
 // ---------------------------------------------------------------------------
 async function apiFetch<T>(path: string, params?: Record<string, string>): Promise<T> {
   const apiKey = process.env.FOOTBALL_DATA_API_KEY;
   if (!apiKey) {
     throw new Error("FOOTBALL_DATA_API_KEY environment variable is not set");
   }
-
-  await waitForRateLimit();
 
   const url = new URL(`${BASE_URL}${path}`);
   if (params) {
@@ -73,12 +59,27 @@ async function apiFetch<T>(path: string, params?: Record<string, string>): Promi
     });
   }
 
+  // Wait in queue
+  await enqueueRequest();
+
   const res = await fetch(url.toString(), {
-    headers: {
-      "X-Auth-Token": apiKey,
-    },
-    next: { revalidate: 300 }, // Cache for 5 minutes in Next.js
+    headers: { "X-Auth-Token": apiKey },
+    next: { revalidate: 300 },
   } as RequestInit);
+
+  // Retry once on 429
+  if (res.status === 429) {
+    await new Promise((r) => setTimeout(r, 10000));
+    const retry = await fetch(url.toString(), {
+      headers: { "X-Auth-Token": apiKey },
+      next: { revalidate: 300 },
+    } as RequestInit);
+    if (!retry.ok) {
+      const text = await retry.text().catch(() => "");
+      throw new Error(`Football-Data API error ${retry.status}: ${text}`);
+    }
+    return retry.json() as Promise<T>;
+  }
 
   if (!res.ok) {
     const text = await res.text().catch(() => "");
@@ -219,7 +220,7 @@ export async function getStandings(competitionCode: string): Promise<Standing[]>
     if (!standingsGroup) return [];
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    return (standingsGroup.table ?? []).map((row: any): Standing => ({
+    const result = (standingsGroup.table ?? []).map((row: any): Standing => ({
       position: row.position,
       team: {
         id: row.team?.id ?? 0,
@@ -237,6 +238,8 @@ export async function getStandings(competitionCode: string): Promise<Standing[]>
       goalDifference: row.goalDifference ?? 0,
       points: row.points ?? 0,
     }));
+    setCache(cacheKey, result, CACHE_30_MIN);
+    return result;
   } catch (error) {
     console.error(`Failed to fetch standings for ${competitionCode}:`, error);
     return [];
@@ -247,11 +250,15 @@ export async function getStandings(competitionCode: string): Promise<Standing[]>
  * Fetch team info including squad and coach.
  */
 export async function getTeamInfo(teamId: number): Promise<TeamInfo | null> {
+  const cacheKey = `team:${teamId}`;
+  const cached = getCached<TeamInfo>(cacheKey);
+  if (cached) return cached;
+
   try {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const raw = await apiFetch<any>(`/teams/${teamId}`);
 
-    return {
+    const result: TeamInfo = {
       id: raw.id,
       name: raw.name ?? "",
       shortName: raw.shortName ?? "",
@@ -270,6 +277,8 @@ export async function getTeamInfo(teamId: number): Promise<TeamInfo | null> {
         })
       ),
     };
+    setCache(cacheKey, result, CACHE_2_HR);
+    return result;
   } catch (error) {
     console.error(`Failed to fetch team info for ${teamId}:`, error);
     return null;
@@ -281,13 +290,19 @@ export async function getTeamInfo(teamId: number): Promise<TeamInfo | null> {
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function getTeamRecentMatches(teamId: number, limit: number): Promise<any[]> {
+  const cacheKey = `recent:${teamId}:${limit}`;
+  const cached = getCached<any[]>(cacheKey);
+  if (cached) return cached;
+
   try {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const data = await apiFetch<any>(`/teams/${teamId}/matches`, {
       status: "FINISHED",
       limit: String(limit),
     });
-    return data.matches ?? [];
+    const result = data.matches ?? [];
+    setCache(cacheKey, result, CACHE_30_MIN);
+    return result;
   } catch (error) {
     console.error(`Failed to fetch recent matches for team ${teamId}:`, error);
     return [];
@@ -302,13 +317,17 @@ export async function getTopScorers(
 ): Promise<
   { name: string; team: string; goals: number; assists: number | null; nationality: string }[]
 > {
+  const cacheKey = `scorers:${competitionCode}`;
+  const cached = getCached<any[]>(cacheKey);
+  if (cached) return cached;
+
   try {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const data = await apiFetch<any>(`/competitions/${competitionCode}/scorers`, {
       limit: "10",
     });
 
-    return (data.scorers ?? []).map(
+    const result = (data.scorers ?? []).map(
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (s: any) => ({
         name: s.player?.name ?? "",
@@ -318,6 +337,8 @@ export async function getTopScorers(
         nationality: s.player?.nationality ?? "",
       })
     );
+    setCache(cacheKey, result, CACHE_30_MIN);
+    return result;
   } catch (error) {
     console.error(`Failed to fetch top scorers for ${competitionCode}:`, error);
     return [];

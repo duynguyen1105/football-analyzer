@@ -22,30 +22,26 @@ function MatchCard({ match }: { match: Match }) {
         <span className="text-[10px] md:text-xs text-text-muted whitespace-nowrap">{leagueInfo?.flag} {match.competition.name}</span>
         <span className="text-[10px] md:text-xs text-text-muted truncate text-right">{match.venue}</span>
       </div>
-      <div className="px-3 py-4 md:px-4 md:py-5">
-        <div className="flex items-center justify-between">
-          <div className="flex-1 text-center min-w-0">
-            <div className="flex justify-center mb-2">
-              <img src={match.homeTeam.crest} alt={match.homeTeam.shortName} className="w-10 h-10 md:w-12 md:h-12 object-contain" loading="lazy" />
-            </div>
-            <p className="font-semibold text-xs md:text-sm truncate px-1">{match.homeTeam.shortName}</p>
+      <div className="p-3 md:p-4">
+        <div className="grid grid-cols-3 items-center">
+          <div className="text-center">
+            <img src={match.homeTeam.crest} alt={match.homeTeam.shortName} className="w-9 h-9 md:w-12 md:h-12 object-contain mx-auto mb-1" loading="lazy" />
+            <p className="font-semibold text-[11px] md:text-sm truncate">{match.homeTeam.shortName}</p>
           </div>
-          <div className="px-2 md:px-4 text-center shrink-0">
+          <div className="text-center">
             {isFinished && match.score ? (
-              <p className="text-xl md:text-2xl font-bold text-text-primary">{match.score.home} - {match.score.away}</p>
+              <p className="text-base md:text-xl font-bold">{match.score.home} - {match.score.away}</p>
             ) : (
-              <p className="text-xl md:text-2xl font-bold text-text-primary">{match.time}</p>
+              <p className="text-base md:text-xl font-bold">{match.time}</p>
             )}
-            <p className="text-[10px] md:text-xs text-text-muted mt-1">{match.date}</p>
-            <div className="mt-2 md:mt-3 px-3 py-1 rounded-full bg-accent/10 text-accent text-[10px] md:text-xs font-medium group-hover:bg-accent/20 transition-colors">
+            <p className="text-[10px] text-text-muted mt-0.5">{match.date}</p>
+            <div className="mt-1.5 inline-block px-2 py-0.5 rounded-full bg-accent/10 text-accent text-[10px] md:text-xs font-medium group-hover:bg-accent/20 transition-colors">
               {isFinished ? "Xem lại" : "Phân tích"}
             </div>
           </div>
-          <div className="flex-1 text-center min-w-0">
-            <div className="flex justify-center mb-2">
-              <img src={match.awayTeam.crest} alt={match.awayTeam.shortName} className="w-10 h-10 md:w-12 md:h-12 object-contain" loading="lazy" />
-            </div>
-            <p className="font-semibold text-xs md:text-sm truncate px-1">{match.awayTeam.shortName}</p>
+          <div className="text-center">
+            <img src={match.awayTeam.crest} alt={match.awayTeam.shortName} className="w-9 h-9 md:w-12 md:h-12 object-contain mx-auto mb-1" loading="lazy" />
+            <p className="font-semibold text-[11px] md:text-sm truncate">{match.awayTeam.shortName}</p>
           </div>
         </div>
       </div>
@@ -60,20 +56,20 @@ function MatchSkeleton() {
         <div className="h-3 w-28 bg-border/30 rounded animate-pulse" />
         <div className="h-3 w-20 bg-border/20 rounded animate-pulse" />
       </div>
-      <div className="px-3 py-4">
-        <div className="flex items-center justify-between">
-          <div className="flex-1 flex flex-col items-center gap-2">
-            <div className="w-10 h-10 bg-border/20 rounded-full animate-pulse" />
-            <div className="h-3.5 w-16 bg-border/30 rounded animate-pulse" />
+      <div className="p-3">
+        <div className="grid grid-cols-3 items-center">
+          <div className="flex flex-col items-center gap-1">
+            <div className="w-9 h-9 bg-border/20 rounded-full animate-pulse" />
+            <div className="h-3 w-14 bg-border/30 rounded animate-pulse" />
           </div>
-          <div className="px-2 flex flex-col items-center gap-2">
-            <div className="h-6 w-12 bg-border/40 rounded animate-pulse" />
+          <div className="flex flex-col items-center gap-1">
+            <div className="h-5 w-12 bg-border/40 rounded animate-pulse" />
             <div className="h-3 w-16 bg-border/20 rounded animate-pulse" />
-            <div className="h-5 w-14 bg-border/10 rounded-full animate-pulse mt-1" />
+            <div className="h-4 w-14 bg-border/10 rounded-full animate-pulse mt-1" />
           </div>
-          <div className="flex-1 flex flex-col items-center gap-2">
-            <div className="w-10 h-10 bg-border/20 rounded-full animate-pulse" />
-            <div className="h-3.5 w-16 bg-border/30 rounded animate-pulse" />
+          <div className="flex flex-col items-center gap-1">
+            <div className="w-9 h-9 bg-border/20 rounded-full animate-pulse" />
+            <div className="h-3 w-14 bg-border/30 rounded animate-pulse" />
           </div>
         </div>
       </div>
