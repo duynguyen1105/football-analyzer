@@ -57,8 +57,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="vi" className="h-full antialiased">
-      <body className="min-h-full flex flex-col">
+    <html lang="vi" className="h-full antialiased overflow-x-hidden">
+      <body className="min-h-full flex flex-col w-full max-w-[100vw] overflow-x-hidden">
         <Providers>{children}</Providers>
       </body>
     </html>
