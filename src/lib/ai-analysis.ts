@@ -20,7 +20,7 @@ export async function generateMatchAnalysis(
 
   const response = await client.messages.create({
     model: "claude-haiku-4-5-20251001",
-    max_tokens: 1500,
+    max_tokens: 2000,
     messages: [{ role: "user", content: prompt }],
   });
 
@@ -94,17 +94,35 @@ PREDICTION MODEL: Home win ${prediction.homeWin}% | Draw ${prediction.draw}% | A
 }
 
 function buildEnglishPrompt(data: MatchDetail): string {
-  return `You are a football analyst writing a pre-match preview. Write a concise, insightful analysis (4-5 short paragraphs) based on the data below. Consider the managers' tactical approach, key players, form, and head-to-head record. End with a clear verdict.
+  return `You are a football analyst writing an actionable pre-match preview for informed readers. Write a concise, insightful analysis (5-6 short paragraphs) based on the data below. Your analysis must cover:
+
+1. Key tactical matchups and how each manager is likely to set up
+2. Current form and momentum — which team is on the rise or declining
+3. Motivation assessment — which team has more at stake (title race, relegation, European spots)
+4. Injury impact — how missing or returning players affect the balance
+5. Head-to-head patterns and what they tell us about this fixture
+6. Clear verdict with reasoning
 
 ${buildDataBlock(data)}
 
-Write naturally. No markdown headers. No bullet points. Just flowing paragraphs. Be specific with numbers. Mention the managers and key players when relevant. Final paragraph should be the verdict in bold-worthy tone.`;
+Write naturally. No markdown headers. No bullet points. Just flowing paragraphs. Be specific with numbers. Mention the managers and key players when relevant. Make your analysis actionable — help readers understand the likely dynamics of the match.
+
+End with your predicted final score in bold format like **Predicted Score: ${data.match.homeTeam.shortName} 2-1 ${data.match.awayTeam.shortName}**`;
 }
 
 function buildVietnamesePrompt(data: MatchDetail): string {
-  return `Bạn là một nhà phân tích bóng đá viết bài nhận định trước trận. Viết bài phân tích ngắn gọn, sâu sắc (4-5 đoạn ngắn) dựa trên dữ liệu bên dưới. Phân tích chiến thuật của HLV, cầu thủ chủ chốt, phong độ và lịch sử đối đầu. Kết thúc bằng nhận định rõ ràng. Viết bằng tiếng Việt.
+  return `Bạn là một nhà phân tích bóng đá chuyên nghiệp viết bài nhận định trước trận cho người đọc muốn đưa ra quyết định sáng suốt. Viết bài phân tích ngắn gọn, sâu sắc (5-6 đoạn ngắn) dựa trên dữ liệu bên dưới. Bài phân tích phải bao gồm:
+
+1. Đối đầu chiến thuật quan trọng — cách mỗi HLV có thể bố trí đội hình
+2. Phong độ hiện tại — đội nào đang trên đà thăng tiến hay sa sút
+3. Đánh giá động lực — đội nào có nhiều lý do để chiến đấu hơn (đua vô địch, trụ hạng, suất châu Âu)
+4. Ảnh hưởng chấn thương — cầu thủ vắng mặt hoặc trở lại tác động thế nào
+5. Lịch sử đối đầu và bài học rút ra
+6. Nhận định rõ ràng kèm lý do
 
 ${buildDataBlock(data)}
 
-Viết tự nhiên. Không dùng markdown headers. Không dùng bullet points. Chỉ các đoạn văn liền mạch. Dùng số liệu cụ thể. Nhắc đến HLV và cầu thủ chủ chốt khi cần. Đoạn cuối là nhận định chung với giọng điệu mạnh mẽ, rõ ràng.`;
+Viết tự nhiên bằng tiếng Việt. Không dùng markdown headers. Không dùng bullet points. Chỉ các đoạn văn liền mạch. Dùng số liệu cụ thể. Nhắc đến HLV và cầu thủ chủ chốt khi cần. Phân tích phải mang tính ứng dụng — giúp người đọc hiểu rõ diễn biến có thể xảy ra trong trận đấu.
+
+Kết thúc bằng dự đoán tỉ số in đậm theo format: **Dự đoán tỉ số: ${data.match.homeTeam.shortName} 2-1 ${data.match.awayTeam.shortName}**`;
 }

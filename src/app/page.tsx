@@ -26,34 +26,34 @@ function MatchCard({ match }: { match: Match }) {
       href={`/match/${match.id}`}
       className="block bg-bg-card rounded-xl border border-border hover:border-accent/30 hover:bg-bg-card-hover transition-all group"
     >
-      <div className="flex items-center justify-between px-4 py-2 border-b border-border/50">
-        <span className="text-xs text-text-muted">{leagueInfo?.flag} {match.competition.name}</span>
-        <span className="text-xs text-text-muted">{match.venue}</span>
+      <div className="flex items-center justify-between px-3 py-2 md:px-4 border-b border-border/50 gap-2">
+        <span className="text-[10px] md:text-xs text-text-muted whitespace-nowrap">{leagueInfo?.flag} {match.competition.name}</span>
+        <span className="text-[10px] md:text-xs text-text-muted truncate text-right">{match.venue}</span>
       </div>
-      <div className="px-4 py-5">
+      <div className="px-3 py-4 md:px-4 md:py-5">
         <div className="flex items-center justify-between">
-          <div className="flex-1 text-center">
+          <div className="flex-1 text-center min-w-0">
             <div className="flex justify-center mb-2">
-              <img src={match.homeTeam.crest} alt={match.homeTeam.shortName} className="w-12 h-12 object-contain" loading="lazy" />
+              <img src={match.homeTeam.crest} alt={match.homeTeam.shortName} className="w-10 h-10 md:w-12 md:h-12 object-contain" loading="lazy" />
             </div>
-            <p className="font-semibold text-sm">{match.homeTeam.shortName}</p>
+            <p className="font-semibold text-xs md:text-sm truncate px-1">{match.homeTeam.shortName}</p>
           </div>
-          <div className="px-4 text-center">
+          <div className="px-2 md:px-4 text-center shrink-0">
             {isFinished && match.score ? (
-              <p className="text-2xl font-bold text-text-primary">{match.score.home} - {match.score.away}</p>
+              <p className="text-xl md:text-2xl font-bold text-text-primary">{match.score.home} - {match.score.away}</p>
             ) : (
-              <p className="text-2xl font-bold text-text-primary">{match.time}</p>
+              <p className="text-xl md:text-2xl font-bold text-text-primary">{match.time}</p>
             )}
-            <p className="text-xs text-text-muted mt-1">{formatDate(match.date)}</p>
-            <div className="mt-3 px-3 py-1 rounded-full bg-accent/10 text-accent text-xs font-medium group-hover:bg-accent/20 transition-colors">
+            <p className="text-[10px] md:text-xs text-text-muted mt-1">{formatDate(match.date)}</p>
+            <div className="mt-2 md:mt-3 px-3 py-1 rounded-full bg-accent/10 text-accent text-[10px] md:text-xs font-medium group-hover:bg-accent/20 transition-colors">
               {isFinished ? "Xem lại" : "Phân tích"}
             </div>
           </div>
-          <div className="flex-1 text-center">
+          <div className="flex-1 text-center min-w-0">
             <div className="flex justify-center mb-2">
-              <img src={match.awayTeam.crest} alt={match.awayTeam.shortName} className="w-12 h-12 object-contain" loading="lazy" />
+              <img src={match.awayTeam.crest} alt={match.awayTeam.shortName} className="w-10 h-10 md:w-12 md:h-12 object-contain" loading="lazy" />
             </div>
-            <p className="font-semibold text-sm">{match.awayTeam.shortName}</p>
+            <p className="font-semibold text-xs md:text-sm truncate px-1">{match.awayTeam.shortName}</p>
           </div>
         </div>
       </div>
@@ -65,27 +65,27 @@ function MatchSkeleton() {
   return (
     <div className="bg-bg-card rounded-xl border border-border">
       {/* Header bar */}
-      <div className="flex items-center justify-between px-4 py-2 border-b border-border/50">
+      <div className="flex items-center justify-between px-3 py-2 md:px-4 border-b border-border/50">
         <div className="h-3 w-28 bg-border/30 rounded animate-pulse" />
         <div className="h-3 w-20 bg-border/20 rounded animate-pulse" />
       </div>
       {/* Body */}
-      <div className="px-4 py-5">
+      <div className="px-3 py-4 md:px-4 md:py-5">
         <div className="flex items-center justify-between">
           {/* Home team */}
           <div className="flex-1 flex flex-col items-center gap-2">
-            <div className="w-12 h-12 bg-border/20 rounded-full animate-pulse" />
+            <div className="w-10 h-10 md:w-12 md:h-12 bg-border/20 rounded-full animate-pulse" />
             <div className="h-3.5 w-16 bg-border/30 rounded animate-pulse" />
           </div>
           {/* Center */}
-          <div className="px-4 flex flex-col items-center gap-2">
-            <div className="h-7 w-14 bg-border/40 rounded animate-pulse" />
-            <div className="h-3 w-20 bg-border/20 rounded animate-pulse" />
-            <div className="h-6 w-16 bg-border/10 rounded-full animate-pulse mt-1" />
+          <div className="px-2 md:px-4 flex flex-col items-center gap-2">
+            <div className="h-6 md:h-7 w-12 md:w-14 bg-border/40 rounded animate-pulse" />
+            <div className="h-3 w-16 md:w-20 bg-border/20 rounded animate-pulse" />
+            <div className="h-5 md:h-6 w-14 md:w-16 bg-border/10 rounded-full animate-pulse mt-1" />
           </div>
           {/* Away team */}
           <div className="flex-1 flex flex-col items-center gap-2">
-            <div className="w-12 h-12 bg-border/20 rounded-full animate-pulse" />
+            <div className="w-10 h-10 md:w-12 md:h-12 bg-border/20 rounded-full animate-pulse" />
             <div className="h-3.5 w-16 bg-border/30 rounded animate-pulse" />
           </div>
         </div>
@@ -120,8 +120,8 @@ function StandingsCard({ league }: { league: typeof LEAGUES[number] }) {
   if (top5.length === 0) return null;
 
   return (
-    <div className="bg-bg-card rounded-xl border border-border p-4">
-      <h3 className="font-semibold text-sm mb-3">{league.flag} {league.name}</h3>
+    <div className="bg-bg-card rounded-xl border border-border p-3 md:p-4">
+      <h3 className="font-semibold text-xs md:text-sm mb-3">{league.flag} {league.name}</h3>
       <table className="w-full text-xs">
         <thead>
           <tr className="text-text-muted">
@@ -173,19 +173,19 @@ export default function Home() {
   return (
     <>
       <Navbar />
-      <main className="max-w-6xl mx-auto px-4 py-6">
-        <div className="mb-6">
-          <h1 className="text-2xl font-bold">Lịch thi đấu & Nhận định</h1>
-          <p className="text-text-secondary text-sm mt-1">
+      <main className="max-w-6xl mx-auto px-4 py-4 md:py-6 overflow-x-hidden">
+        <div className="mb-4 md:mb-6">
+          <h1 className="text-xl md:text-2xl font-bold">Lịch thi đấu & Nhận định</h1>
+          <p className="text-text-secondary text-xs md:text-sm mt-1">
             Phân tích trước trận đấu cho 5 giải hàng đầu Châu Âu
           </p>
         </div>
 
         {/* League filter */}
-        <div className="flex gap-1.5 overflow-x-auto pb-4 -mx-1 px-1 scrollbar-hide">
+        <div className="flex gap-1.5 overflow-x-auto pb-4 -mx-1 px-1 scrollbar-hide snap-x">
           <button
             onClick={() => setLeagueFilter(null)}
-            className={`px-4 py-2 rounded-full text-xs font-medium whitespace-nowrap transition-colors ${
+            className={`px-3 md:px-4 py-2.5 md:py-2 rounded-full text-xs font-medium whitespace-nowrap transition-colors snap-start ${
               !leagueFilter
                 ? "bg-accent/15 text-accent border border-accent/30"
                 : "text-text-secondary hover:bg-bg-card-hover border border-transparent hover:border-border"
@@ -197,7 +197,7 @@ export default function Home() {
             <button
               key={league.code}
               onClick={() => setLeagueFilter(league.code)}
-              className={`px-4 py-2 rounded-full text-xs font-medium whitespace-nowrap transition-colors ${
+              className={`px-3 md:px-4 py-2.5 md:py-2 rounded-full text-xs font-medium whitespace-nowrap transition-colors snap-start ${
                 leagueFilter === league.code
                   ? "bg-accent/15 text-accent border border-accent/30"
                   : "text-text-secondary hover:bg-bg-card-hover border border-transparent hover:border-border"

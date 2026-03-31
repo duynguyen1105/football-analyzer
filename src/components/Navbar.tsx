@@ -12,11 +12,11 @@ export function Navbar() {
             </span>
           </Link>
 
-          <nav className="flex items-center gap-6 text-sm text-text-secondary">
-            <Link href="/" className="hover:text-text-primary transition-colors">
+          <nav className="flex items-center gap-4 md:gap-6 text-xs md:text-sm text-text-secondary">
+            <Link href="/" className="hover:text-text-primary transition-colors py-2">
               Lịch đấu
             </Link>
-            <Link href="/about" className="hover:text-text-primary transition-colors">
+            <Link href="/about" className="hover:text-text-primary transition-colors py-2">
               Giới thiệu
             </Link>
           </nav>

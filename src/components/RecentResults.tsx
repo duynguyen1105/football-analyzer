@@ -139,21 +139,21 @@ function TeamColumn({
       {results.map((r) => (
         <div
           key={r.id}
-          className="flex items-center gap-2 py-1.5 px-2 rounded-lg bg-bg-primary/50 text-sm"
+          className="flex items-center gap-1.5 md:gap-2 py-1.5 px-1.5 md:px-2 rounded-lg bg-bg-primary/50 text-xs md:text-sm"
         >
           <ResultIndicator result={r.result} />
           <img
             src={r.opponentCrest}
             alt={r.opponentName}
-            className="w-5 h-5 object-contain shrink-0"
+            className="w-4 h-4 md:w-5 md:h-5 object-contain shrink-0"
           />
-          <span className="flex-1 truncate text-xs text-text-secondary">
+          <span className="flex-1 truncate text-xs text-text-secondary min-w-0">
             {r.isHome ? "vs" : "@"} {r.opponentName}
           </span>
-          <span className="font-bold text-xs whitespace-nowrap">
-            {r.teamGoals} - {r.opponentGoals}
+          <span className="font-bold text-xs whitespace-nowrap shrink-0">
+            {r.teamGoals}-{r.opponentGoals}
           </span>
-          <span className="text-xs text-text-muted w-10 text-right">
+          <span className="text-[10px] md:text-xs text-text-muted w-8 md:w-10 text-right shrink-0">
             {r.date}
           </span>
         </div>
@@ -169,8 +169,8 @@ export function RecentResults({
   awayTeamName,
 }: RecentResultsProps) {
   return (
-    <section className="bg-bg-card rounded-2xl border border-border p-5">
-      <h3 className="font-bold text-sm mb-4 flex items-center gap-2">
+    <section className="bg-bg-card rounded-2xl border border-border p-4 md:p-5">
+      <h3 className="font-bold text-sm mb-3 md:mb-4 flex items-center gap-2">
         <span className="w-1.5 h-1.5 rounded-full bg-accent" />
         Kết quả gần đây
       </h3>

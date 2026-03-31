@@ -21,7 +21,7 @@ import Link from "next/link";
 function FormBadge({ result }: { result: string }) {
   const cls = result === "W" ? "badge-w" : result === "D" ? "badge-d" : "badge-l";
   return (
-    <span className={`inline-flex items-center justify-center w-7 h-7 rounded-lg text-xs font-bold ${cls}`}>
+    <span className={`inline-flex items-center justify-center w-6 h-6 md:w-7 md:h-7 rounded-lg text-[10px] md:text-xs font-bold ${cls}`}>
       {result}
     </span>
   );
@@ -74,11 +74,11 @@ function FormSection({ matchId }: { matchId: string }) {
   const { data, isLoading } = useMatchForm(matchId);
   if (isLoading || !data) return null;
   return (
-    <div className="flex gap-6 justify-center mt-3">
-      <div className="flex gap-1.5">
+    <div className="flex gap-3 md:gap-6 justify-center mt-3">
+      <div className="flex gap-1 md:gap-1.5">
         {(data.homeForm || []).map((r: string, i: number) => <FormBadge key={i} result={r} />)}
       </div>
-      <div className="flex gap-1.5">
+      <div className="flex gap-1 md:gap-1.5">
         {(data.awayForm || []).map((r: string, i: number) => <FormBadge key={i} result={r} />)}
       </div>
     </div>
@@ -92,32 +92,32 @@ function H2HSection({ matchId, homeTla, awayTla }: { matchId: string; homeTla: s
   if (!h2h || !h2h.lastMatches || h2h.lastMatches.length === 0) return null;
 
   return (
-    <section className="bg-bg-card rounded-2xl border border-border p-5">
+    <section className="bg-bg-card rounded-2xl border border-border p-4 md:p-5">
       <h3 className="font-bold text-sm mb-4 flex items-center gap-2">
         <span className="w-1.5 h-1.5 rounded-full bg-accent-2" />
         Lịch sử đối đầu
       </h3>
-      <div className="flex gap-2 mb-5">
-        <div className="flex-1 text-center p-3 rounded-xl bg-accent/10">
-          <p className="text-2xl font-bold text-accent">{h2h.homeWins}</p>
-          <p className="text-xs text-text-muted">{homeTla} Thắng</p>
+      <div className="flex gap-2 mb-4 md:mb-5">
+        <div className="flex-1 text-center p-2 md:p-3 rounded-xl bg-accent/10">
+          <p className="text-xl md:text-2xl font-bold text-accent">{h2h.homeWins}</p>
+          <p className="text-[10px] md:text-xs text-text-muted">{homeTla} Thắng</p>
         </div>
-        <div className="flex-1 text-center p-3 rounded-xl bg-accent-yellow/10">
-          <p className="text-2xl font-bold text-accent-yellow">{h2h.draws}</p>
-          <p className="text-xs text-text-muted">Hòa</p>
+        <div className="flex-1 text-center p-2 md:p-3 rounded-xl bg-accent-yellow/10">
+          <p className="text-xl md:text-2xl font-bold text-accent-yellow">{h2h.draws}</p>
+          <p className="text-[10px] md:text-xs text-text-muted">Hòa</p>
         </div>
-        <div className="flex-1 text-center p-3 rounded-xl bg-accent-2/10">
-          <p className="text-2xl font-bold text-accent-2">{h2h.awayWins}</p>
-          <p className="text-xs text-text-muted">{awayTla} Thắng</p>
+        <div className="flex-1 text-center p-2 md:p-3 rounded-xl bg-accent-2/10">
+          <p className="text-xl md:text-2xl font-bold text-accent-2">{h2h.awayWins}</p>
+          <p className="text-[10px] md:text-xs text-text-muted">{awayTla} Thắng</p>
         </div>
       </div>
       <div className="space-y-2">
         {h2h.lastMatches.map((m: any, i: number) => (
-          <div key={i} className="flex items-center justify-between py-2 px-3 rounded-lg bg-bg-primary/50 text-sm">
-            <span className="text-xs text-text-muted w-24">{m.date}</span>
-            <span className="flex-1 text-right truncate">{m.home}</span>
-            <span className="mx-3 font-bold px-2 py-0.5 rounded bg-white/5">{m.scoreHome} - {m.scoreAway}</span>
-            <span className="flex-1 truncate">{m.away}</span>
+          <div key={i} className="flex items-center justify-between py-2 px-2 md:px-3 rounded-lg bg-bg-primary/50 text-xs md:text-sm">
+            <span className="text-[10px] md:text-xs text-text-muted w-12 md:w-24 shrink-0">{m.date}</span>
+            <span className="flex-1 text-right truncate min-w-0">{m.home}</span>
+            <span className="mx-1.5 md:mx-3 font-bold px-1.5 md:px-2 py-0.5 rounded bg-white/5 shrink-0">{m.scoreHome} - {m.scoreAway}</span>
+            <span className="flex-1 truncate min-w-0">{m.away}</span>
           </div>
         ))}
       </div>
@@ -211,25 +211,25 @@ export default function MatchPage({ params }: { params: Promise<{ id: string }> 
           </div>
 
           {/* Match header */}
-          <div className="bg-bg-card rounded-2xl border border-border p-6 mb-6">
+          <div className="bg-bg-card rounded-2xl border border-border p-4 md:p-6 mb-6">
             <div className="flex justify-center mb-2">
               <div className="h-3 w-48 bg-border/30 rounded animate-pulse" />
             </div>
-            <div className="flex items-center justify-between py-4">
-              <div className="flex-1 flex flex-col items-center gap-3">
-                <div className="w-20 h-20 bg-border/20 rounded-full animate-pulse" />
-                <div className="h-5 w-20 bg-border/40 rounded animate-pulse" />
-                <div className="h-3 w-16 bg-border/20 rounded animate-pulse" />
+            <div className="flex items-center justify-between py-3 md:py-4">
+              <div className="flex-1 flex flex-col items-center gap-2 md:gap-3">
+                <div className="w-14 h-14 md:w-20 md:h-20 bg-border/20 rounded-full animate-pulse" />
+                <div className="h-4 md:h-5 w-16 md:w-20 bg-border/40 rounded animate-pulse" />
+                <div className="h-3 w-14 md:w-16 bg-border/20 rounded animate-pulse" />
               </div>
-              <div className="px-6 flex flex-col items-center gap-2">
+              <div className="px-2 md:px-6 flex flex-col items-center gap-2">
                 <div className="h-3 w-10 bg-border/20 rounded animate-pulse" />
-                <div className="h-9 w-16 bg-border/40 rounded animate-pulse" />
-                <div className="h-3 w-28 bg-border/20 rounded animate-pulse" />
+                <div className="h-7 md:h-9 w-14 md:w-16 bg-border/40 rounded animate-pulse" />
+                <div className="h-3 w-20 md:w-28 bg-border/20 rounded animate-pulse" />
               </div>
-              <div className="flex-1 flex flex-col items-center gap-3">
-                <div className="w-20 h-20 bg-border/20 rounded-full animate-pulse" />
-                <div className="h-5 w-20 bg-border/40 rounded animate-pulse" />
-                <div className="h-3 w-16 bg-border/20 rounded animate-pulse" />
+              <div className="flex-1 flex flex-col items-center gap-2 md:gap-3">
+                <div className="w-14 h-14 md:w-20 md:h-20 bg-border/20 rounded-full animate-pulse" />
+                <div className="h-4 md:h-5 w-16 md:w-20 bg-border/40 rounded animate-pulse" />
+                <div className="h-3 w-14 md:w-16 bg-border/20 rounded animate-pulse" />
               </div>
             </div>
           </div>
@@ -277,58 +277,56 @@ export default function MatchPage({ params }: { params: Promise<{ id: string }> 
         </div>
 
         {/* Match header */}
-        <div className="bg-bg-card rounded-2xl border border-border p-6 mb-6">
+        <div className="bg-bg-card rounded-2xl border border-border p-4 md:p-6 mb-6">
           <div className="text-center mb-2">
-            <span className="text-xs text-text-muted">{match.competition.name} — {match.venue}</span>
+            <span className="text-[10px] md:text-xs text-text-muted">{match.competition.name} — {match.venue}</span>
           </div>
-          <div className="flex items-center justify-between py-4">
-            <div className="flex-1 text-center">
-              <div className="flex justify-center mb-3">
-                <img src={match.homeTeam.crest} alt={match.homeTeam.shortName} className="w-20 h-20 object-contain" />
+          <div className="flex items-center justify-between py-3 md:py-4">
+            <div className="flex-1 text-center min-w-0">
+              <div className="flex justify-center mb-2 md:mb-3">
+                <img src={match.homeTeam.crest} alt={match.homeTeam.shortName} className="w-14 h-14 md:w-20 md:h-20 object-contain" />
               </div>
-              <h2 className="text-xl font-bold">{match.homeTeam.shortName}</h2>
+              <h2 className="text-sm md:text-xl font-bold truncate px-1">{match.homeTeam.shortName}</h2>
               {homeStanding && (
-                <p className="text-xs text-text-muted mt-1">{ordinal(homeStanding.position)} — {homeStanding.points} pts</p>
+                <p className="text-[10px] md:text-xs text-text-muted mt-1">{ordinal(homeStanding.position)} — {homeStanding.points} pts</p>
               )}
             </div>
-            <div className="px-6 text-center">
+            <div className="px-2 md:px-6 text-center shrink-0">
               {match.status === "FINISHED" && match.score ? (
-                <p className="text-4xl font-bold">{match.score.home} - {match.score.away}</p>
+                <p className="text-2xl md:text-4xl font-bold">{match.score.home} - {match.score.away}</p>
               ) : (
                 <>
-                  <p className="text-sm text-text-muted">Giờ đá</p>
-                  <p className="text-3xl font-bold my-2">{match.time}</p>
+                  <p className="text-xs md:text-sm text-text-muted">Giờ đá</p>
+                  <p className="text-2xl md:text-3xl font-bold my-1 md:my-2">{match.time}</p>
                 </>
               )}
-              <p className="text-xs text-text-muted">
+              <p className="text-[10px] md:text-xs text-text-muted">
                 {new Date(match.date + "T00:00:00").toLocaleDateString("vi-VN", {
                   weekday: "short", day: "numeric", month: "short", year: "numeric",
                 })}
               </p>
             </div>
-            <div className="flex-1 text-center">
-              <div className="flex justify-center mb-3">
-                <img src={match.awayTeam.crest} alt={match.awayTeam.shortName} className="w-20 h-20 object-contain" />
+            <div className="flex-1 text-center min-w-0">
+              <div className="flex justify-center mb-2 md:mb-3">
+                <img src={match.awayTeam.crest} alt={match.awayTeam.shortName} className="w-14 h-14 md:w-20 md:h-20 object-contain" />
               </div>
-              <h2 className="text-xl font-bold">{match.awayTeam.shortName}</h2>
+              <h2 className="text-sm md:text-xl font-bold truncate px-1">{match.awayTeam.shortName}</h2>
               {awayStanding && (
-                <p className="text-xs text-text-muted mt-1">{ordinal(awayStanding.position)} — {awayStanding.points} pts</p>
+                <p className="text-[10px] md:text-xs text-text-muted mt-1">{ordinal(awayStanding.position)} — {awayStanding.points} pts</p>
               )}
             </div>
           </div>
           {/* Form loads independently */}
           <FormSection matchId={id} />
 
-          {/* Countdown */}
-          {match.status !== "FINISHED" && (
-            <div className="mt-4">
+          {/* Countdown + Share */}
+          <div className="mt-3 md:mt-4 space-y-3">
+            {match.status !== "FINISHED" && (
               <MatchCountdown matchDate={match.date} matchTime={match.time} />
+            )}
+            <div className="flex justify-center">
+              <ShareButton homeTeam={match.homeTeam.shortName} awayTeam={match.awayTeam.shortName} matchId={match.id} />
             </div>
-          )}
-
-          {/* Share */}
-          <div className="flex justify-center mt-3">
-            <ShareButton homeTeam={match.homeTeam.shortName} awayTeam={match.awayTeam.shortName} matchId={match.id} />
           </div>
         </div>
 
@@ -337,21 +335,21 @@ export default function MatchPage({ params }: { params: Promise<{ id: string }> 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2 space-y-6">
             {/* Prediction — instant from core */}
-            <section className="bg-bg-card rounded-2xl border border-border p-5">
-              <h3 className="font-bold text-sm mb-4 flex items-center gap-2">
+            <section className="bg-bg-card rounded-2xl border border-border p-4 md:p-5">
+              <h3 className="font-bold text-sm mb-3 md:mb-4 flex items-center gap-2">
                 <span className="w-1.5 h-1.5 rounded-full bg-accent" />
                 Dự đoán trận đấu
               </h3>
-              <div className="flex gap-2 mb-4">
+              <div className="flex gap-2 mb-3 md:mb-4">
                 {[
                   { label: match.homeTeam.tla, pct: prediction.homeWin, color: "bg-accent" },
                   { label: "Hòa", pct: prediction.draw, color: "bg-accent-yellow" },
                   { label: match.awayTeam.tla, pct: prediction.awayWin, color: "bg-accent-2" },
                 ].map((p: any) => (
                   <div key={p.label} className="flex-1 text-center">
-                    <div className="text-2xl font-bold">{p.pct}%</div>
-                    <div className="text-xs text-text-muted mt-1">{p.label}</div>
-                    <div className="mt-2 h-2 rounded-full bg-border overflow-hidden">
+                    <div className="text-xl md:text-2xl font-bold">{p.pct}%</div>
+                    <div className="text-[10px] md:text-xs text-text-muted mt-1">{p.label}</div>
+                    <div className="mt-2 h-1.5 md:h-2 rounded-full bg-border overflow-hidden">
                       <div className={`h-full rounded-full ${p.color}`} style={{ width: `${p.pct}%` }} />
                     </div>
                   </div>
@@ -359,12 +357,12 @@ export default function MatchPage({ params }: { params: Promise<{ id: string }> 
               </div>
               <div className="flex gap-4 pt-3 border-t border-border/50">
                 <div className="flex-1 text-center">
-                  <p className="text-lg font-bold">{prediction.btts}%</p>
-                  <p className="text-xs text-text-muted">Cả hai ghi bàn</p>
+                  <p className="text-base md:text-lg font-bold">{prediction.btts}%</p>
+                  <p className="text-[10px] md:text-xs text-text-muted">Cả hai ghi bàn</p>
                 </div>
                 <div className="flex-1 text-center">
-                  <p className="text-lg font-bold">{prediction.over25}%</p>
-                  <p className="text-xs text-text-muted">Trên 2.5 bàn</p>
+                  <p className="text-base md:text-lg font-bold">{prediction.over25}%</p>
+                  <p className="text-[10px] md:text-xs text-text-muted">Trên 2.5 bàn</p>
                 </div>
               </div>
             </section>
@@ -374,8 +372,8 @@ export default function MatchPage({ params }: { params: Promise<{ id: string }> 
 
             {/* Stats — instant from core standings */}
             {homeStanding && awayStanding && (
-              <section className="bg-bg-card rounded-2xl border border-border p-5">
-                <h3 className="font-bold text-sm mb-4 flex items-center gap-2">
+              <section className="bg-bg-card rounded-2xl border border-border p-4 md:p-5">
+                <h3 className="font-bold text-sm mb-3 md:mb-4 flex items-center gap-2">
                   <span className="w-1.5 h-1.5 rounded-full bg-accent-yellow" />
                   Thống kê mùa giải
                 </h3>
@@ -420,7 +418,7 @@ export default function MatchPage({ params }: { params: Promise<{ id: string }> 
 
             {/* Standings — instant from core */}
             {standings && standings.length > 0 && (
-              <section className="bg-bg-card rounded-2xl border border-border p-5">
+              <section className="bg-bg-card rounded-2xl border border-border p-4 md:p-5">
                 <h3 className="font-bold text-sm mb-3">Bảng xếp hạng</h3>
                 <table className="w-full text-xs">
                   <thead>

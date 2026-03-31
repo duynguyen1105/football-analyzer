@@ -55,3 +55,12 @@ body {
 .badge-w { background: #22c55e20; color: #22c55e; }
 .badge-d { background: #eab30820; color: #eab308; }
 .badge-l { background: #ef444420; color: #ef4444; }
+
+/* Hide scrollbar for horizontal scroll areas */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}

@@ -134,8 +134,8 @@ export function KeyPlayers({ matchId, homeTeam, awayTeam }: KeyPlayersProps) {
   const { data, isLoading } = useMatchTeams(matchId);
 
   return (
-    <section className="bg-bg-card rounded-2xl border border-border p-5">
-      <h3 className="font-bold text-sm mb-4 flex items-center gap-2">
+    <section className="bg-bg-card rounded-2xl border border-border p-4 md:p-5">
+      <h3 className="font-bold text-sm mb-3 md:mb-4 flex items-center gap-2">
         <span className="w-1.5 h-1.5 rounded-full bg-purple-500" />
         Cầu thủ chủ chốt
       </h3>

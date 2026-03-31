@@ -39,12 +39,12 @@ function getTimeLeft(matchDate: string, matchTime: string): TimeLeft | null {
 function CountdownUnit({ value, label }: { value: number; label: string }) {
   return (
     <div className="flex flex-col items-center">
-      <div className="bg-bg-primary border border-border rounded-lg w-16 h-16 flex items-center justify-center">
-        <span className="text-2xl font-bold text-text-primary">
+      <div className="bg-bg-primary border border-border rounded-lg w-12 h-12 md:w-16 md:h-16 flex items-center justify-center">
+        <span className="text-lg md:text-2xl font-bold text-text-primary">
           {String(value).padStart(2, "0")}
         </span>
       </div>
-      <span className="text-xs text-text-muted mt-1.5">{label}</span>
+      <span className="text-[10px] md:text-xs text-text-muted mt-1">{label}</span>
     </div>
   );
 }
@@ -75,17 +75,17 @@ export function MatchCountdown({ matchDate, matchTime }: MatchCountdownProps) {
   if (!timeLeft) return null;
 
   return (
-    <div className="flex justify-center gap-3">
+    <div className="flex justify-center gap-1.5 md:gap-3">
       <CountdownUnit value={timeLeft.days} label="Ngày" />
-      <div className="flex items-center text-text-muted text-xl font-bold pb-5">
+      <div className="flex items-center text-text-muted text-base md:text-xl font-bold pb-4 md:pb-5">
         :
       </div>
       <CountdownUnit value={timeLeft.hours} label="Giờ" />
-      <div className="flex items-center text-text-muted text-xl font-bold pb-5">
+      <div className="flex items-center text-text-muted text-base md:text-xl font-bold pb-4 md:pb-5">
         :
       </div>
       <CountdownUnit value={timeLeft.minutes} label="Phút" />
-      <div className="flex items-center text-text-muted text-xl font-bold pb-5">
+      <div className="flex items-center text-text-muted text-base md:text-xl font-bold pb-4 md:pb-5">
         :
       </div>
       <CountdownUnit value={timeLeft.seconds} label="Giây" />
