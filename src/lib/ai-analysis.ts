@@ -20,7 +20,7 @@ export async function generateMatchAnalysis(
 
   const response = await client.messages.create({
     model: "claude-haiku-4-5-20251001",
-    max_tokens: 800,
+    max_tokens: 1500,
     messages: [{ role: "user", content: prompt }],
   });
 

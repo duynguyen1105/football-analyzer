@@ -1,18 +1,12 @@
+"use client";
+
 import { Navbar } from "@/components/Navbar";
 import { AdSlot } from "@/components/AdSlot";
-import { getMatches, getStandings } from "@/lib/football-data";
+import { useMatches, useStandings } from "@/lib/hooks";
+import { useAppStore } from "@/lib/store";
 import { LEAGUES } from "@/lib/constants";
 import { Match, Standing } from "@/lib/types";
 import Link from "next/link";
-
-export const revalidate = 300;
-
-function getVietnamDate(offsetDays = 0): string {
-  const now = new Date();
-  const vnTime = new Date(now.getTime() + 7 * 60 * 60 * 1000);
-  vnTime.setUTCDate(vnTime.getUTCDate() + offsetDays);
-  return vnTime.toISOString().slice(0, 10);
-}
 
 function FormBadge({ result }: { result: string }) {
   const cls = result === "W" ? "badge-w" : result === "D" ? "badge-d" : "badge-l";
@@ -33,9 +27,7 @@ function MatchCard({ match }: { match: Match }) {
       className="block bg-bg-card rounded-xl border border-border hover:border-accent/30 hover:bg-bg-card-hover transition-all group"
     >
       <div className="flex items-center justify-between px-4 py-2 border-b border-border/50">
-        <span className="text-xs text-text-muted">
-          {leagueInfo?.flag} {match.competition.name}
-        </span>
+        <span className="text-xs text-text-muted">{leagueInfo?.flag} {match.competition.name}</span>
         <span className="text-xs text-text-muted">{match.venue}</span>
       </div>
       <div className="px-4 py-5">
@@ -48,9 +40,7 @@ function MatchCard({ match }: { match: Match }) {
           </div>
           <div className="px-4 text-center">
             {isFinished && match.score ? (
-              <p className="text-2xl font-bold text-text-primary">
-                {match.score.home} - {match.score.away}
-              </p>
+              <p className="text-2xl font-bold text-text-primary">{match.score.home} - {match.score.away}</p>
             ) : (
               <p className="text-2xl font-bold text-text-primary">{match.time}</p>
             )}
@@ -71,15 +61,22 @@ function MatchCard({ match }: { match: Match }) {
   );
 }
 
-function StandingsCard({ league, standings }: { league: typeof LEAGUES[number]; standings: Standing[] }) {
-  const top5 = standings.slice(0, 5);
+function MatchSkeleton() {
+  return <div className="h-48 bg-bg-card rounded-xl border border-border animate-pulse" />;
+}
+
+function StandingsCard({ league }: { league: typeof LEAGUES[number] }) {
+  const { data: standings, isLoading } = useStandings(league.code);
+  const top5 = (standings || []).slice(0, 5);
+
+  if (isLoading) {
+    return <div className="h-52 bg-bg-card rounded-xl border border-border animate-pulse" />;
+  }
   if (top5.length === 0) return null;
 
   return (
     <div className="bg-bg-card rounded-xl border border-border p-4">
-      <h3 className="font-semibold text-sm mb-3">
-        {league.flag} {league.name}
-      </h3>
+      <h3 className="font-semibold text-sm mb-3">{league.flag} {league.name}</h3>
       <table className="w-full text-xs">
         <thead>
           <tr className="text-text-muted">
@@ -91,7 +88,7 @@ function StandingsCard({ league, standings }: { league: typeof LEAGUES[number]; 
           </tr>
         </thead>
         <tbody className="text-text-secondary">
-          {top5.map((row) => (
+          {top5.map((row: Standing) => (
             <tr key={row.team.id} className="border-t border-border/30">
               <td className="py-1.5 text-text-muted">{row.position}</td>
               <td className="py-1.5">
@@ -111,24 +108,13 @@ function StandingsCard({ league, standings }: { league: typeof LEAGUES[number]; 
   );
 }
 
-export default async function Home({
-  searchParams,
-}: {
-  searchParams: Promise<{ league?: string }>;
-}) {
-  const { league: leagueFilter } = await searchParams;
-  const today = getVietnamDate();
-  const nextWeek = getVietnamDate(7);
+export default function Home() {
+  const { leagueFilter, setLeagueFilter } = useAppStore();
+  const { data: matches, isLoading } = useMatches();
 
-  const [matches, ...allStandings] = await Promise.all([
-    getMatches(today, nextWeek),
-    ...LEAGUES.map((l) => getStandings(l.code)),
-  ]);
-
-  // Filter by league if specified
   const filteredMatches = leagueFilter
-    ? matches.filter((m) => m.competition.code === leagueFilter)
-    : matches;
+    ? (matches || []).filter((m: Match) => m.competition.code === leagueFilter)
+    : matches || [];
 
   // Group matches by date
   const grouped: Record<string, Match[]> = {};
@@ -137,7 +123,7 @@ export default async function Home({
     grouped[match.date].push(match);
   }
 
-  const hasMatches = filteredMatches.length > 0;
+  const today = new Date(Date.now() + 7 * 60 * 60 * 1000).toISOString().slice(0, 10);
 
   return (
     <>
@@ -150,10 +136,10 @@ export default async function Home({
           </p>
         </div>
 
-        {/* League filter tabs */}
+        {/* League filter */}
         <div className="flex gap-1.5 overflow-x-auto pb-4 -mx-1 px-1 scrollbar-hide">
-          <Link
-            href="/"
+          <button
+            onClick={() => setLeagueFilter(null)}
             className={`px-4 py-2 rounded-full text-xs font-medium whitespace-nowrap transition-colors ${
               !leagueFilter
                 ? "bg-accent/15 text-accent border border-accent/30"
@@ -161,11 +147,11 @@ export default async function Home({
             }`}
           >
             Tất cả giải đấu
-          </Link>
+          </button>
           {LEAGUES.map((league) => (
-            <Link
+            <button
               key={league.code}
-              href={`/?league=${league.code}`}
+              onClick={() => setLeagueFilter(league.code)}
               className={`px-4 py-2 rounded-full text-xs font-medium whitespace-nowrap transition-colors ${
                 leagueFilter === league.code
                   ? "bg-accent/15 text-accent border border-accent/30"
@@ -173,20 +159,27 @@ export default async function Home({
               }`}
             >
               {league.flag} {league.name}
-            </Link>
+            </button>
           ))}
         </div>
 
         <AdSlot size="leaderboard" className="mb-6" />
 
-        {!hasMatches && (
+        {/* Matches */}
+        {isLoading && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {[...Array(4)].map((_, i) => <MatchSkeleton key={i} />)}
+          </div>
+        )}
+
+        {!isLoading && filteredMatches.length === 0 && (
           <div className="text-center py-16 text-text-muted">
             <p className="text-lg">Không có trận đấu nào được lên lịch.</p>
             <p className="text-sm mt-2">Hãy quay lại sau hoặc xem bảng xếp hạng bên dưới.</p>
           </div>
         )}
 
-        {hasMatches && (
+        {!isLoading && filteredMatches.length > 0 && (
           <div className="space-y-8">
             {Object.entries(grouped).map(([date, dateMatches]) => (
               <section key={date}>
@@ -194,7 +187,7 @@ export default async function Home({
                   {formatDateHeader(date, today)}
                 </h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {dateMatches.map((match) => (
+                  {dateMatches.map((match: Match) => (
                     <MatchCard key={match.id} match={match} />
                   ))}
                 </div>
@@ -205,11 +198,12 @@ export default async function Home({
 
         <AdSlot size="rectangle" className="mt-8 mx-auto max-w-md" />
 
+        {/* Standings — each loads independently */}
         <section className="mt-10">
           <h2 className="text-xl font-bold mb-4">Bảng xếp hạng</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {LEAGUES.map((league, i) => (
-              <StandingsCard key={league.code} league={league} standings={allStandings[i] || []} />
+            {LEAGUES.map((league) => (
+              <StandingsCard key={league.code} league={league} />
             ))}
           </div>
         </section>
@@ -228,8 +222,7 @@ export default async function Home({
 }
 
 function formatDate(dateStr: string): string {
-  const d = new Date(dateStr + "T00:00:00");
-  return d.toLocaleDateString("vi-VN", { weekday: "short", day: "numeric", month: "short" });
+  return new Date(dateStr + "T00:00:00").toLocaleDateString("vi-VN", { weekday: "short", day: "numeric", month: "short" });
 }
 
 function formatDateHeader(dateStr: string, today: string): string {
@@ -238,6 +231,5 @@ function formatDateHeader(dateStr: string, today: string): string {
   const tomorrow = new Date(todayD);
   tomorrow.setDate(todayD.getDate() + 1);
   if (dateStr === tomorrow.toISOString().slice(0, 10)) return "Ngày mai";
-  const d = new Date(dateStr + "T00:00:00");
-  return d.toLocaleDateString("vi-VN", { weekday: "long", day: "numeric", month: "long" });
+  return new Date(dateStr + "T00:00:00").toLocaleDateString("vi-VN", { weekday: "long", day: "numeric", month: "long" });
 }

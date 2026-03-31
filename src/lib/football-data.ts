@@ -5,6 +5,26 @@ const BASE_URL = "https://api.football-data.org/v4";
 const GMT_PLUS_7_OFFSET = 7 * 60 * 60 * 1000; // 7 hours in ms
 
 // ---------------------------------------------------------------------------
+// In-memory cache — avoids redundant API calls across navigations
+// ---------------------------------------------------------------------------
+const memCache = new Map<string, { data: unknown; expiresAt: number }>();
+
+function getCached<T>(key: string): T | null {
+  const entry = memCache.get(key);
+  if (entry && Date.now() < entry.expiresAt) return entry.data as T;
+  if (entry) memCache.delete(key);
+  return null;
+}
+
+function setCache(key: string, data: unknown, ttlMs: number): void {
+  memCache.set(key, { data, expiresAt: Date.now() + ttlMs });
+}
+
+const CACHE_5_MIN = 5 * 60 * 1000;
+const CACHE_30_MIN = 30 * 60 * 1000;
+const CACHE_2_HR = 2 * 60 * 60 * 1000;
+
+// ---------------------------------------------------------------------------
 // Rate limiter — token bucket (10 requests per minute for free tier)
 // ---------------------------------------------------------------------------
 const RATE_LIMIT = 10;
@@ -138,6 +158,10 @@ function mapMatch(raw: any): Match {
  * Form arrays are left empty (computed on match detail pages).
  */
 export async function getMatches(dateFrom: string, dateTo: string): Promise<Match[]> {
+  const cacheKey = `matches:${dateFrom}:${dateTo}`;
+  const cached = getCached<Match[]>(cacheKey);
+  if (cached) return cached;
+
   try {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const data = await apiFetch<any>("/matches", {
@@ -147,6 +171,7 @@ export async function getMatches(dateFrom: string, dateTo: string): Promise<Matc
     });
 
     const matches: Match[] = (data.matches ?? []).map(mapMatch);
+    setCache(cacheKey, matches, CACHE_5_MIN);
     return matches;
   } catch (error) {
     console.error("Failed to fetch matches:", error);
@@ -158,10 +183,16 @@ export async function getMatches(dateFrom: string, dateTo: string): Promise<Matc
  * Fetch a single match by ID.
  */
 export async function getMatch(matchId: number): Promise<Match | null> {
+  const cacheKey = `match:${matchId}`;
+  const cached = getCached<Match>(cacheKey);
+  if (cached) return cached;
+
   try {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const raw = await apiFetch<any>(`/matches/${matchId}`);
-    return mapMatch(raw);
+    const match = mapMatch(raw);
+    setCache(cacheKey, match, CACHE_5_MIN);
+    return match;
   } catch (error) {
     console.error(`Failed to fetch match ${matchId}:`, error);
     return null;
@@ -172,6 +203,10 @@ export async function getMatch(matchId: number): Promise<Match | null> {
  * Fetch the TOTAL standings table for a competition.
  */
 export async function getStandings(competitionCode: string): Promise<Standing[]> {
+  const cacheKey = `standings:${competitionCode}`;
+  const cached = getCached<Standing[]>(cacheKey);
+  if (cached) return cached;
+
   try {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const data = await apiFetch<any>(`/competitions/${competitionCode}/standings`);
