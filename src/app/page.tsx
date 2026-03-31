@@ -159,7 +159,7 @@ export default function Home() {
   return (
     <>
       <Navbar />
-      <main className="max-w-6xl mx-auto px-4 py-4 md:py-6 overflow-x-hidden">
+      <main className="max-w-6xl mx-auto px-4 py-4 md:py-6">
         <div className="mb-4 md:mb-6">
           <h1 className="text-xl md:text-2xl font-bold">Lịch thi đấu &amp; Nhận định</h1>
           <p className="text-text-secondary text-xs md:text-sm mt-1">
@@ -168,7 +168,7 @@ export default function Home() {
         </div>
 
         {/* League filter */}
-        <div className="flex gap-1.5 overflow-x-auto pb-4 -mx-1 px-1 scrollbar-hide">
+        <div className="flex gap-1.5 overflow-x-auto pb-4 scrollbar-hide">
           <button
             onClick={() => setLeagueFilter(null)}
             className={`px-3 md:px-4 py-2 rounded-full text-xs font-medium whitespace-nowrap transition-colors ${
