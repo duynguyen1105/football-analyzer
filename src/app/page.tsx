@@ -62,7 +62,36 @@ function MatchCard({ match }: { match: Match }) {
 }
 
 function MatchSkeleton() {
-  return <div className="h-48 bg-bg-card rounded-xl border border-border animate-pulse" />;
+  return (
+    <div className="bg-bg-card rounded-xl border border-border">
+      {/* Header bar */}
+      <div className="flex items-center justify-between px-4 py-2 border-b border-border/50">
+        <div className="h-3 w-28 bg-border/30 rounded animate-pulse" />
+        <div className="h-3 w-20 bg-border/20 rounded animate-pulse" />
+      </div>
+      {/* Body */}
+      <div className="px-4 py-5">
+        <div className="flex items-center justify-between">
+          {/* Home team */}
+          <div className="flex-1 flex flex-col items-center gap-2">
+            <div className="w-12 h-12 bg-border/20 rounded-full animate-pulse" />
+            <div className="h-3.5 w-16 bg-border/30 rounded animate-pulse" />
+          </div>
+          {/* Center */}
+          <div className="px-4 flex flex-col items-center gap-2">
+            <div className="h-7 w-14 bg-border/40 rounded animate-pulse" />
+            <div className="h-3 w-20 bg-border/20 rounded animate-pulse" />
+            <div className="h-6 w-16 bg-border/10 rounded-full animate-pulse mt-1" />
+          </div>
+          {/* Away team */}
+          <div className="flex-1 flex flex-col items-center gap-2">
+            <div className="w-12 h-12 bg-border/20 rounded-full animate-pulse" />
+            <div className="h-3.5 w-16 bg-border/30 rounded animate-pulse" />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 function StandingsCard({ league }: { league: typeof LEAGUES[number] }) {
@@ -70,7 +99,23 @@ function StandingsCard({ league }: { league: typeof LEAGUES[number] }) {
   const top5 = (standings || []).slice(0, 5);
 
   if (isLoading) {
-    return <div className="h-52 bg-bg-card rounded-xl border border-border animate-pulse" />;
+    return (
+      <div className="bg-bg-card rounded-xl border border-border p-4">
+        <div className="h-4 w-32 bg-border/40 rounded animate-pulse mb-3" />
+        <div className="space-y-2.5">
+          {[...Array(5)].map((_, i) => (
+            <div key={i} className="flex items-center gap-2">
+              <div className="h-3 w-4 bg-border/20 rounded animate-pulse" />
+              <div className="w-4 h-4 bg-border/20 rounded animate-pulse" />
+              <div className="h-3 flex-1 bg-border/20 rounded animate-pulse" />
+              <div className="h-3 w-5 bg-border/20 rounded animate-pulse" />
+              <div className="h-3 w-5 bg-border/20 rounded animate-pulse" />
+              <div className="h-3 w-5 bg-border/30 rounded animate-pulse" />
+            </div>
+          ))}
+        </div>
+      </div>
+    );
   }
   if (top5.length === 0) return null;
 

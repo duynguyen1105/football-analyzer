@@ -49,8 +49,17 @@ function StatCompare({ label, homeVal, awayVal }: { label: string; homeVal: numb
   );
 }
 
-function SectionSkeleton({ height = "h-48" }: { height?: string }) {
-  return <div className={`bg-bg-card rounded-2xl border border-border ${height} animate-pulse`} />;
+function SectionSkeleton({ lines = 4 }: { lines?: number }) {
+  return (
+    <div className="bg-bg-card rounded-2xl border border-border p-5">
+      <div className="h-4 w-32 bg-border/40 rounded animate-pulse mb-4" />
+      <div className="space-y-3">
+        {[...Array(lines)].map((_, i) => (
+          <div key={i} className="h-9 bg-border/15 rounded-lg animate-pulse" />
+        ))}
+      </div>
+    </div>
+  );
 }
 
 function ordinal(n: number): string {
@@ -119,7 +128,7 @@ function H2HSection({ matchId, homeTla, awayTla }: { matchId: string; homeTla: s
 // --- Teams Section (coaches + squads) ---
 function TeamsSection({ matchId, homeTeam, awayTeam }: { matchId: string; homeTeam: any; awayTeam: any }) {
   const { data, isLoading } = useMatchTeams(matchId);
-  if (isLoading) return <SectionSkeleton height="h-64" />;
+  if (isLoading) return <SectionSkeleton lines={3} />;
   if (!data?.homeTeamInfo && !data?.awayTeamInfo) return null;
 
   return (
@@ -157,7 +166,7 @@ function TeamsSection({ matchId, homeTeam, awayTeam }: { matchId: string; homeTe
 // --- Scorers Section ---
 function ScorersSection({ matchId, homeTeamName, awayTeamName }: { matchId: string; homeTeamName: string; awayTeamName: string }) {
   const { data: scorers, isLoading } = useMatchScorers(matchId);
-  if (isLoading) return <SectionSkeleton height="h-32" />;
+  if (isLoading) return <SectionSkeleton lines={3} />;
 
   const relevant = (scorers || []).filter(
     (s: any) => s.team === homeTeamName || s.team === awayTeamName
@@ -192,16 +201,47 @@ export default function MatchPage({ params }: { params: Promise<{ id: string }> 
       <>
         <Navbar />
         <div className="max-w-4xl mx-auto px-4 py-6">
-          <div className="h-4 w-64 bg-bg-card rounded animate-pulse mb-6" />
-          <div className="bg-bg-card rounded-2xl border border-border p-6 mb-6 h-64 animate-pulse" />
+          {/* Breadcrumb */}
+          <div className="flex items-center gap-2 mb-6">
+            <div className="h-3 w-16 bg-border/30 rounded animate-pulse" />
+            <div className="h-3 w-2 bg-border/20 rounded animate-pulse" />
+            <div className="h-3 w-24 bg-border/30 rounded animate-pulse" />
+            <div className="h-3 w-2 bg-border/20 rounded animate-pulse" />
+            <div className="h-3 w-32 bg-border/40 rounded animate-pulse" />
+          </div>
+
+          {/* Match header */}
+          <div className="bg-bg-card rounded-2xl border border-border p-6 mb-6">
+            <div className="flex justify-center mb-2">
+              <div className="h-3 w-48 bg-border/30 rounded animate-pulse" />
+            </div>
+            <div className="flex items-center justify-between py-4">
+              <div className="flex-1 flex flex-col items-center gap-3">
+                <div className="w-20 h-20 bg-border/20 rounded-full animate-pulse" />
+                <div className="h-5 w-20 bg-border/40 rounded animate-pulse" />
+                <div className="h-3 w-16 bg-border/20 rounded animate-pulse" />
+              </div>
+              <div className="px-6 flex flex-col items-center gap-2">
+                <div className="h-3 w-10 bg-border/20 rounded animate-pulse" />
+                <div className="h-9 w-16 bg-border/40 rounded animate-pulse" />
+                <div className="h-3 w-28 bg-border/20 rounded animate-pulse" />
+              </div>
+              <div className="flex-1 flex flex-col items-center gap-3">
+                <div className="w-20 h-20 bg-border/20 rounded-full animate-pulse" />
+                <div className="h-5 w-20 bg-border/40 rounded animate-pulse" />
+                <div className="h-3 w-16 bg-border/20 rounded animate-pulse" />
+              </div>
+            </div>
+          </div>
+
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div className="lg:col-span-2 space-y-6">
               <SectionSkeleton />
               <SectionSkeleton />
             </div>
             <div className="space-y-6">
-              <SectionSkeleton height="h-40" />
-              <SectionSkeleton height="h-40" />
+              <SectionSkeleton lines={3} />
+              <SectionSkeleton lines={3} />
             </div>
           </div>
         </div>
