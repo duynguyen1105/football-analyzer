@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo } from "react";
 import { Navbar } from "@/components/Navbar";
 import { AdSlot } from "@/components/AdSlot";
 import { useMatches, useStandings } from "@/lib/hooks";
@@ -7,15 +8,6 @@ import { useAppStore } from "@/lib/store";
 import { LEAGUES } from "@/lib/constants";
 import { Match, Standing } from "@/lib/types";
 import Link from "next/link";
-
-function FormBadge({ result }: { result: string }) {
-  const cls = result === "W" ? "badge-w" : result === "D" ? "badge-d" : "badge-l";
-  return (
-    <span className={`inline-flex items-center justify-center w-6 h-6 rounded-md text-xs font-bold ${cls}`}>
-      {result}
-    </span>
-  );
-}
 
 function MatchCard({ match }: { match: Match }) {
   const leagueInfo = LEAGUES.find((l) => l.code === match.competition.code);
@@ -26,7 +18,7 @@ function MatchCard({ match }: { match: Match }) {
       href={`/match/${match.id}`}
       className="block bg-bg-card rounded-xl border border-border hover:border-accent/30 hover:bg-bg-card-hover transition-all group"
     >
-      <div className="flex items-center justify-between px-3 py-2 md:px-4 border-b border-border/50 gap-2">
+      <div className="flex items-center justify-between px-3 py-2 border-b border-border/50 gap-2">
         <span className="text-[10px] md:text-xs text-text-muted whitespace-nowrap">{leagueInfo?.flag} {match.competition.name}</span>
         <span className="text-[10px] md:text-xs text-text-muted truncate text-right">{match.venue}</span>
       </div>
@@ -44,7 +36,7 @@ function MatchCard({ match }: { match: Match }) {
             ) : (
               <p className="text-xl md:text-2xl font-bold text-text-primary">{match.time}</p>
             )}
-            <p className="text-[10px] md:text-xs text-text-muted mt-1">{formatDate(match.date)}</p>
+            <p className="text-[10px] md:text-xs text-text-muted mt-1">{match.date}</p>
             <div className="mt-2 md:mt-3 px-3 py-1 rounded-full bg-accent/10 text-accent text-[10px] md:text-xs font-medium group-hover:bg-accent/20 transition-colors">
               {isFinished ? "Xem lại" : "Phân tích"}
             </div>
@@ -64,28 +56,23 @@ function MatchCard({ match }: { match: Match }) {
 function MatchSkeleton() {
   return (
     <div className="bg-bg-card rounded-xl border border-border">
-      {/* Header bar */}
-      <div className="flex items-center justify-between px-3 py-2 md:px-4 border-b border-border/50">
+      <div className="flex items-center justify-between px-3 py-2 border-b border-border/50">
         <div className="h-3 w-28 bg-border/30 rounded animate-pulse" />
         <div className="h-3 w-20 bg-border/20 rounded animate-pulse" />
       </div>
-      {/* Body */}
-      <div className="px-3 py-4 md:px-4 md:py-5">
+      <div className="px-3 py-4">
         <div className="flex items-center justify-between">
-          {/* Home team */}
           <div className="flex-1 flex flex-col items-center gap-2">
-            <div className="w-10 h-10 md:w-12 md:h-12 bg-border/20 rounded-full animate-pulse" />
+            <div className="w-10 h-10 bg-border/20 rounded-full animate-pulse" />
             <div className="h-3.5 w-16 bg-border/30 rounded animate-pulse" />
           </div>
-          {/* Center */}
-          <div className="px-2 md:px-4 flex flex-col items-center gap-2">
-            <div className="h-6 md:h-7 w-12 md:w-14 bg-border/40 rounded animate-pulse" />
-            <div className="h-3 w-16 md:w-20 bg-border/20 rounded animate-pulse" />
-            <div className="h-5 md:h-6 w-14 md:w-16 bg-border/10 rounded-full animate-pulse mt-1" />
+          <div className="px-2 flex flex-col items-center gap-2">
+            <div className="h-6 w-12 bg-border/40 rounded animate-pulse" />
+            <div className="h-3 w-16 bg-border/20 rounded animate-pulse" />
+            <div className="h-5 w-14 bg-border/10 rounded-full animate-pulse mt-1" />
           </div>
-          {/* Away team */}
           <div className="flex-1 flex flex-col items-center gap-2">
-            <div className="w-10 h-10 md:w-12 md:h-12 bg-border/20 rounded-full animate-pulse" />
+            <div className="w-10 h-10 bg-border/20 rounded-full animate-pulse" />
             <div className="h-3.5 w-16 bg-border/30 rounded animate-pulse" />
           </div>
         </div>
@@ -100,7 +87,7 @@ function StandingsCard({ league }: { league: typeof LEAGUES[number] }) {
 
   if (isLoading) {
     return (
-      <div className="bg-bg-card rounded-xl border border-border p-4">
+      <div className="bg-bg-card rounded-xl border border-border p-3">
         <div className="h-4 w-32 bg-border/40 rounded animate-pulse mb-3" />
         <div className="space-y-2.5">
           {[...Array(5)].map((_, i) => (
@@ -108,8 +95,6 @@ function StandingsCard({ league }: { league: typeof LEAGUES[number] }) {
               <div className="h-3 w-4 bg-border/20 rounded animate-pulse" />
               <div className="w-4 h-4 bg-border/20 rounded animate-pulse" />
               <div className="h-3 flex-1 bg-border/20 rounded animate-pulse" />
-              <div className="h-3 w-5 bg-border/20 rounded animate-pulse" />
-              <div className="h-3 w-5 bg-border/20 rounded animate-pulse" />
               <div className="h-3 w-5 bg-border/30 rounded animate-pulse" />
             </div>
           ))}
@@ -120,7 +105,7 @@ function StandingsCard({ league }: { league: typeof LEAGUES[number] }) {
   if (top5.length === 0) return null;
 
   return (
-    <div className="bg-bg-card rounded-xl border border-border p-3 md:p-4">
+    <div className="bg-bg-card rounded-xl border border-border p-3">
       <h3 className="font-semibold text-xs md:text-sm mb-3">{league.flag} {league.name}</h3>
       <table className="w-full text-xs">
         <thead>
@@ -161,31 +146,32 @@ export default function Home() {
     ? (matches || []).filter((m: Match) => m.competition.code === leagueFilter)
     : matches || [];
 
-  // Group matches by date
-  const grouped: Record<string, Match[]> = {};
-  for (const match of filteredMatches) {
-    if (!grouped[match.date]) grouped[match.date] = [];
-    grouped[match.date].push(match);
-  }
-
-  const today = new Date(Date.now() + 7 * 60 * 60 * 1000).toISOString().slice(0, 10);
+  // Group matches by date — use stable key (YYYY-MM-DD string) to avoid hydration issues
+  const grouped = useMemo(() => {
+    const g: Record<string, Match[]> = {};
+    for (const match of filteredMatches) {
+      if (!g[match.date]) g[match.date] = [];
+      g[match.date].push(match);
+    }
+    return g;
+  }, [filteredMatches]);
 
   return (
     <>
       <Navbar />
       <main className="max-w-6xl mx-auto px-4 py-4 md:py-6 overflow-x-hidden">
         <div className="mb-4 md:mb-6">
-          <h1 className="text-xl md:text-2xl font-bold">Lịch thi đấu & Nhận định</h1>
+          <h1 className="text-xl md:text-2xl font-bold">Lịch thi đấu &amp; Nhận định</h1>
           <p className="text-text-secondary text-xs md:text-sm mt-1">
             Phân tích trước trận đấu cho 5 giải hàng đầu Châu Âu
           </p>
         </div>
 
         {/* League filter */}
-        <div className="flex gap-1.5 overflow-x-auto pb-4 -mx-1 px-1 scrollbar-hide snap-x">
+        <div className="flex gap-1.5 overflow-x-auto pb-4 -mx-1 px-1 scrollbar-hide">
           <button
             onClick={() => setLeagueFilter(null)}
-            className={`px-3 md:px-4 py-2.5 md:py-2 rounded-full text-xs font-medium whitespace-nowrap transition-colors snap-start ${
+            className={`px-3 md:px-4 py-2 rounded-full text-xs font-medium whitespace-nowrap transition-colors ${
               !leagueFilter
                 ? "bg-accent/15 text-accent border border-accent/30"
                 : "text-text-secondary hover:bg-bg-card-hover border border-transparent hover:border-border"
@@ -197,7 +183,7 @@ export default function Home() {
             <button
               key={league.code}
               onClick={() => setLeagueFilter(league.code)}
-              className={`px-3 md:px-4 py-2.5 md:py-2 rounded-full text-xs font-medium whitespace-nowrap transition-colors snap-start ${
+              className={`px-3 md:px-4 py-2 rounded-full text-xs font-medium whitespace-nowrap transition-colors ${
                 leagueFilter === league.code
                   ? "bg-accent/15 text-accent border border-accent/30"
                   : "text-text-secondary hover:bg-bg-card-hover border border-transparent hover:border-border"
@@ -212,7 +198,7 @@ export default function Home() {
 
         {/* Matches */}
         {isLoading && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
             {[...Array(4)].map((_, i) => <MatchSkeleton key={i} />)}
           </div>
         )}
@@ -225,13 +211,13 @@ export default function Home() {
         )}
 
         {!isLoading && filteredMatches.length > 0 && (
-          <div className="space-y-8">
+          <div className="space-y-6 md:space-y-8">
             {Object.entries(grouped).map(([date, dateMatches]) => (
               <section key={date}>
-                <h2 className="text-sm font-semibold text-text-secondary uppercase tracking-wide mb-3">
-                  {formatDateHeader(date, today)}
+                <h2 className="text-xs md:text-sm font-semibold text-text-secondary uppercase tracking-wide mb-3">
+                  {date}
                 </h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
                   {dateMatches.map((match: Match) => (
                     <MatchCard key={match.id} match={match} />
                   ))}
@@ -243,17 +229,17 @@ export default function Home() {
 
         <AdSlot size="rectangle" className="mt-8 mx-auto max-w-md" />
 
-        {/* Standings — each loads independently */}
-        <section className="mt-10">
-          <h2 className="text-xl font-bold mb-4">Bảng xếp hạng</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {/* Standings */}
+        <section className="mt-8 md:mt-10">
+          <h2 className="text-lg md:text-xl font-bold mb-4">Bảng xếp hạng</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
             {LEAGUES.map((league) => (
               <StandingsCard key={league.code} league={league} />
             ))}
           </div>
         </section>
 
-        <footer className="mt-12 py-6 border-t border-border text-center text-xs text-text-muted">
+        <footer className="mt-10 md:mt-12 py-6 border-t border-border text-center text-xs text-text-muted">
           <p>MatchDay Analyst — Nhận định bóng đá trước trận</p>
           <p className="mt-1">Dữ liệu từ Football-Data.org</p>
           <div className="mt-2 flex gap-4 justify-center">
@@ -264,17 +250,4 @@ export default function Home() {
       </main>
     </>
   );
-}
-
-function formatDate(dateStr: string): string {
-  return new Date(dateStr + "T00:00:00").toLocaleDateString("vi-VN", { weekday: "short", day: "numeric", month: "short" });
-}
-
-function formatDateHeader(dateStr: string, today: string): string {
-  if (dateStr === today) return "Hôm nay";
-  const todayD = new Date(today + "T00:00:00");
-  const tomorrow = new Date(todayD);
-  tomorrow.setDate(todayD.getDate() + 1);
-  if (dateStr === tomorrow.toISOString().slice(0, 10)) return "Ngày mai";
-  return new Date(dateStr + "T00:00:00").toLocaleDateString("vi-VN", { weekday: "long", day: "numeric", month: "long" });
 }
