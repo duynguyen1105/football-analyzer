@@ -1,11 +1,11 @@
 import { NextRequest } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
 import { getMatch, getStandings } from "@/lib/football-data";
+import { getCached, setCached } from "@/lib/cache";
 
 const client = new Anthropic();
 
-const cache = new Map<string, { text: string; generatedAt: number }>();
-const CACHE_TTL = 1000 * 60 * 60 * 6; // 6 hours
+const CACHE_TTL_SECONDS = 6 * 60 * 60; // 6 hours
 
 export async function GET(request: NextRequest) {
   const { searchParams } = request.nextUrl;
@@ -16,12 +16,12 @@ export async function GET(request: NextRequest) {
   }
 
   const matchId = parseInt(matchIdParam, 10);
-
-  // Check cache
   const cacheKey = `quick-summary:${matchId}`;
-  const cached = cache.get(cacheKey);
-  if (cached && Date.now() - cached.generatedAt < CACHE_TTL) {
-    return Response.json({ summary: cached.text });
+
+  // Check persistent cache
+  const cached = await getCached(cacheKey);
+  if (cached) {
+    return Response.json({ summary: cached });
   }
 
   try {
@@ -36,14 +36,12 @@ export async function GET(request: NextRequest) {
 
     const homePos = homeStanding?.position ?? "N/A";
     const homePts = homeStanding?.points ?? "N/A";
-    const homeForm = match.homeForm.length > 0 ? match.homeForm.join("-") : "N/A";
     const awayPos = awayStanding?.position ?? "N/A";
     const awayPts = awayStanding?.points ?? "N/A";
-    const awayForm = match.awayForm.length > 0 ? match.awayForm.join("-") : "N/A";
 
     const prompt = `Viết 3 điểm nhận định nhanh (mỗi điểm 1 câu ngắn) cho trận ${match.homeTeam.name} vs ${match.awayTeam.name}.
-${match.homeTeam.shortName}: Hạng ${homePos}, ${homePts} điểm, phong độ ${homeForm}
-${match.awayTeam.shortName}: Hạng ${awayPos}, ${awayPts} điểm, phong độ ${awayForm}
+${match.homeTeam.shortName}: Hạng ${homePos}, ${homePts} điểm
+${match.awayTeam.shortName}: Hạng ${awayPos}, ${awayPts} điểm
 Chỉ trả về 3 dòng, mỗi dòng bắt đầu bằng "•". Không cần tiêu đề.`;
 
     const response = await client.messages.create({
@@ -55,7 +53,8 @@ Chỉ trả về 3 dòng, mỗi dòng bắt đầu bằng "•". Không cần ti
     const summary =
       response.content[0].type === "text" ? response.content[0].text : "";
 
-    cache.set(cacheKey, { text: summary, generatedAt: Date.now() });
+    // Store persistently
+    await setCached(cacheKey, summary, CACHE_TTL_SECONDS);
 
     return Response.json({ summary });
   } catch (err: unknown) {

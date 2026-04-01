@@ -1,20 +1,20 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { MatchDetail } from "./types";
+import { getCached, setCached } from "./cache";
 
 const client = new Anthropic();
 
-const cache = new Map<string, { text: string; generatedAt: number }>();
-const CACHE_TTL = 1000 * 60 * 60 * 6; // 6 hours
+const CACHE_TTL_SECONDS = 6 * 60 * 60; // 6 hours
 
 export async function generateMatchAnalysis(
   data: MatchDetail,
   lang: "en" | "vi" = "en"
 ): Promise<string> {
-  const cacheKey = `${data.match.id}-${lang}`;
-  const cached = cache.get(cacheKey);
-  if (cached && Date.now() - cached.generatedAt < CACHE_TTL) {
-    return cached.text;
-  }
+  const cacheKey = `analysis:${data.match.id}:${lang}`;
+
+  // Check persistent cache first
+  const cached = await getCached(cacheKey);
+  if (cached) return cached;
 
   const prompt = lang === "en" ? buildEnglishPrompt(data) : buildVietnamesePrompt(data);
 
@@ -25,7 +25,10 @@ export async function generateMatchAnalysis(
   });
 
   const text = response.content[0].type === "text" ? response.content[0].text : "";
-  cache.set(cacheKey, { text, generatedAt: Date.now() });
+
+  // Store in persistent cache
+  await setCached(cacheKey, text, CACHE_TTL_SECONDS);
+
   return text;
 }
 
