@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import "./globals.css";
 import { Providers } from "@/components/Providers";
+import { NavigationProgress } from "@/components/NavigationProgress";
 import { GoogleAnalytics } from "@/components/GoogleAnalytics";
 import { AdSenseScript } from "@/components/AdSenseScript";
 import { buildWebSiteSchema } from "@/lib/json-ld";
@@ -26,6 +28,9 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
   return (
     <html lang="vi">
       <body>
+        <Suspense fallback={null}>
+          <NavigationProgress />
+        </Suspense>
         <Providers>{children}</Providers>
         <script
           type="application/ld+json"

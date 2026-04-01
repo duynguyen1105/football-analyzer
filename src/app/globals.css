@@ -59,6 +59,28 @@ body {
   transition: width 0.8s ease;
 }
 
+/* NProgress bar */
+#nprogress { pointer-events: none; }
+#nprogress .bar {
+  background: var(--accent);
+  position: fixed;
+  z-index: 9999;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 3px;
+}
+#nprogress .peg {
+  display: block;
+  position: absolute;
+  right: 0;
+  width: 100px;
+  height: 100%;
+  box-shadow: 0 0 10px var(--accent), 0 0 5px var(--accent);
+  opacity: 1;
+  transform: rotate(3deg) translate(0px, -4px);
+}
+
 .badge-w { background: #22c55e20; color: #22c55e; }
 .badge-d { background: #eab30820; color: #eab308; }
 .badge-l { background: #ef444420; color: #ef4444; }
