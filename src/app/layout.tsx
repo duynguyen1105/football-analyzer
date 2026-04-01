@@ -1,6 +1,9 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { Providers } from "@/components/Providers";
+import { GoogleAnalytics } from "@/components/GoogleAnalytics";
+import { AdSenseScript } from "@/components/AdSenseScript";
+import { buildWebSiteSchema } from "@/lib/json-ld";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://nhandinhbongdavn.com"),
@@ -14,6 +17,9 @@ export const metadata: Metadata = {
   twitter: { card: "summary_large_image" },
   robots: { index: true, follow: true },
   alternates: { canonical: "https://nhandinhbongdavn.com" },
+  verification: {
+    google: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION || "",
+  },
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
@@ -21,6 +27,14 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
     <html lang="vi">
       <body>
         <Providers>{children}</Providers>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify(buildWebSiteSchema()).replace(/</g, "\\u003c"),
+          }}
+        />
+        <GoogleAnalytics />
+        <AdSenseScript />
       </body>
     </html>
   );

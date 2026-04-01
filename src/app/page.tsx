@@ -95,7 +95,9 @@ function StandingsCard({ league }: { league: (typeof LEAGUES)[number] }) {
 
   return (
     <div className="bg-bg-card rounded-lg border border-border p-3">
-      <h3 className="font-semibold text-xs mb-2">{league.flag} {league.name}</h3>
+      <Link href={`/giai-dau/${league.code}`}>
+        <h3 className="font-semibold text-xs mb-2 hover:text-accent transition-colors">{league.flag} {league.name}</h3>
+      </Link>
       <table className="w-full text-[11px]">
         <thead>
           <tr className="text-text-muted">
@@ -123,6 +125,9 @@ function StandingsCard({ league }: { league: (typeof LEAGUES)[number] }) {
           ))}
         </tbody>
       </table>
+      <Link href={`/giai-dau/${league.code}`} className="block text-center text-[10px] text-accent mt-2 hover:underline">
+        Xem day du &rarr;
+      </Link>
     </div>
   );
 }

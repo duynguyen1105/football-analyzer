@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { getMatch } from "@/lib/football-data";
+import { buildSportsEventSchema, buildBreadcrumbSchema } from "@/lib/json-ld";
 
 export async function generateMetadata({
   params,
@@ -30,10 +31,46 @@ export async function generateMetadata({
   };
 }
 
-export default function MatchLayout({
+export default async function MatchLayout({
+  params,
   children,
 }: {
+  params: Promise<{ id: string }>;
   children: React.ReactNode;
 }) {
-  return children;
+  const { id } = await params;
+  const match = await getMatch(parseInt(id));
+
+  const baseUrl = "https://nhandinhbongdavn.com";
+
+  return (
+    <>
+      {match && (
+        <>
+          <script
+            type="application/ld+json"
+            dangerouslySetInnerHTML={{
+              __html: JSON.stringify(buildSportsEventSchema(match)).replace(/</g, "\\u003c"),
+            }}
+          />
+          <script
+            type="application/ld+json"
+            dangerouslySetInnerHTML={{
+              __html: JSON.stringify(
+                buildBreadcrumbSchema([
+                  { name: "Trang chủ", url: baseUrl },
+                  { name: match.competition.name, url: baseUrl },
+                  {
+                    name: `${match.homeTeam.shortName} vs ${match.awayTeam.shortName}`,
+                    url: `${baseUrl}/match/${id}`,
+                  },
+                ])
+              ).replace(/</g, "\\u003c"),
+            }}
+          />
+        </>
+      )}
+      {children}
+    </>
+  );
 }
