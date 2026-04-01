@@ -84,3 +84,25 @@ export function useQuickSummary(matchId: string) {
     staleTime: 6 * 60 * 60 * 1000, // 6 hours
   });
 }
+
+export function usePlayerAnalysis(homeTeamId: number, awayTeamId: number) {
+  return useQuery({
+    queryKey: ["players", homeTeamId, awayTeamId],
+    queryFn: () =>
+      fetch(
+        `/api/players?homeTeamId=${homeTeamId}&awayTeamId=${awayTeamId}`
+      ).then((r) => r.json()),
+    staleTime: 60 * 60 * 1000, // 1 hour
+  });
+}
+
+export function useTeamRecentDetailed(teamId: number) {
+  return useQuery({
+    queryKey: ["recent-detailed", teamId],
+    queryFn: () =>
+      fetch(`/api/match/recent?teamId=${teamId}&limit=10`).then((r) =>
+        r.json()
+      ),
+    staleTime: 30 * 60 * 1000, // 30 min
+  });
+}

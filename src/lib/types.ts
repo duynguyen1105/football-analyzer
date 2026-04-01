@@ -52,7 +52,7 @@ export interface TeamInfo {
   crest: string;
   venue: string;
   coach: { name: string; nationality: string } | null;
-  squad: { name: string; position: string; nationality: string }[];
+  squad: { id: number; name: string; position: string; nationality: string; dateOfBirth?: string }[];
 }
 
 export interface H2HMatch {

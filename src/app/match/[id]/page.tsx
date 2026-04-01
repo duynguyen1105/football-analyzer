@@ -6,6 +6,8 @@ import { AdSlot } from "@/components/AdSlot";
 import { AiAnalysis } from "@/components/AiAnalysis";
 import { RecentResults } from "@/components/RecentResults";
 import { KeyPlayers } from "@/components/KeyPlayers";
+import { PlayerAnalysis } from "@/components/PlayerAnalysis";
+import { HomeAwayForm } from "@/components/HomeAwayForm";
 import { MatchCountdown } from "@/components/MatchCountdown";
 import { MatchImportance } from "@/components/MatchImportance";
 import { RefereeInfo } from "@/components/RefereeInfo";
@@ -416,6 +418,22 @@ export default function MatchPage({ params }: { params: Promise<{ id: string }> 
               matchId={id}
               homeTeam={{ name: match.homeTeam.name, shortName: match.homeTeam.shortName, crest: match.homeTeam.crest }}
               awayTeam={{ name: match.awayTeam.name, shortName: match.awayTeam.shortName, crest: match.awayTeam.crest }}
+            />
+
+            {/* Player Analysis — loads independently */}
+            <PlayerAnalysis
+              homeTeamId={match.homeTeam.id}
+              awayTeamId={match.awayTeam.id}
+              homeTeamName={match.homeTeam.shortName}
+              awayTeamName={match.awayTeam.shortName}
+            />
+
+            {/* Home/Away Form — loads independently */}
+            <HomeAwayForm
+              homeTeamId={match.homeTeam.id}
+              awayTeamId={match.awayTeam.id}
+              homeTeamName={match.homeTeam.shortName}
+              awayTeamName={match.awayTeam.shortName}
             />
 
             {/* AI Analysis */}

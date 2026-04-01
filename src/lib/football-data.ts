@@ -277,9 +277,11 @@ export async function getTeamInfo(teamId: number): Promise<TeamInfo | null> {
       squad: (raw.squad ?? []).map(
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (p: any) => ({
+          id: p.id ?? 0,
           name: p.name ?? "",
           position: p.position ?? "Unknown",
           nationality: p.nationality ?? "",
+          dateOfBirth: p.dateOfBirth ?? undefined,
         })
       ),
     };
@@ -514,4 +516,98 @@ export function computeForm(teamId: number, recentMatches: any[]): string[] {
     if (teamGoals === opponentGoals) return "D";
     return "L";
   });
+}
+
+/**
+ * Fetch individual player profile.
+ */
+export async function getPlayerInfo(playerId: number): Promise<{
+  id: number;
+  name: string;
+  dateOfBirth: string;
+  nationality: string;
+  position: string;
+  shirtNumber?: number;
+} | null> {
+  const cacheKey = `player:${playerId}`;
+  const cached = getCached<{
+    id: number;
+    name: string;
+    dateOfBirth: string;
+    nationality: string;
+    position: string;
+    shirtNumber?: number;
+  }>(cacheKey);
+  if (cached) return cached;
+
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const raw = await apiFetch<any>(`/persons/${playerId}`);
+
+    const result = {
+      id: raw.id,
+      name: raw.name ?? "",
+      dateOfBirth: raw.dateOfBirth ?? "",
+      nationality: raw.nationality ?? "",
+      position: raw.position ?? "",
+      shirtNumber: raw.shirtNumber ?? undefined,
+    };
+    setCache(cacheKey, result, CACHE_2_HR);
+    return result;
+  } catch (error) {
+    console.error(`Failed to fetch player info for ${playerId}:`, error);
+    return null;
+  }
+}
+
+const CACHE_1_HR = 60 * 60 * 1000;
+
+/**
+ * Fetch a player's recent match stats (aggregated).
+ */
+export async function getPlayerMatches(
+  playerId: number,
+  limit: number = 5
+): Promise<{
+  goals: number;
+  assists: number;
+  yellowCards: number;
+  redCards: number;
+  minutesPlayed: number;
+  matchesPlayed: number;
+} | null> {
+  const cacheKey = `player-matches:${playerId}:${limit}`;
+  const cached = getCached<{
+    goals: number;
+    assists: number;
+    yellowCards: number;
+    redCards: number;
+    minutesPlayed: number;
+    matchesPlayed: number;
+  }>(cacheKey);
+  if (cached) return cached;
+
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const raw = await apiFetch<any>(`/persons/${playerId}/matches`, {
+      limit: String(limit),
+    });
+
+    const resultSet = raw.resultSet ?? {};
+    const matches = raw.matches ?? [];
+
+    const result = {
+      goals: resultSet.goals ?? 0,
+      assists: resultSet.assists ?? 0,
+      yellowCards: resultSet.yellowCards ?? 0,
+      redCards: resultSet.redCards ?? 0,
+      minutesPlayed: resultSet.minutesPlayed ?? 0,
+      matchesPlayed: matches.length,
+    };
+    setCache(cacheKey, result, CACHE_1_HR);
+    return result;
+  } catch (error) {
+    console.error(`Failed to fetch player matches for ${playerId}:`, error);
+    return null;
+  }
 }
