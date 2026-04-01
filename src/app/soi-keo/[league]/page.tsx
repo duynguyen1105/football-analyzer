@@ -68,11 +68,15 @@ export default async function SoiKeoPage({ params }: Props) {
         <div className="flex items-center gap-2 text-xs text-text-muted mb-4">
           <Link href="/" className="hover:text-text-primary transition-colors">Trang chủ</Link>
           <span>/</span>
-          <span className="text-text-secondary">{league.flag} Soi kèo {league.name}</span>
+          <span className="text-text-secondary flex items-center gap-1.5">
+            <img src={league.logo} alt="" className="w-4 h-4 object-contain" />
+            Soi kèo {league.name}
+          </span>
         </div>
 
-        <h1 className="text-xl md:text-2xl font-bold mb-2">
-          {league.flag} Soi kèo {league.name}
+        <h1 className="text-xl md:text-2xl font-bold mb-2 flex items-center gap-2">
+          <img src={league.logo} alt="" className="w-7 h-7 object-contain" />
+          Soi kèo {league.name}
         </h1>
         <p className="text-sm text-text-secondary mb-6">
           Tỷ lệ kèo từ các nhà cái &middot; Cập nhật mỗi giờ
@@ -88,13 +92,14 @@ export default async function SoiKeoPage({ params }: Props) {
               <Link
                 key={s}
                 href={`/soi-keo/${s}`}
-                className={`text-xs px-3 py-1.5 rounded-full border transition-colors ${
+                className={`flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full border transition-colors ${
                   isActive
                     ? "bg-accent/20 border-accent text-accent"
                     : "border-border text-text-secondary hover:border-accent/30"
                 }`}
               >
-                {l.flag} {l.name}
+                <img src={l.logo} alt="" className="w-4 h-4 object-contain" />
+                {l.name}
               </Link>
             );
           })}
