@@ -30,25 +30,23 @@
   --color-border: var(--border);
 }
 
-*,
-*::before,
-*::after {
-  box-sizing: border-box;
-}
+*, *::before, *::after { box-sizing: border-box; }
 
-html, body {
-  max-width: 100vw;
+html {
   overflow-x: hidden;
+  -webkit-text-size-adjust: 100%;
 }
 
 body {
+  margin: 0;
+  width: 100%;
+  min-height: 100dvh;
   background: var(--bg-primary);
   color: var(--text-primary);
   font-family: system-ui, -apple-system, sans-serif;
   overflow-x: hidden;
 }
 
-/* Stat bar animation */
 .stat-bar {
   height: 6px;
   border-radius: 3px;
@@ -61,16 +59,6 @@ body {
   transition: width 0.8s ease;
 }
 
-/* Badge styles */
 .badge-w { background: #22c55e20; color: #22c55e; }
 .badge-d { background: #eab30820; color: #eab308; }
 .badge-l { background: #ef444420; color: #ef4444; }
-
-/* Hide scrollbar for horizontal scroll areas */
-.scrollbar-hide {
-  -ms-overflow-style: none;
-  scrollbar-width: none;
-}
-.scrollbar-hide::-webkit-scrollbar {
-  display: none;
-}

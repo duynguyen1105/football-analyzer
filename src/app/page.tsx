@@ -9,170 +9,116 @@ import { LEAGUES } from "@/lib/constants";
 import { Match, Standing } from "@/lib/types";
 import Link from "next/link";
 
+/* ───────────────────────── Match Card ───────────────────────── */
+
 function MatchCard({ match }: { match: Match }) {
-  const leagueInfo = LEAGUES.find((l) => l.code === match.competition.code);
-  const isFinished = match.status === "FINISHED";
+  const league = LEAGUES.find((l) => l.code === match.competition.code);
+  const fin = match.status === "FINISHED";
 
   return (
-    <Link
-      href={`/match/${match.id}`}
-      className="block bg-bg-card rounded-xl border border-border hover:border-accent/30 hover:bg-bg-card-hover transition-all group"
-    >
-      <div className="flex items-center justify-between px-3 py-2 border-b border-border/50 gap-2">
-        <span className="text-[10px] md:text-xs text-text-muted whitespace-nowrap">{leagueInfo?.flag} {match.competition.name}</span>
-        <span className="text-[10px] md:text-xs text-text-muted truncate text-right">{match.venue}</span>
+    <Link href={`/match/${match.id}`} className="block bg-bg-card rounded-lg border border-border hover:border-accent/30 transition-colors">
+      {/* League header */}
+      <div className="px-3 py-1.5 border-b border-border/50 text-[10px] text-text-muted truncate">
+        {league?.flag} {match.competition.name}
       </div>
-      <div className="p-3 md:p-4">
-        {/* Mobile: stacked layout */}
-        <div className="flex flex-col items-center gap-3 md:hidden">
-          <div className="flex items-center justify-center gap-4 w-full">
-            <div className="flex items-center gap-2 flex-1 justify-end">
-              <p className="font-semibold text-sm text-right">{match.homeTeam.shortName}</p>
-              <img src={match.homeTeam.crest} alt={match.homeTeam.shortName} className="w-9 h-9 object-contain" loading="lazy" />
-            </div>
-            <div className="text-center shrink-0 px-2">
-              {isFinished && match.score ? (
-                <p className="text-lg font-bold">{match.score.home} - {match.score.away}</p>
-              ) : (
-                <p className="text-lg font-bold">{match.time}</p>
-              )}
-            </div>
-            <div className="flex items-center gap-2 flex-1">
-              <img src={match.awayTeam.crest} alt={match.awayTeam.shortName} className="w-9 h-9 object-contain" loading="lazy" />
-              <p className="font-semibold text-sm text-left">{match.awayTeam.shortName}</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-3">
-            <p className="text-[10px] text-text-muted">{match.date}</p>
-            <div className="px-3 py-1 rounded-full bg-accent/10 text-accent text-[10px] font-medium group-hover:bg-accent/20 transition-colors">
-              {isFinished ? "Xem lại" : "Phân tích"}
-            </div>
-          </div>
-        </div>
 
-        {/* Desktop: horizontal layout */}
-        <div className="hidden md:grid grid-cols-3 items-center">
-          <div className="text-center">
-            <img src={match.homeTeam.crest} alt={match.homeTeam.shortName} className="w-12 h-12 object-contain mx-auto mb-1" loading="lazy" />
-            <p className="font-semibold text-sm">{match.homeTeam.shortName}</p>
-          </div>
-          <div className="text-center">
-            {isFinished && match.score ? (
-              <p className="text-xl font-bold">{match.score.home} - {match.score.away}</p>
-            ) : (
-              <p className="text-xl font-bold">{match.time}</p>
-            )}
-            <p className="text-xs text-text-muted mt-0.5">{match.date}</p>
-            <div className="mt-2 inline-block px-3 py-1 rounded-full bg-accent/10 text-accent text-xs font-medium group-hover:bg-accent/20 transition-colors">
-              {isFinished ? "Xem lại" : "Phân tích"}
-            </div>
-          </div>
-          <div className="text-center">
-            <img src={match.awayTeam.crest} alt={match.awayTeam.shortName} className="w-12 h-12 object-contain mx-auto mb-1" loading="lazy" />
-            <p className="font-semibold text-sm">{match.awayTeam.shortName}</p>
-          </div>
-        </div>
+      {/* Row 1: Home team */}
+      <div className="flex items-center gap-3 px-3 py-2 border-b border-border/20">
+        <img src={match.homeTeam.crest} alt="" className="w-7 h-7 object-contain shrink-0" loading="lazy" />
+        <span className="text-sm font-medium flex-1 truncate">{match.homeTeam.shortName}</span>
+        {fin && match.score ? (
+          <span className="text-sm font-bold w-6 text-right">{match.score.home}</span>
+        ) : null}
+      </div>
+
+      {/* Row 2: Away team */}
+      <div className="flex items-center gap-3 px-3 py-2 border-b border-border/20">
+        <img src={match.awayTeam.crest} alt="" className="w-7 h-7 object-contain shrink-0" loading="lazy" />
+        <span className="text-sm font-medium flex-1 truncate">{match.awayTeam.shortName}</span>
+        {fin && match.score ? (
+          <span className="text-sm font-bold w-6 text-right">{match.score.away}</span>
+        ) : null}
+      </div>
+
+      {/* Row 3: Time + CTA */}
+      <div className="flex items-center justify-between px-3 py-2">
+        <span className="text-xs text-text-muted">
+          {fin ? "KT" : match.time} · {match.date}
+        </span>
+        <span className="text-[10px] font-medium text-accent bg-accent/10 px-2 py-0.5 rounded-full">
+          {fin ? "Xem lại" : "Phân tích"}
+        </span>
       </div>
     </Link>
   );
 }
 
+/* ───────────────────────── Skeleton ───────────────────────── */
+
 function MatchSkeleton() {
   return (
-    <div className="bg-bg-card rounded-xl border border-border">
-      <div className="flex items-center justify-between px-3 py-2 border-b border-border/50">
-        <div className="h-3 w-28 bg-border/30 rounded animate-pulse" />
-        <div className="h-3 w-20 bg-border/20 rounded animate-pulse" />
+    <div className="bg-bg-card rounded-lg border border-border">
+      <div className="px-3 py-1.5 border-b border-border/50">
+        <div className="h-3 w-24 bg-border/30 rounded animate-pulse" />
       </div>
-      <div className="p-3">
-        {/* Mobile skeleton */}
-        <div className="flex flex-col items-center gap-3 md:hidden">
-          <div className="flex items-center justify-center gap-4 w-full">
-            <div className="flex items-center gap-2 flex-1 justify-end">
-              <div className="h-3.5 w-14 bg-border/30 rounded animate-pulse" />
-              <div className="w-9 h-9 bg-border/20 rounded-full animate-pulse" />
-            </div>
-            <div className="h-5 w-12 bg-border/40 rounded animate-pulse" />
-            <div className="flex items-center gap-2 flex-1">
-              <div className="w-9 h-9 bg-border/20 rounded-full animate-pulse" />
-              <div className="h-3.5 w-14 bg-border/30 rounded animate-pulse" />
-            </div>
-          </div>
-          <div className="flex items-center gap-3">
-            <div className="h-3 w-16 bg-border/20 rounded animate-pulse" />
-            <div className="h-5 w-14 bg-border/10 rounded-full animate-pulse" />
-          </div>
+      {[0, 1].map((i) => (
+        <div key={i} className="flex items-center gap-3 px-3 py-2 border-b border-border/20">
+          <div className="w-7 h-7 bg-border/20 rounded-full animate-pulse shrink-0" />
+          <div className="h-3.5 flex-1 bg-border/30 rounded animate-pulse" />
         </div>
-        {/* Desktop skeleton */}
-        <div className="hidden md:grid grid-cols-3 items-center">
-          <div className="flex flex-col items-center gap-1">
-            <div className="w-12 h-12 bg-border/20 rounded-full animate-pulse" />
-            <div className="h-3 w-14 bg-border/30 rounded animate-pulse" />
-          </div>
-          <div className="flex flex-col items-center gap-1">
-            <div className="h-6 w-12 bg-border/40 rounded animate-pulse" />
-            <div className="h-3 w-16 bg-border/20 rounded animate-pulse" />
-            <div className="h-5 w-14 bg-border/10 rounded-full animate-pulse mt-1" />
-          </div>
-          <div className="flex flex-col items-center gap-1">
-            <div className="w-12 h-12 bg-border/20 rounded-full animate-pulse" />
-            <div className="h-3 w-14 bg-border/30 rounded animate-pulse" />
-          </div>
-        </div>
+      ))}
+      <div className="flex items-center justify-between px-3 py-2">
+        <div className="h-3 w-20 bg-border/20 rounded animate-pulse" />
+        <div className="h-4 w-14 bg-border/10 rounded-full animate-pulse" />
       </div>
     </div>
   );
 }
 
-function StandingsCard({ league }: { league: typeof LEAGUES[number] }) {
+/* ───────────────────────── Standings ───────────────────────── */
+
+function StandingsCard({ league }: { league: (typeof LEAGUES)[number] }) {
   const { data: standings, isLoading } = useStandings(league.code);
-  const top5 = (standings || []).slice(0, 5);
+  const rows = (standings || []).slice(0, 5);
 
   if (isLoading) {
     return (
-      <div className="bg-bg-card rounded-xl border border-border p-3">
-        <div className="h-4 w-32 bg-border/40 rounded animate-pulse mb-3" />
-        <div className="space-y-2.5">
-          {[...Array(5)].map((_, i) => (
-            <div key={i} className="flex items-center gap-2">
-              <div className="h-3 w-4 bg-border/20 rounded animate-pulse" />
-              <div className="w-4 h-4 bg-border/20 rounded animate-pulse" />
-              <div className="h-3 flex-1 bg-border/20 rounded animate-pulse" />
-              <div className="h-3 w-5 bg-border/30 rounded animate-pulse" />
-            </div>
-          ))}
-        </div>
+      <div className="bg-bg-card rounded-lg border border-border p-3 space-y-2">
+        <div className="h-4 w-28 bg-border/40 rounded animate-pulse" />
+        {[...Array(5)].map((_, i) => (
+          <div key={i} className="h-3.5 bg-border/20 rounded animate-pulse" />
+        ))}
       </div>
     );
   }
-  if (top5.length === 0) return null;
+  if (rows.length === 0) return null;
 
   return (
-    <div className="bg-bg-card rounded-xl border border-border p-3">
-      <h3 className="font-semibold text-xs md:text-sm mb-3">{league.flag} {league.name}</h3>
-      <table className="w-full text-xs">
+    <div className="bg-bg-card rounded-lg border border-border p-3">
+      <h3 className="font-semibold text-xs mb-2">{league.flag} {league.name}</h3>
+      <table className="w-full text-[11px]">
         <thead>
           <tr className="text-text-muted">
-            <th className="text-left py-1">#</th>
-            <th className="text-left py-1">Đội</th>
-            <th className="text-center py-1">Tr</th>
-            <th className="text-center py-1">HS</th>
-            <th className="text-center py-1 font-bold text-text-secondary">Đ</th>
+            <th className="text-left py-0.5 w-5">#</th>
+            <th className="text-left py-0.5">Đội</th>
+            <th className="text-center py-0.5 w-6">Tr</th>
+            <th className="text-center py-0.5 w-7">HS</th>
+            <th className="text-center py-0.5 w-6 text-text-secondary font-bold">Đ</th>
           </tr>
         </thead>
         <tbody className="text-text-secondary">
-          {top5.map((row: Standing) => (
-            <tr key={row.team.id} className="border-t border-border/30">
-              <td className="py-1.5 text-text-muted">{row.position}</td>
-              <td className="py-1.5">
-                <div className="flex items-center gap-1.5">
-                  <img src={row.team.crest} alt="" className="w-4 h-4 object-contain" />
-                  <span className="text-text-primary font-medium">{row.team.shortName}</span>
+          {rows.map((r: Standing) => (
+            <tr key={r.team.id} className="border-t border-border/30">
+              <td className="py-1 text-text-muted">{r.position}</td>
+              <td className="py-1">
+                <div className="flex items-center gap-1">
+                  <img src={r.team.crest} alt="" className="w-3.5 h-3.5 object-contain shrink-0" />
+                  <span className="text-text-primary font-medium truncate">{r.team.shortName}</span>
                 </div>
               </td>
-              <td className="py-1.5 text-center">{row.playedGames}</td>
-              <td className="py-1.5 text-center">{row.goalDifference > 0 ? `+${row.goalDifference}` : row.goalDifference}</td>
-              <td className="py-1.5 text-center font-bold text-text-primary">{row.points}</td>
+              <td className="py-1 text-center">{r.playedGames}</td>
+              <td className="py-1 text-center">{r.goalDifference > 0 ? `+${r.goalDifference}` : r.goalDifference}</td>
+              <td className="py-1 text-center font-bold text-text-primary">{r.points}</td>
             </tr>
           ))}
         </tbody>
@@ -181,88 +127,84 @@ function StandingsCard({ league }: { league: typeof LEAGUES[number] }) {
   );
 }
 
+/* ───────────────────────── Home Page ───────────────────────── */
+
 export default function Home() {
   const { leagueFilter, setLeagueFilter } = useAppStore();
   const { data: matches, isLoading } = useMatches();
 
-  const filteredMatches = leagueFilter
+  const filtered = leagueFilter
     ? (matches || []).filter((m: Match) => m.competition.code === leagueFilter)
     : matches || [];
 
-  // Group matches by date — use stable key (YYYY-MM-DD string) to avoid hydration issues
   const grouped = useMemo(() => {
     const g: Record<string, Match[]> = {};
-    for (const match of filteredMatches) {
-      if (!g[match.date]) g[match.date] = [];
-      g[match.date].push(match);
+    for (const m of filtered) {
+      (g[m.date] ??= []).push(m);
     }
     return g;
-  }, [filteredMatches]);
+  }, [filtered]);
 
   return (
     <>
       <Navbar />
-      <main className="max-w-6xl mx-auto px-4 py-4 md:py-6">
-        <div className="mb-4 md:mb-6">
-          <h1 className="text-xl md:text-2xl font-bold">Lịch thi đấu &amp; Nhận định</h1>
-          <p className="text-text-secondary text-xs md:text-sm mt-1">
-            Phân tích trước trận đấu cho 5 giải hàng đầu Châu Âu
-          </p>
-        </div>
 
-        {/* League filter */}
-        <div className="flex gap-1.5 overflow-x-auto pb-4 scrollbar-hide">
+      <div className="max-w-5xl mx-auto px-3 py-4">
+        {/* Title */}
+        <h1 className="text-lg font-bold mb-0.5">Lịch thi đấu &amp; Nhận định</h1>
+        <p className="text-text-secondary text-xs mb-4">Phân tích trước trận cho 5 giải hàng đầu Châu Âu</p>
+
+        {/* League filter — wraps on mobile instead of scrolling */}
+        <div className="flex flex-wrap gap-1.5 mb-4">
           <button
             onClick={() => setLeagueFilter(null)}
-            className={`px-3 md:px-4 py-2 rounded-full text-xs font-medium whitespace-nowrap transition-colors ${
+            className={`px-2.5 py-1.5 rounded-full text-[11px] font-medium transition-colors ${
               !leagueFilter
                 ? "bg-accent/15 text-accent border border-accent/30"
-                : "text-text-secondary hover:bg-bg-card-hover border border-transparent hover:border-border"
+                : "text-text-secondary border border-border hover:bg-bg-card-hover"
             }`}
           >
-            Tất cả giải đấu
+            Tất cả
           </button>
-          {LEAGUES.map((league) => (
+          {LEAGUES.map((l) => (
             <button
-              key={league.code}
-              onClick={() => setLeagueFilter(league.code)}
-              className={`px-3 md:px-4 py-2 rounded-full text-xs font-medium whitespace-nowrap transition-colors ${
-                leagueFilter === league.code
+              key={l.code}
+              onClick={() => setLeagueFilter(l.code)}
+              className={`px-2.5 py-1.5 rounded-full text-[11px] font-medium transition-colors ${
+                leagueFilter === l.code
                   ? "bg-accent/15 text-accent border border-accent/30"
-                  : "text-text-secondary hover:bg-bg-card-hover border border-transparent hover:border-border"
+                  : "text-text-secondary border border-border hover:bg-bg-card-hover"
               }`}
             >
-              {league.flag} {league.name}
+              {l.flag} {l.name}
             </button>
           ))}
         </div>
 
-        <AdSlot size="leaderboard" className="mb-6" />
+        <AdSlot size="leaderboard" className="mb-4" />
 
-        {/* Matches */}
+        {/* Match list */}
         {isLoading && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
+          <div className="space-y-3">
             {[...Array(4)].map((_, i) => <MatchSkeleton key={i} />)}
           </div>
         )}
 
-        {!isLoading && filteredMatches.length === 0 && (
-          <div className="text-center py-16 text-text-muted">
-            <p className="text-lg">Không có trận đấu nào được lên lịch.</p>
-            <p className="text-sm mt-2">Hãy quay lại sau hoặc xem bảng xếp hạng bên dưới.</p>
+        {!isLoading && filtered.length === 0 && (
+          <div className="text-center py-12 text-text-muted">
+            <p>Không có trận đấu nào.</p>
+            <p className="text-xs mt-1">Xem bảng xếp hạng bên dưới.</p>
           </div>
         )}
 
-        {!isLoading && filteredMatches.length > 0 && (
-          <div className="space-y-6 md:space-y-8">
+        {!isLoading && filtered.length > 0 && (
+          <div className="space-y-5">
             {Object.entries(grouped).map(([date, dateMatches]) => (
               <section key={date}>
-                <h2 className="text-xs md:text-sm font-semibold text-text-secondary uppercase tracking-wide mb-3">
-                  {date}
-                </h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
-                  {dateMatches.map((match: Match) => (
-                    <MatchCard key={match.id} match={match} />
+                <h2 className="text-xs font-semibold text-text-secondary uppercase tracking-wide mb-2">{date}</h2>
+                <div className="space-y-2">
+                  {dateMatches.map((m: Match) => (
+                    <MatchCard key={m.id} match={m} />
                   ))}
                 </div>
               </section>
@@ -270,27 +212,28 @@ export default function Home() {
           </div>
         )}
 
-        <AdSlot size="rectangle" className="mt-8 mx-auto max-w-md" />
+        <AdSlot size="rectangle" className="mt-6 mx-auto max-w-sm" />
 
         {/* Standings */}
-        <section className="mt-8 md:mt-10">
-          <h2 className="text-lg md:text-xl font-bold mb-4">Bảng xếp hạng</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
-            {LEAGUES.map((league) => (
-              <StandingsCard key={league.code} league={league} />
+        <section className="mt-8">
+          <h2 className="text-base font-bold mb-3">Bảng xếp hạng</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {LEAGUES.map((l) => (
+              <StandingsCard key={l.code} league={l} />
             ))}
           </div>
         </section>
 
-        <footer className="mt-10 md:mt-12 py-6 border-t border-border text-center text-xs text-text-muted">
+        {/* Footer */}
+        <footer className="mt-8 py-4 border-t border-border text-center text-[10px] text-text-muted">
           <p>MatchDay Analyst — Nhận định bóng đá trước trận</p>
-          <p className="mt-1">Dữ liệu từ Football-Data.org</p>
-          <div className="mt-2 flex gap-4 justify-center">
-            <Link href="/about" className="hover:text-text-primary transition-colors">Giới thiệu</Link>
-            <Link href="/privacy" className="hover:text-text-primary transition-colors">Chính sách bảo mật</Link>
+          <p className="mt-0.5">Dữ liệu từ Football-Data.org</p>
+          <div className="mt-1 flex gap-3 justify-center">
+            <Link href="/about" className="hover:text-text-primary">Giới thiệu</Link>
+            <Link href="/privacy" className="hover:text-text-primary">Chính sách bảo mật</Link>
           </div>
         </footer>
-      </main>
+      </div>
     </>
   );
 }
