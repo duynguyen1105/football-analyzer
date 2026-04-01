@@ -105,7 +105,7 @@ export default async function SoiKeoPage({ params }: Props) {
             Không có trận đấu nào có tỷ lệ kèo trong 7 ngày tới.
           </div>
         ) : (
-          <div className="space-y-3">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
             {matchesWithOdds.map(({ match, odds }) => {
               const matchWinner = odds?.bookmakers?.[0]?.bets?.find(
                 (b) => b.name === "Match Winner" || b.name === "Home/Away"
@@ -120,18 +120,23 @@ export default async function SoiKeoPage({ params }: Props) {
                   href={`/match/${match.id}`}
                   className="block bg-bg-card rounded-xl border border-border p-4 hover:border-accent/30 transition-colors"
                 >
-                  <div className="flex items-center gap-3 mb-3">
-                    <div className="flex items-center gap-2 flex-1 min-w-0">
-                      <img src={match.homeTeam.crest} alt="" className="w-5 h-5 object-contain shrink-0" loading="lazy" />
-                      <span className="text-sm font-medium truncate">{match.homeTeam.shortName}</span>
+                  {/* Teams row */}
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-3 flex-1 min-w-0">
+                      <img src={match.homeTeam.crest} alt="" className="w-10 h-10 object-contain shrink-0" loading="lazy" />
+                      <span className="font-semibold truncate">{match.homeTeam.shortName}</span>
                     </div>
-                    <span className="text-xs text-text-muted shrink-0">{match.date} · {match.time}</span>
-                    <div className="flex items-center gap-2 flex-1 min-w-0 justify-end">
-                      <span className="text-sm font-medium truncate text-right">{match.awayTeam.shortName}</span>
-                      <img src={match.awayTeam.crest} alt="" className="w-5 h-5 object-contain shrink-0" loading="lazy" />
+                    <div className="text-center px-4">
+                      <span className="text-xs text-text-muted">{match.date}</span>
+                      <p className="text-sm font-medium">{match.time}</p>
+                    </div>
+                    <div className="flex items-center gap-3 flex-1 min-w-0 justify-end">
+                      <span className="font-semibold truncate text-right">{match.awayTeam.shortName}</span>
+                      <img src={match.awayTeam.crest} alt="" className="w-10 h-10 object-contain shrink-0" loading="lazy" />
                     </div>
                   </div>
 
+                  {/* Odds row */}
                   {matchWinner ? (
                     <div className="flex gap-2">
                       <OddBadge label="Thắng nhà" value={home} color="accent" />
@@ -139,7 +144,7 @@ export default async function SoiKeoPage({ params }: Props) {
                       <OddBadge label="Thắng khách" value={away} color="accent-2" />
                     </div>
                   ) : (
-                    <p className="text-xs text-text-muted text-center">Chưa có tỷ lệ kèo</p>
+                    <p className="text-xs text-text-muted text-center py-2">Chưa có tỷ lệ kèo</p>
                   )}
                 </Link>
               );
@@ -162,9 +167,9 @@ export default async function SoiKeoPage({ params }: Props) {
 
 function OddBadge({ label, value, color }: { label: string; value?: string; color: string }) {
   return (
-    <div className={`flex-1 text-center py-2 rounded-lg bg-${color}/10`}>
-      <p className={`text-sm font-bold text-${color}`}>{value ?? "-"}</p>
-      <p className="text-[10px] text-text-muted">{label}</p>
+    <div className={`flex-1 text-center py-1.5 px-2 rounded-lg bg-${color}/10`}>
+      <p className={`text-xs font-bold text-${color}`}>{value ?? "-"}</p>
+      <p className="text-[9px] text-text-muted">{label}</p>
     </div>
   );
 }
