@@ -51,7 +51,7 @@ export interface TeamInfo {
   tla: string;
   crest: string;
   venue: string;
-  coach: { name: string; nationality: string } | null;
+  coach: { name: string; nationality: string; photo?: string } | null;
   squad: { id: number; name: string; position: string; nationality: string; photo?: string; dateOfBirth?: string }[];
 }
 
@@ -76,11 +76,13 @@ export interface MatchDetail {
   } | null;
   standings: Standing[];
   topScorers: {
+    id: number;
     name: string;
     team: string;
     goals: number;
     assists: number | null;
     nationality: string;
+    photo?: string;
   }[];
   prediction: {
     homeWin: number;

@@ -313,8 +313,17 @@ export async function getTeamInfo(teamId: number): Promise<TeamInfo | null> {
     ]);
 
     const team = teamData?.[0];
-    const coach = coachData?.[0];
     const squad = squadData?.[0]?.players ?? [];
+
+    // Find the current coach - the one whose career entry for this team has no end date
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const currentCoach = (coachData ?? []).find((c: any) => {
+      const currentCareer = c.career?.find(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (career: any) => career.team?.id === teamId && !career.end
+      );
+      return currentCareer;
+    });
 
     const result: TeamInfo = {
       id: team?.team?.id ?? teamId,
@@ -323,8 +332,8 @@ export async function getTeamInfo(teamId: number): Promise<TeamInfo | null> {
       tla: getTla(teamId, team?.team?.name ?? ""),
       crest: team?.team?.logo ?? "",
       venue: team?.venue?.name ?? "",
-      coach: coach
-        ? { name: coach.name ?? "", nationality: coach.nationality ?? "" }
+      coach: currentCoach
+        ? { name: currentCoach.name ?? "", nationality: currentCoach.nationality ?? "", photo: currentCoach.photo ?? "" }
         : null,
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       squad: squad.map((p: any) => ({
@@ -406,7 +415,7 @@ export async function getTeamRecentMatches(teamId: number, limit: number): Promi
 
 export async function getTopScorers(
   competitionCode: string
-): Promise<{ name: string; team: string; goals: number; assists: number | null; nationality: string }[]> {
+): Promise<{ id: number; name: string; team: string; goals: number; assists: number | null; nationality: string; photo?: string }[]> {
   const cacheKey = `scorers:${competitionCode}`;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const cached = await getCached<any[]>(cacheKey);
@@ -425,11 +434,13 @@ export async function getTopScorers(
     const result = (data ?? []).slice(0, 10).map(
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (s: any) => ({
+        id: s.player?.id ?? 0,
         name: s.player?.name ?? "",
         team: s.statistics?.[0]?.team?.name ?? "",
         goals: s.statistics?.[0]?.goals?.total ?? 0,
         assists: s.statistics?.[0]?.goals?.assists ?? null,
         nationality: s.player?.nationality ?? "",
+        photo: s.player?.photo ?? "",
       })
     );
 

@@ -148,19 +148,33 @@ function TeamsSection({ matchId, homeTeam, awayTeam }: { matchId: string; homeTe
           <div className="space-y-3">
             {data.homeTeamInfo?.coach && (
               <div className="flex items-center gap-3">
-                <img src={homeTeam.crest} alt="" className="w-6 h-6 object-contain" />
-                <div>
-                  <p className="text-sm font-medium">{data.homeTeamInfo.coach.name}</p>
-                  <p className="text-xs text-text-muted">{data.homeTeamInfo.coach.nationality}</p>
+                {data.homeTeamInfo.coach.photo ? (
+                  <img src={data.homeTeamInfo.coach.photo} alt="" className="w-10 h-10 rounded-full object-cover bg-border/20" />
+                ) : (
+                  <img src={homeTeam.crest} alt="" className="w-8 h-8 object-contain" />
+                )}
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium truncate">{data.homeTeamInfo.coach.name}</p>
+                  <div className="flex items-center gap-1.5 text-xs text-text-muted">
+                    <img src={homeTeam.crest} alt="" className="w-4 h-4 object-contain" />
+                    <span>{data.homeTeamInfo.coach.nationality}</span>
+                  </div>
                 </div>
               </div>
             )}
             {data.awayTeamInfo?.coach && (
               <div className="flex items-center gap-3">
-                <img src={awayTeam.crest} alt="" className="w-6 h-6 object-contain" />
-                <div>
-                  <p className="text-sm font-medium">{data.awayTeamInfo.coach.name}</p>
-                  <p className="text-xs text-text-muted">{data.awayTeamInfo.coach.nationality}</p>
+                {data.awayTeamInfo.coach.photo ? (
+                  <img src={data.awayTeamInfo.coach.photo} alt="" className="w-10 h-10 rounded-full object-cover bg-border/20" />
+                ) : (
+                  <img src={awayTeam.crest} alt="" className="w-8 h-8 object-contain" />
+                )}
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium truncate">{data.awayTeamInfo.coach.name}</p>
+                  <div className="flex items-center gap-1.5 text-xs text-text-muted">
+                    <img src={awayTeam.crest} alt="" className="w-4 h-4 object-contain" />
+                    <span>{data.awayTeamInfo.coach.nationality}</span>
+                  </div>
                 </div>
               </div>
             )}
@@ -186,13 +200,25 @@ function ScorersSection({ matchId, homeTeamName, awayTeamName }: { matchId: stri
       <h3 className="font-bold text-sm mb-3">Cầu thủ chủ chốt — Vua phá lưới</h3>
       <div className="space-y-2">
         {relevant.map((s: any, i: number) => (
-          <div key={i} className="flex items-center justify-between text-sm">
-            <div>
-              <p className="font-medium">{s.name}</p>
-              <p className="text-xs text-text-muted">{s.team}</p>
+          <Link
+            key={i}
+            href={s.id ? `/cau-thu/${s.id}` : "#"}
+            className="flex items-center gap-3 py-2 px-2 -mx-2 rounded-lg hover:bg-bg-primary/50 transition-colors"
+          >
+            {s.photo ? (
+              <img src={s.photo} alt="" className="w-10 h-10 rounded-full object-cover bg-border/20 shrink-0" />
+            ) : (
+              <div className="w-10 h-10 rounded-full bg-border/20 flex items-center justify-center text-sm shrink-0">👤</div>
+            )}
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium truncate">{s.name}</p>
+              <p className="text-xs text-text-muted truncate">{s.team}</p>
             </div>
-            <span className="text-accent font-bold">{s.goals} bàn</span>
-          </div>
+            <div className="text-right shrink-0">
+              <span className="text-accent font-bold">{s.goals}</span>
+              <p className="text-[10px] text-text-muted">bàn thắng</p>
+            </div>
+          </Link>
         ))}
       </div>
     </section>
