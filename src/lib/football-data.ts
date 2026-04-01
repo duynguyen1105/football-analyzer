@@ -23,6 +23,7 @@ function setCache(key: string, data: unknown, ttlMs: number): void {
 const CACHE_5_MIN = 5 * 60 * 1000;
 const CACHE_30_MIN = 30 * 60 * 1000;
 const CACHE_2_HR = 2 * 60 * 60 * 1000;
+const CACHE_24_HR = 24 * 60 * 60 * 1000;
 
 // ---------------------------------------------------------------------------
 // Rate limiter — sequential queue (max 9 req/min to stay safe under 10 limit)
@@ -147,6 +148,11 @@ function mapMatch(raw: any): Match {
       raw.score?.fullTime?.home != null || raw.score?.fullTime?.away != null
         ? { home: raw.score.fullTime.home, away: raw.score.fullTime.away }
         : undefined,
+    referee: (() => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const ref = (raw.referees ?? []).find((r: any) => r.type === "REFEREE");
+      return ref ? { name: ref.name ?? "", nationality: ref.nationality ?? "" } : null;
+    })(),
   };
 }
 
@@ -346,6 +352,59 @@ export async function getTopScorers(
 }
 
 /**
+ * Fetch head-to-head data from the official Football-Data.org H2H endpoint.
+ * Falls back to computeH2H if the endpoint fails.
+ */
+export async function getH2H(
+  matchId: number
+): Promise<{
+  homeWins: number;
+  draws: number;
+  awayWins: number;
+  totalGoals: number;
+  lastMatches: H2HMatch[];
+} | null> {
+  const cacheKey = `h2h:${matchId}`;
+  const cached = getCached<{
+    homeWins: number;
+    draws: number;
+    awayWins: number;
+    totalGoals: number;
+    lastMatches: H2HMatch[];
+  }>(cacheKey);
+  if (cached) return cached;
+
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const data = await apiFetch<any>(`/matches/${matchId}/head2head`, {
+      limit: "10",
+    });
+
+    const agg = data.aggregates;
+    const homeWins = agg?.homeTeam?.wins ?? 0;
+    const draws = agg?.homeTeam?.draws ?? agg?.awayTeam?.draws ?? 0;
+    const awayWins = agg?.awayTeam?.wins ?? 0;
+    const totalGoals = agg?.totalGoals ?? 0;
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const lastMatches: H2HMatch[] = (data.matches ?? []).map((m: any) => ({
+      date: formatDateGmt7(m.utcDate),
+      home: m.homeTeam?.shortName ?? m.homeTeam?.name ?? "",
+      away: m.awayTeam?.shortName ?? m.awayTeam?.name ?? "",
+      scoreHome: m.score?.fullTime?.home ?? 0,
+      scoreAway: m.score?.fullTime?.away ?? 0,
+    }));
+
+    const result = { homeWins, draws, awayWins, totalGoals, lastMatches };
+    setCache(cacheKey, result, CACHE_24_HR);
+    return result;
+  } catch (error) {
+    console.error(`Failed to fetch H2H for match ${matchId}, falling back to computeH2H:`, error);
+    return null;
+  }
+}
+
+/**
  * Compute head-to-head record between two teams.
  * Fetches recent matches for both teams and finds overlapping fixtures.
  */
@@ -356,6 +415,7 @@ export async function computeH2H(
   homeWins: number;
   draws: number;
   awayWins: number;
+  totalGoals: number;
   lastMatches: H2HMatch[];
 } | null> {
   try {
@@ -376,11 +436,14 @@ export async function computeH2H(
     let homeWins = 0;
     let draws = 0;
     let awayWins = 0;
+    let totalGoals = 0;
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const lastMatches: H2HMatch[] = h2hRawMatches.map((m: any) => {
       const scoreHome: number = m.score?.fullTime?.home ?? 0;
       const scoreAway: number = m.score?.fullTime?.away ?? 0;
+
+      totalGoals += scoreHome + scoreAway;
 
       const isHomeTeamHome = m.homeTeam?.id === homeTeamId;
 
@@ -409,6 +472,7 @@ export async function computeH2H(
       homeWins,
       draws,
       awayWins,
+      totalGoals,
       lastMatches: lastMatches.slice(0, 5),
     };
   } catch (error) {

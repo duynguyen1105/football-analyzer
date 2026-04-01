@@ -6,6 +6,7 @@ import {
   getTeamInfo,
   getTeamRecentMatches,
   getTopScorers,
+  getH2H,
   computeH2H,
   computeForm,
 } from "@/lib/football-data";
@@ -34,7 +35,7 @@ export async function GET(request: NextRequest) {
         getTeamInfo(match.awayTeam.id),
         getTeamRecentMatches(match.homeTeam.id, 10),
         getTeamRecentMatches(match.awayTeam.id, 10),
-        computeH2H(match.homeTeam.id, match.awayTeam.id),
+        getH2H(parseInt(matchId, 10)).then(r => r || computeH2H(match.homeTeam.id, match.awayTeam.id)),
         getTopScorers(match.competition.code),
       ]);
 

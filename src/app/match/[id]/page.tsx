@@ -7,6 +7,9 @@ import { AiAnalysis } from "@/components/AiAnalysis";
 import { RecentResults } from "@/components/RecentResults";
 import { KeyPlayers } from "@/components/KeyPlayers";
 import { MatchCountdown } from "@/components/MatchCountdown";
+import { MatchImportance } from "@/components/MatchImportance";
+import { RefereeInfo } from "@/components/RefereeInfo";
+import { QuickSummary } from "@/components/QuickSummary";
 import { ShareButton } from "@/components/ShareButton";
 import {
   useMatchCore,
@@ -85,10 +88,8 @@ function FormSection({ matchId }: { matchId: string }) {
   );
 }
 
-// --- H2H Section ---
-function H2HSection({ matchId, homeTla, awayTla }: { matchId: string; homeTla: string; awayTla: string }) {
-  const { data: h2h, isLoading } = useMatchH2H(matchId);
-  if (isLoading) return <SectionSkeleton />;
+// --- H2H Section (uses core data, no extra API call) ---
+function H2HSection({ h2h, homeTla, awayTla }: { h2h: any; homeTla: string; awayTla: string }) {
   if (!h2h || !h2h.lastMatches || h2h.lastMatches.length === 0) return null;
 
   return (
@@ -319,8 +320,14 @@ export default function MatchPage({ params }: { params: Promise<{ id: string }> 
           {/* Form loads independently */}
           <FormSection matchId={id} />
 
-          {/* Countdown + Share */}
-          <div className="mt-3 md:mt-4 space-y-3">
+          {/* Referee */}
+          <RefereeInfo referee={match.referee} />
+
+          {/* Importance + Countdown + Share */}
+          <div className="mt-3 space-y-2">
+            {core.importance && (
+              <MatchImportance score={core.importance.score} reason={core.importance.reason} />
+            )}
             {match.status !== "FINISHED" && (
               <MatchCountdown matchDate={match.date} matchTime={match.time} />
             )}
@@ -332,7 +339,10 @@ export default function MatchPage({ params }: { params: Promise<{ id: string }> 
 
         <AdSlot size="leaderboard" className="mb-6" />
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Quick Summary — loads independently */}
+        <QuickSummary matchId={id} />
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
           <div className="lg:col-span-2 space-y-6">
             {/* Prediction — instant from core */}
             <section className="bg-bg-card rounded-2xl border border-border p-4 md:p-5">
@@ -368,7 +378,7 @@ export default function MatchPage({ params }: { params: Promise<{ id: string }> 
             </section>
 
             {/* H2H — loads independently */}
-            <H2HSection matchId={id} homeTla={match.homeTeam.tla} awayTla={match.awayTeam.tla} />
+            <H2HSection h2h={core.h2h} homeTla={match.homeTeam.tla} awayTla={match.awayTeam.tla} />
 
             {/* Stats — instant from core standings */}
             {homeStanding && awayStanding && (

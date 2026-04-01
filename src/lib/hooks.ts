@@ -75,3 +75,12 @@ export function useMatchScorers(matchId: string) {
     staleTime: 60 * 60 * 1000,
   });
 }
+
+export function useQuickSummary(matchId: string) {
+  return useQuery({
+    queryKey: ["quick-summary", matchId],
+    queryFn: () =>
+      fetch(`/api/quick-summary?matchId=${matchId}`).then((r) => r.json()),
+    staleTime: 6 * 60 * 60 * 1000, // 6 hours
+  });
+}

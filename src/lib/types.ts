@@ -22,6 +22,7 @@ export interface Match {
   homeForm: string[]; // ["W","D","L",...]
   awayForm: string[];
   score?: { home: number | null; away: number | null };
+  referee?: { name: string; nationality: string } | null;
 }
 
 export interface Standing {
@@ -70,6 +71,7 @@ export interface MatchDetail {
     homeWins: number;
     draws: number;
     awayWins: number;
+    totalGoals: number;
     lastMatches: H2HMatch[];
   } | null;
   standings: Standing[];
