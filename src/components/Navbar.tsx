@@ -13,6 +13,7 @@ export function Navbar() {
         <nav className="flex items-center gap-3 sm:gap-4 text-xs text-text-secondary">
           <Link href="/hom-nay" className="hover:text-text-primary transition-colors">Hôm nay</Link>
           <Link href="/" className="hover:text-text-primary transition-colors">Lịch đấu</Link>
+          <Link href="/soi-keo/premier-league" className="hover:text-text-primary transition-colors">Soi kèo</Link>
           <Link href="/about" className="hover:text-text-primary transition-colors">Giới thiệu</Link>
         </nav>
       </div>

@@ -1,5 +1,5 @@
 export interface Match {
-  id: number; // Football-Data.org match ID
+  id: number; // API-Football fixture ID
   competition: { code: string; name: string };
   date: string; // YYYY-MM-DD in GMT+7
   time: string; // HH:MM in GMT+7
@@ -97,4 +97,30 @@ export interface League {
   name: string;
   country: string;
   flag: string;
+}
+
+export interface MatchOdds {
+  fixtureId: number;
+  bookmakers: {
+    name: string;
+    bets: {
+      name: string;
+      values: { value: string; odd: string }[];
+    }[];
+  }[];
+}
+
+export interface MatchInjury {
+  player: { id: number; name: string; photo: string };
+  team: { id: number; name: string; logo: string };
+  type: string;
+  reason: string;
+}
+
+export interface MatchLineup {
+  team: { id: number; name: string; logo: string };
+  formation: string;
+  coach: { name: string; photo: string };
+  startXI: { id: number; name: string; number: number; pos: string }[];
+  substitutes: { id: number; name: string; number: number; pos: string }[];
 }

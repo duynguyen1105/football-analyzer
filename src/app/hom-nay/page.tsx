@@ -215,7 +215,7 @@ export default async function HomNayPage() {
         {/* Footer */}
         <footer className="mt-10 py-4 border-t border-border text-center text-[10px] text-text-muted">
           <p>MatchDay Analyst &mdash; Nhận định bóng đá trước trận</p>
-          <p className="mt-0.5">Dữ liệu từ Football-Data.org</p>
+          <p className="mt-0.5">Dữ liệu từ API-Football</p>
         </footer>
       </main>
     </>

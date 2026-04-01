@@ -13,6 +13,9 @@ import { MatchImportance } from "@/components/MatchImportance";
 import { RefereeInfo } from "@/components/RefereeInfo";
 import { QuickSummary } from "@/components/QuickSummary";
 import { ShareButton } from "@/components/ShareButton";
+import { MatchOdds } from "@/components/MatchOdds";
+import { MatchInjuries } from "@/components/MatchInjuries";
+import { MatchLineups } from "@/components/MatchLineups";
 import {
   useMatchCore,
   useMatchForm,
@@ -379,6 +382,9 @@ export default function MatchPage({ params }: { params: Promise<{ id: string }> 
               </div>
             </section>
 
+            {/* Odds — loads independently */}
+            <MatchOdds matchId={id} />
+
             {/* H2H — loads independently */}
             <H2HSection h2h={core.h2h} homeTla={match.homeTeam.tla} awayTla={match.awayTeam.tla} />
 
@@ -419,6 +425,18 @@ export default function MatchPage({ params }: { params: Promise<{ id: string }> 
               homeTeam={{ name: match.homeTeam.name, shortName: match.homeTeam.shortName, crest: match.homeTeam.crest }}
               awayTeam={{ name: match.awayTeam.name, shortName: match.awayTeam.shortName, crest: match.awayTeam.crest }}
             />
+
+            {/* Injuries — loads independently */}
+            <MatchInjuries
+              matchId={id}
+              homeTeamId={match.homeTeam.id}
+              awayTeamId={match.awayTeam.id}
+              homeTeamName={match.homeTeam.shortName}
+              awayTeamName={match.awayTeam.shortName}
+            />
+
+            {/* Lineups — loads independently */}
+            <MatchLineups matchId={id} />
 
             {/* Player Analysis — loads independently */}
             <PlayerAnalysis

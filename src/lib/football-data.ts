@@ -1,9 +1,10 @@
-import { Match, Standing, TeamInfo, H2HMatch } from "./types";
-import { COMPETITION_CODES } from "./constants";
+import { Match, Standing, TeamInfo, H2HMatch, MatchOdds, MatchInjury, MatchLineup } from "./types";
+import { LEAGUE_IDS, CURRENT_SEASON, getLeagueId, getLeagueCode } from "./constants";
 import { getCached as getRedis, setCached as setRedis } from "./cache";
+import { getShortName, getTla } from "./team-names";
 
-const BASE_URL = "https://api.football-data.org/v4";
-const GMT_PLUS_7_OFFSET = 7 * 60 * 60 * 1000; // 7 hours in ms
+const BASE_URL = "https://v3.football.api-sports.io";
+const GMT_PLUS_7_OFFSET = 7 * 60 * 60 * 1000;
 
 // ---------------------------------------------------------------------------
 // Two-level cache: in-memory (fast) + Redis (persistent across deploys)
@@ -11,104 +12,118 @@ const GMT_PLUS_7_OFFSET = 7 * 60 * 60 * 1000; // 7 hours in ms
 const memCache = new Map<string, { data: unknown; expiresAt: number }>();
 
 async function getCached<T>(key: string): Promise<T | null> {
-  // Level 1: in-memory (instant)
   const mem = memCache.get(key);
   if (mem && Date.now() < mem.expiresAt) return mem.data as T;
   if (mem) memCache.delete(key);
 
-  // Level 2: Redis (persistent)
-  const redisVal = await getRedis(`fd:${key}`);
+  const redisVal = await getRedis(`af:${key}`);
   if (redisVal) {
     try {
       const parsed = JSON.parse(redisVal) as T;
-      // Warm memory cache from Redis (5 min TTL for memory layer)
       memCache.set(key, { data: parsed, expiresAt: Date.now() + 5 * 60 * 1000 });
       return parsed;
-    } catch { /* ignore parse errors */ }
+    } catch { /* ignore */ }
   }
-
   return null;
 }
 
 async function setCache(key: string, data: unknown, ttlMs: number): Promise<void> {
   memCache.set(key, { data, expiresAt: Date.now() + ttlMs });
-  // Also persist to Redis
-  await setRedis(`fd:${key}`, JSON.stringify(data), Math.floor(ttlMs / 1000)).catch(() => {});
+  await setRedis(`af:${key}`, JSON.stringify(data), Math.floor(ttlMs / 1000)).catch(() => {});
 }
 
 const CACHE_5_MIN = 5 * 60 * 1000;
 const CACHE_30_MIN = 30 * 60 * 1000;
+const CACHE_1_HR = 60 * 60 * 1000;
 const CACHE_2_HR = 2 * 60 * 60 * 1000;
 const CACHE_24_HR = 24 * 60 * 60 * 1000;
 
 // ---------------------------------------------------------------------------
-// Rate limiter — sliding window (10 requests per 60 seconds)
+// Rate limiter — sliding window (300 req/min on Pro plan, use 280 safely)
 // ---------------------------------------------------------------------------
 const RATE_WINDOW_MS = 60_000;
-const MAX_REQUESTS = 9; // stay under 10/min limit
+const MAX_REQUESTS = 280;
 const requestTimestamps: number[] = [];
 
 async function waitForRateLimit(): Promise<void> {
   const now = Date.now();
-
-  // Remove timestamps older than the window
   while (requestTimestamps.length > 0 && requestTimestamps[0] < now - RATE_WINDOW_MS) {
     requestTimestamps.shift();
   }
-
-  // If at capacity, wait until the oldest request falls out of the window
   if (requestTimestamps.length >= MAX_REQUESTS) {
     const waitMs = requestTimestamps[0] + RATE_WINDOW_MS - now + 100;
     await new Promise((r) => setTimeout(r, waitMs));
   }
-
   requestTimestamps.push(Date.now());
 }
 
 // ---------------------------------------------------------------------------
-// Generic fetch helper with retry on 429
+// Status mapping: API-Football short codes → our normalized status
 // ---------------------------------------------------------------------------
-async function apiFetch<T>(path: string, params?: Record<string, string>): Promise<T> {
-  const apiKey = process.env.FOOTBALL_DATA_API_KEY;
-  if (!apiKey) {
-    throw new Error("FOOTBALL_DATA_API_KEY environment variable is not set");
-  }
+const STATUS_MAP: Record<string, string> = {
+  TBD: "SCHEDULED", NS: "SCHEDULED",
+  "1H": "IN_PLAY", HT: "IN_PLAY", "2H": "IN_PLAY", ET: "IN_PLAY", BT: "IN_PLAY", P: "IN_PLAY",
+  SUSP: "SUSPENDED", INT: "SUSPENDED",
+  FT: "FINISHED", AET: "FINISHED", PEN: "FINISHED", AWD: "FINISHED", WO: "FINISHED",
+  PST: "POSTPONED", CANC: "CANCELLED", ABD: "CANCELLED",
+  LIVE: "LIVE",
+};
+
+// ---------------------------------------------------------------------------
+// Position mapping: API-Football → our convention
+// ---------------------------------------------------------------------------
+const POSITION_MAP: Record<string, string> = {
+  Goalkeeper: "Goalkeeper",
+  Defender: "Defence",
+  Midfielder: "Midfield",
+  Attacker: "Offence",
+};
+
+function mapPosition(pos: string): string {
+  return POSITION_MAP[pos] ?? pos;
+}
+
+// ---------------------------------------------------------------------------
+// Generic fetch helper
+// ---------------------------------------------------------------------------
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function apiFetch<T = any>(path: string, params?: Record<string, string>): Promise<T> {
+  const apiKey = process.env.API_FOOTBALL_KEY;
+  if (!apiKey) throw new Error("API_FOOTBALL_KEY environment variable is not set");
 
   const url = new URL(`${BASE_URL}${path}`);
   if (params) {
-    Object.entries(params).forEach(([key, value]) => {
-      url.searchParams.set(key, value);
-    });
+    for (const [k, v] of Object.entries(params)) url.searchParams.set(k, v);
   }
 
-  // Wait if at rate limit
   await waitForRateLimit();
 
   const res = await fetch(url.toString(), {
-    headers: { "X-Auth-Token": apiKey },
+    headers: { "x-apisports-key": apiKey },
     next: { revalidate: 300 },
   } as RequestInit);
 
-  // Retry once on 429
   if (res.status === 429) {
-    await new Promise((r) => setTimeout(r, 10000));
+    await new Promise((r) => setTimeout(r, 5000));
     const retry = await fetch(url.toString(), {
-      headers: { "X-Auth-Token": apiKey },
+      headers: { "x-apisports-key": apiKey },
       next: { revalidate: 300 },
     } as RequestInit);
-    if (!retry.ok) {
-      const text = await retry.text().catch(() => "");
-      throw new Error(`Football-Data API error ${retry.status}: ${text}`);
-    }
-    return retry.json() as Promise<T>;
+    if (!retry.ok) throw new Error(`API-Football error ${retry.status}`);
+    const json = await retry.json();
+    return json.response as T;
   }
 
   if (!res.ok) {
     const text = await res.text().catch(() => "");
-    throw new Error(`Football-Data API error ${res.status}: ${text}`);
+    throw new Error(`API-Football error ${res.status}: ${text}`);
   }
 
-  return res.json() as Promise<T>;
+  const json = await res.json();
+  if (json.errors && Object.keys(json.errors).length > 0) {
+    throw new Error(`API-Football error: ${JSON.stringify(json.errors)}`);
+  }
+  return json.response as T;
 }
 
 // ---------------------------------------------------------------------------
@@ -135,45 +150,49 @@ function formatTimeGmt7(utcDateStr: string): string {
 }
 
 // ---------------------------------------------------------------------------
-// Map raw API match to our Match type
+// Map API-Football fixture to our Match type
 // ---------------------------------------------------------------------------
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-function mapMatch(raw: any): Match {
+function mapFixture(raw: any): Match {
+  const fixtureDate = raw.fixture?.date ?? new Date().toISOString();
+  const homeId = raw.teams?.home?.id ?? 0;
+  const awayId = raw.teams?.away?.id ?? 0;
+  const homeName = raw.teams?.home?.name ?? "";
+  const awayName = raw.teams?.away?.name ?? "";
+
   return {
-    id: raw.id,
+    id: raw.fixture?.id ?? 0,
     competition: {
-      code: raw.competition?.code ?? "",
-      name: raw.competition?.name ?? "",
+      code: getLeagueCode(raw.league?.id) ?? "",
+      name: raw.league?.name ?? "",
     },
-    date: formatDateGmt7(raw.utcDate),
-    time: formatTimeGmt7(raw.utcDate),
-    status: raw.status ?? "SCHEDULED",
+    date: formatDateGmt7(fixtureDate),
+    time: formatTimeGmt7(fixtureDate),
+    status: STATUS_MAP[raw.fixture?.status?.short] ?? "SCHEDULED",
     homeTeam: {
-      id: raw.homeTeam?.id ?? 0,
-      name: raw.homeTeam?.name ?? "",
-      shortName: raw.homeTeam?.shortName ?? "",
-      tla: raw.homeTeam?.tla ?? "",
-      crest: raw.homeTeam?.crest ?? "",
+      id: homeId,
+      name: homeName,
+      shortName: getShortName(homeId, homeName),
+      tla: getTla(homeId, homeName),
+      crest: raw.teams?.home?.logo ?? "",
     },
     awayTeam: {
-      id: raw.awayTeam?.id ?? 0,
-      name: raw.awayTeam?.name ?? "",
-      shortName: raw.awayTeam?.shortName ?? "",
-      tla: raw.awayTeam?.tla ?? "",
-      crest: raw.awayTeam?.crest ?? "",
+      id: awayId,
+      name: awayName,
+      shortName: getShortName(awayId, awayName),
+      tla: getTla(awayId, awayName),
+      crest: raw.teams?.away?.logo ?? "",
     },
-    venue: raw.venue ?? "",
+    venue: raw.fixture?.venue?.name ?? "",
     homeForm: [],
     awayForm: [],
     score:
-      raw.score?.fullTime?.home != null || raw.score?.fullTime?.away != null
-        ? { home: raw.score.fullTime.home, away: raw.score.fullTime.away }
+      raw.goals?.home != null || raw.goals?.away != null
+        ? { home: raw.goals.home, away: raw.goals.away }
         : undefined,
-    referee: (() => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const ref = (raw.referees ?? []).find((r: any) => r.type === "REFEREE");
-      return ref ? { name: ref.name ?? "", nationality: ref.nationality ?? "" } : null;
-    })(),
+    referee: raw.fixture?.referee
+      ? { name: raw.fixture.referee, nationality: "" }
+      : null,
   };
 }
 
@@ -181,24 +200,30 @@ function mapMatch(raw: any): Match {
 // Public API functions
 // ---------------------------------------------------------------------------
 
-/**
- * Fetch matches across tracked competitions for a date range.
- * Form arrays are left empty (computed on match detail pages).
- */
 export async function getMatches(dateFrom: string, dateTo: string): Promise<Match[]> {
   const cacheKey = `matches:${dateFrom}:${dateTo}`;
   const cached = await getCached<Match[]>(cacheKey);
   if (cached) return cached;
 
   try {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const data = await apiFetch<any>("/matches", {
-      competitions: COMPETITION_CODES,
-      dateFrom,
-      dateTo,
+    const allFixtures = await Promise.all(
+      LEAGUE_IDS.map((leagueId) =>
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        apiFetch<any[]>("/fixtures", {
+          league: String(leagueId),
+          season: String(CURRENT_SEASON),
+          from: dateFrom,
+          to: dateTo,
+        })
+      )
+    );
+
+    const matches: Match[] = allFixtures.flat().map(mapFixture);
+    matches.sort((a, b) => {
+      const dateCompare = a.date.localeCompare(b.date);
+      return dateCompare !== 0 ? dateCompare : a.time.localeCompare(b.time);
     });
 
-    const matches: Match[] = (data.matches ?? []).map(mapMatch);
     await setCache(cacheKey, matches, CACHE_5_MIN);
     return matches;
   } catch (error) {
@@ -207,9 +232,6 @@ export async function getMatches(dateFrom: string, dateTo: string): Promise<Matc
   }
 }
 
-/**
- * Fetch a single match by ID.
- */
 export async function getMatch(matchId: number): Promise<Match | null> {
   const cacheKey = `match:${matchId}`;
   const cached = await getCached<Match>(cacheKey);
@@ -217,8 +239,9 @@ export async function getMatch(matchId: number): Promise<Match | null> {
 
   try {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const raw = await apiFetch<any>(`/matches/${matchId}`);
-    const match = mapMatch(raw);
+    const data = await apiFetch<any[]>("/fixtures", { id: String(matchId) });
+    if (!data || data.length === 0) return null;
+    const match = mapFixture(data[0]);
     await setCache(cacheKey, match, CACHE_5_MIN);
     return match;
   } catch (error) {
@@ -227,44 +250,45 @@ export async function getMatch(matchId: number): Promise<Match | null> {
   }
 }
 
-/**
- * Fetch the TOTAL standings table for a competition.
- */
 export async function getStandings(competitionCode: string): Promise<Standing[]> {
   const cacheKey = `standings:${competitionCode}`;
   const cached = await getCached<Standing[]>(cacheKey);
   if (cached) return cached;
 
+  const leagueId = getLeagueId(competitionCode);
+  if (!leagueId) return [];
+
   try {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const data = await apiFetch<any>(`/competitions/${competitionCode}/standings`);
+    const data = await apiFetch<any[]>("/standings", {
+      league: String(leagueId),
+      season: String(CURRENT_SEASON),
+    });
 
-    const standingsGroup = (data.standings ?? []).find(
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (s: any) => s.type === "TOTAL"
-    );
-
-    if (!standingsGroup) return [];
+    // response[0].league.standings[0] = array of team standings
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const standingsArr = data?.[0]?.league?.standings?.[0] ?? [];
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const result = (standingsGroup.table ?? []).map((row: any): Standing => ({
-      position: row.position,
+    const result = standingsArr.map((row: any): Standing => ({
+      position: row.rank ?? 0,
       team: {
         id: row.team?.id ?? 0,
         name: row.team?.name ?? "",
-        shortName: row.team?.shortName ?? "",
-        tla: row.team?.tla ?? "",
-        crest: row.team?.crest ?? "",
+        shortName: getShortName(row.team?.id, row.team?.name ?? ""),
+        tla: getTla(row.team?.id, row.team?.name ?? ""),
+        crest: row.team?.logo ?? "",
       },
-      playedGames: row.playedGames ?? 0,
-      won: row.won ?? 0,
-      draw: row.draw ?? 0,
-      lost: row.lost ?? 0,
-      goalsFor: row.goalsFor ?? 0,
-      goalsAgainst: row.goalsAgainst ?? 0,
-      goalDifference: row.goalDifference ?? 0,
+      playedGames: row.all?.played ?? 0,
+      won: row.all?.win ?? 0,
+      draw: row.all?.draw ?? 0,
+      lost: row.all?.lose ?? 0,
+      goalsFor: row.all?.goals?.for ?? 0,
+      goalsAgainst: row.all?.goals?.against ?? 0,
+      goalDifference: row.goalsDiff ?? 0,
       points: row.points ?? 0,
     }));
+
     await setCache(cacheKey, result, CACHE_30_MIN);
     return result;
   } catch (error) {
@@ -273,39 +297,45 @@ export async function getStandings(competitionCode: string): Promise<Standing[]>
   }
 }
 
-/**
- * Fetch team info including squad and coach.
- */
 export async function getTeamInfo(teamId: number): Promise<TeamInfo | null> {
   const cacheKey = `team:${teamId}`;
   const cached = await getCached<TeamInfo>(cacheKey);
   if (cached) return cached;
 
   try {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const raw = await apiFetch<any>(`/teams/${teamId}`);
+    const [teamData, coachData, squadData] = await Promise.all([
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      apiFetch<any[]>("/teams", { id: String(teamId) }),
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      apiFetch<any[]>("/coachs", { team: String(teamId) }),
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      apiFetch<any[]>("/players/squads", { team: String(teamId) }),
+    ]);
+
+    const team = teamData?.[0];
+    const coach = coachData?.[0];
+    const squad = squadData?.[0]?.players ?? [];
 
     const result: TeamInfo = {
-      id: raw.id,
-      name: raw.name ?? "",
-      shortName: raw.shortName ?? "",
-      tla: raw.tla ?? "",
-      crest: raw.crest ?? "",
-      venue: raw.venue ?? "",
-      coach: raw.coach
-        ? { name: raw.coach.name ?? "", nationality: raw.coach.nationality ?? "" }
+      id: team?.team?.id ?? teamId,
+      name: team?.team?.name ?? "",
+      shortName: getShortName(teamId, team?.team?.name ?? ""),
+      tla: getTla(teamId, team?.team?.name ?? ""),
+      crest: team?.team?.logo ?? "",
+      venue: team?.venue?.name ?? "",
+      coach: coach
+        ? { name: coach.name ?? "", nationality: coach.nationality ?? "" }
         : null,
-      squad: (raw.squad ?? []).map(
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (p: any) => ({
-          id: p.id ?? 0,
-          name: p.name ?? "",
-          position: p.position ?? "Unknown",
-          nationality: p.nationality ?? "",
-          dateOfBirth: p.dateOfBirth ?? undefined,
-        })
-      ),
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      squad: squad.map((p: any) => ({
+        id: p.id ?? 0,
+        name: p.name ?? "",
+        position: mapPosition(p.position ?? ""),
+        nationality: "",
+        dateOfBirth: undefined,
+      })),
     };
+
     await setCache(cacheKey, result, CACHE_2_HR);
     return result;
   } catch (error) {
@@ -316,20 +346,55 @@ export async function getTeamInfo(teamId: number): Promise<TeamInfo | null> {
 
 /**
  * Fetch recent finished matches for a team.
+ * Returns objects normalized to the shape consumers expect
+ * (utcDate, status, homeTeam.shortName, score.fullTime, etc.)
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function getTeamRecentMatches(teamId: number, limit: number): Promise<any[]> {
   const cacheKey = `recent:${teamId}:${limit}`;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const cached = await getCached<any[]>(cacheKey);
   if (cached) return cached;
 
   try {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const data = await apiFetch<any>(`/teams/${teamId}/matches`, {
-      status: "FINISHED",
-      limit: String(limit),
+    const data = await apiFetch<any[]>("/fixtures", {
+      team: String(teamId),
+      last: String(limit),
     });
-    const result = data.matches ?? [];
+
+    // Normalize to the shape consumers expect (RecentResults, HomeAwayForm, computeForm)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const result = (data ?? []).map((raw: any) => {
+      const homeId = raw.teams?.home?.id ?? 0;
+      const awayId = raw.teams?.away?.id ?? 0;
+      const statusShort = raw.fixture?.status?.short ?? "NS";
+
+      return {
+        id: raw.fixture?.id ?? 0,
+        utcDate: raw.fixture?.date ?? "",
+        status: STATUS_MAP[statusShort] ?? "SCHEDULED",
+        homeTeam: {
+          id: homeId,
+          name: raw.teams?.home?.name ?? "",
+          shortName: getShortName(homeId, raw.teams?.home?.name ?? ""),
+          crest: raw.teams?.home?.logo ?? "",
+        },
+        awayTeam: {
+          id: awayId,
+          name: raw.teams?.away?.name ?? "",
+          shortName: getShortName(awayId, raw.teams?.away?.name ?? ""),
+          crest: raw.teams?.away?.logo ?? "",
+        },
+        score: {
+          fullTime: {
+            home: raw.goals?.home ?? null,
+            away: raw.goals?.away ?? null,
+          },
+        },
+      };
+    });
+
     await setCache(cacheKey, result, CACHE_30_MIN);
     return result;
   } catch (error) {
@@ -338,34 +403,35 @@ export async function getTeamRecentMatches(teamId: number, limit: number): Promi
   }
 }
 
-/**
- * Fetch top scorers for a competition.
- */
 export async function getTopScorers(
   competitionCode: string
-): Promise<
-  { name: string; team: string; goals: number; assists: number | null; nationality: string }[]
-> {
+): Promise<{ name: string; team: string; goals: number; assists: number | null; nationality: string }[]> {
   const cacheKey = `scorers:${competitionCode}`;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const cached = await getCached<any[]>(cacheKey);
   if (cached) return cached;
 
+  const leagueId = getLeagueId(competitionCode);
+  if (!leagueId) return [];
+
   try {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const data = await apiFetch<any>(`/competitions/${competitionCode}/scorers`, {
-      limit: "10",
+    const data = await apiFetch<any[]>("/players/topscorers", {
+      league: String(leagueId),
+      season: String(CURRENT_SEASON),
     });
 
-    const result = (data.scorers ?? []).map(
+    const result = (data ?? []).slice(0, 10).map(
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (s: any) => ({
         name: s.player?.name ?? "",
-        team: s.team?.name ?? "",
-        goals: s.goals ?? 0,
-        assists: s.assists ?? null,
+        team: s.statistics?.[0]?.team?.name ?? "",
+        goals: s.statistics?.[0]?.goals?.total ?? 0,
+        assists: s.statistics?.[0]?.goals?.assists ?? null,
         nationality: s.player?.nationality ?? "",
       })
     );
+
     await setCache(cacheKey, result, CACHE_30_MIN);
     return result;
   } catch (error) {
@@ -374,10 +440,6 @@ export async function getTopScorers(
   }
 }
 
-/**
- * Fetch head-to-head data from the official Football-Data.org H2H endpoint.
- * Falls back to computeH2H if the endpoint fails.
- */
 export async function getH2H(
   matchId: number
 ): Promise<{
@@ -389,48 +451,24 @@ export async function getH2H(
 } | null> {
   const cacheKey = `h2h:${matchId}`;
   const cached = await getCached<{
-    homeWins: number;
-    draws: number;
-    awayWins: number;
-    totalGoals: number;
-    lastMatches: H2HMatch[];
+    homeWins: number; draws: number; awayWins: number;
+    totalGoals: number; lastMatches: H2HMatch[];
   }>(cacheKey);
   if (cached) return cached;
 
   try {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const data = await apiFetch<any>(`/matches/${matchId}/head2head`, {
-      limit: "10",
-    });
+    const match = await getMatch(matchId);
+    if (!match) return null;
 
-    const agg = data.aggregates;
-    const homeWins = agg?.homeTeam?.wins ?? 0;
-    const draws = agg?.homeTeam?.draws ?? agg?.awayTeam?.draws ?? 0;
-    const awayWins = agg?.awayTeam?.wins ?? 0;
-    const totalGoals = agg?.totalGoals ?? 0;
-
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const lastMatches: H2HMatch[] = (data.matches ?? []).map((m: any) => ({
-      date: formatDateGmt7(m.utcDate),
-      home: m.homeTeam?.shortName ?? m.homeTeam?.name ?? "",
-      away: m.awayTeam?.shortName ?? m.awayTeam?.name ?? "",
-      scoreHome: m.score?.fullTime?.home ?? 0,
-      scoreAway: m.score?.fullTime?.away ?? 0,
-    }));
-
-    const result = { homeWins, draws, awayWins, totalGoals, lastMatches };
-    await setCache(cacheKey, result, CACHE_24_HR);
+    const result = await computeH2H(match.homeTeam.id, match.awayTeam.id);
+    if (result) await setCache(cacheKey, result, CACHE_24_HR);
     return result;
   } catch (error) {
-    console.error(`Failed to fetch H2H for match ${matchId}, falling back to computeH2H:`, error);
+    console.error(`Failed to fetch H2H for match ${matchId}:`, error);
     return null;
   }
 }
 
-/**
- * Compute head-to-head record between two teams.
- * Fetches recent matches for both teams and finds overlapping fixtures.
- */
 export async function computeH2H(
   homeTeamId: number,
   awayTeamId: number
@@ -441,35 +479,29 @@ export async function computeH2H(
   totalGoals: number;
   lastMatches: H2HMatch[];
 } | null> {
+  const cacheKey = `h2h-direct:${homeTeamId}-${awayTeamId}`;
+  const cached = await getCached<{
+    homeWins: number; draws: number; awayWins: number;
+    totalGoals: number; lastMatches: H2HMatch[];
+  }>(cacheKey);
+  if (cached) return cached;
+
   try {
-    // Fetch last 20 finished matches for each team to find H2H encounters
-    const [homeMatches, awayMatches] = await Promise.all([
-      getTeamRecentMatches(homeTeamId, 20),
-      getTeamRecentMatches(awayTeamId, 20),
-    ]);
-
-    // Build a set of match IDs for the away team for quick lookup
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const awayMatchIds = new Set(awayMatches.map((m: any) => m.id));
+    const data = await apiFetch<any[]>("/fixtures/headtohead", {
+      h2h: `${homeTeamId}-${awayTeamId}`,
+      last: "10",
+    });
 
-    // Find matches that appear in both lists (H2H encounters)
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const h2hRawMatches = homeMatches.filter((m: any) => awayMatchIds.has(m.id));
-
-    let homeWins = 0;
-    let draws = 0;
-    let awayWins = 0;
-    let totalGoals = 0;
+    let homeWins = 0, draws = 0, awayWins = 0, totalGoals = 0;
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const lastMatches: H2HMatch[] = h2hRawMatches.map((m: any) => {
-      const scoreHome: number = m.score?.fullTime?.home ?? 0;
-      const scoreAway: number = m.score?.fullTime?.away ?? 0;
-
+    const lastMatches: H2HMatch[] = (data ?? []).map((raw: any) => {
+      const scoreHome: number = raw.goals?.home ?? 0;
+      const scoreAway: number = raw.goals?.away ?? 0;
       totalGoals += scoreHome + scoreAway;
 
-      const isHomeTeamHome = m.homeTeam?.id === homeTeamId;
-
+      const isHomeTeamHome = raw.teams?.home?.id === homeTeamId;
       if (scoreHome === scoreAway) {
         draws++;
       } else if (
@@ -482,22 +514,17 @@ export async function computeH2H(
       }
 
       return {
-        date: formatDateGmt7(m.utcDate),
-        home: m.homeTeam?.name ?? "",
-        away: m.awayTeam?.name ?? "",
+        date: formatDateGmt7(raw.fixture?.date ?? new Date().toISOString()),
+        home: getShortName(raw.teams?.home?.id, raw.teams?.home?.name ?? ""),
+        away: getShortName(raw.teams?.away?.id, raw.teams?.away?.name ?? ""),
         scoreHome,
         scoreAway,
       };
     });
 
-    // Return only the last 5 meetings
-    return {
-      homeWins,
-      draws,
-      awayWins,
-      totalGoals,
-      lastMatches: lastMatches.slice(0, 5),
-    };
+    const result = { homeWins, draws, awayWins, totalGoals, lastMatches: lastMatches.slice(0, 5) };
+    await setCache(cacheKey, result, CACHE_24_HR);
+    return result;
   } catch (error) {
     console.error(`Failed to compute H2H for ${homeTeamId} vs ${awayTeamId}:`, error);
     return null;
@@ -505,23 +532,20 @@ export async function computeH2H(
 }
 
 /**
- * Compute form string (W/D/L) from the last N finished matches for a team.
- * @param teamId - The team's ID to determine W/D/L perspective
- * @param recentMatches - Raw match objects from the Football-Data API
- * @returns Array of "W", "D", or "L" strings, most recent first
+ * Compute form string (W/D/L) from raw recent matches.
+ * Works on normalized objects from getTeamRecentMatches.
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function computeForm(teamId: number, recentMatches: any[]): string[] {
-  // Sort by date descending (most recent first)
   const sorted = [...recentMatches]
     .filter(
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (m: any) => m.status === "FINISHED" && m.score?.fullTime
     )
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    .sort((a: any, b: any) => {
-      return new Date(b.utcDate).getTime() - new Date(a.utcDate).getTime();
-    })
+    .sort((a: any, b: any) =>
+      new Date(b.utcDate).getTime() - new Date(a.utcDate).getTime()
+    )
     .slice(0, 5);
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -539,40 +563,37 @@ export function computeForm(teamId: number, recentMatches: any[]): string[] {
   });
 }
 
-/**
- * Fetch individual player profile.
- */
 export async function getPlayerInfo(playerId: number): Promise<{
-  id: number;
-  name: string;
-  dateOfBirth: string;
-  nationality: string;
-  position: string;
-  shirtNumber?: number;
+  id: number; name: string; dateOfBirth: string; nationality: string;
+  position: string; shirtNumber?: number;
 } | null> {
   const cacheKey = `player:${playerId}`;
   const cached = await getCached<{
-    id: number;
-    name: string;
-    dateOfBirth: string;
-    nationality: string;
-    position: string;
-    shirtNumber?: number;
+    id: number; name: string; dateOfBirth: string; nationality: string;
+    position: string; shirtNumber?: number;
   }>(cacheKey);
   if (cached) return cached;
 
   try {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const raw = await apiFetch<any>(`/persons/${playerId}`);
+    const data = await apiFetch<any[]>("/players", {
+      id: String(playerId),
+      season: String(CURRENT_SEASON),
+    });
+
+    const player = data?.[0]?.player;
+    const stats = data?.[0]?.statistics?.[0];
+    if (!player) return null;
 
     const result = {
-      id: raw.id,
-      name: raw.name ?? "",
-      dateOfBirth: raw.dateOfBirth ?? "",
-      nationality: raw.nationality ?? "",
-      position: raw.position ?? "",
-      shirtNumber: raw.shirtNumber ?? undefined,
+      id: player.id,
+      name: player.name ?? "",
+      dateOfBirth: player.birth?.date ?? "",
+      nationality: player.nationality ?? "",
+      position: mapPosition(stats?.games?.position ?? player.position ?? ""),
+      shirtNumber: player.number ?? undefined,
     };
+
     await setCache(cacheKey, result, CACHE_2_HR);
     return result;
   } catch (error) {
@@ -581,54 +602,162 @@ export async function getPlayerInfo(playerId: number): Promise<{
   }
 }
 
-const CACHE_1_HR = 60 * 60 * 1000;
-
-/**
- * Fetch a player's recent match stats (aggregated).
- */
 export async function getPlayerMatches(
   playerId: number,
-  limit: number = 5
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  _limit: number = 5
 ): Promise<{
-  goals: number;
-  assists: number;
-  yellowCards: number;
-  redCards: number;
-  minutesPlayed: number;
-  matchesPlayed: number;
+  goals: number; assists: number; yellowCards: number; redCards: number;
+  minutesPlayed: number; matchesPlayed: number;
 } | null> {
-  const cacheKey = `player-matches:${playerId}:${limit}`;
+  const cacheKey = `player-matches:${playerId}`;
   const cached = await getCached<{
-    goals: number;
-    assists: number;
-    yellowCards: number;
-    redCards: number;
-    minutesPlayed: number;
-    matchesPlayed: number;
+    goals: number; assists: number; yellowCards: number; redCards: number;
+    minutesPlayed: number; matchesPlayed: number;
   }>(cacheKey);
   if (cached) return cached;
 
   try {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const raw = await apiFetch<any>(`/persons/${playerId}/matches`, {
-      limit: String(limit),
+    const data = await apiFetch<any[]>("/players", {
+      id: String(playerId),
+      season: String(CURRENT_SEASON),
     });
 
-    const resultSet = raw.resultSet ?? {};
-    const matches = raw.matches ?? [];
+    const stats = data?.[0]?.statistics?.[0];
+    if (!stats) return null;
 
     const result = {
-      goals: resultSet.goals ?? 0,
-      assists: resultSet.assists ?? 0,
-      yellowCards: resultSet.yellowCards ?? 0,
-      redCards: resultSet.redCards ?? 0,
-      minutesPlayed: resultSet.minutesPlayed ?? 0,
-      matchesPlayed: matches.length,
+      goals: stats.goals?.total ?? 0,
+      assists: stats.goals?.assists ?? 0,
+      yellowCards: stats.cards?.yellow ?? 0,
+      redCards: stats.cards?.red ?? 0,
+      minutesPlayed: stats.games?.minutes ?? 0,
+      matchesPlayed: stats.games?.appearences ?? 0,
     };
+
     await setCache(cacheKey, result, CACHE_1_HR);
     return result;
   } catch (error) {
     console.error(`Failed to fetch player matches for ${playerId}:`, error);
     return null;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// New API-Football features: Odds, Injuries, Lineups
+// ---------------------------------------------------------------------------
+
+export async function getMatchOdds(fixtureId: number): Promise<MatchOdds | null> {
+  const cacheKey = `odds:${fixtureId}`;
+  const cached = await getCached<MatchOdds>(cacheKey);
+  if (cached) return cached;
+
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const data = await apiFetch<any[]>("/odds", { fixture: String(fixtureId) });
+    if (!data || data.length === 0) return null;
+
+    const raw = data[0];
+    const result: MatchOdds = {
+      fixtureId,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      bookmakers: (raw.bookmakers ?? []).slice(0, 5).map((b: any) => ({
+        name: b.name ?? "",
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        bets: (b.bets ?? []).slice(0, 3).map((bet: any) => ({
+          name: bet.name ?? "",
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          values: (bet.values ?? []).map((v: any) => ({
+            value: String(v.value ?? ""),
+            odd: String(v.odd ?? ""),
+          })),
+        })),
+      })),
+    };
+
+    await setCache(cacheKey, result, CACHE_1_HR);
+    return result;
+  } catch (error) {
+    console.error(`Failed to fetch odds for fixture ${fixtureId}:`, error);
+    return null;
+  }
+}
+
+export async function getMatchInjuries(fixtureId: number): Promise<MatchInjury[]> {
+  const cacheKey = `injuries:${fixtureId}`;
+  const cached = await getCached<MatchInjury[]>(cacheKey);
+  if (cached) return cached;
+
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const data = await apiFetch<any[]>("/injuries", { fixture: String(fixtureId) });
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const result: MatchInjury[] = (data ?? []).map((item: any) => ({
+      player: {
+        id: item.player?.id ?? 0,
+        name: item.player?.name ?? "",
+        photo: item.player?.photo ?? "",
+      },
+      team: {
+        id: item.team?.id ?? 0,
+        name: item.team?.name ?? "",
+        logo: item.team?.logo ?? "",
+      },
+      type: item.player?.type ?? "",
+      reason: item.player?.reason ?? "",
+    }));
+
+    await setCache(cacheKey, result, CACHE_2_HR);
+    return result;
+  } catch (error) {
+    console.error(`Failed to fetch injuries for fixture ${fixtureId}:`, error);
+    return [];
+  }
+}
+
+export async function getMatchLineups(fixtureId: number): Promise<MatchLineup[]> {
+  const cacheKey = `lineups:${fixtureId}`;
+  const cached = await getCached<MatchLineup[]>(cacheKey);
+  if (cached) return cached;
+
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const data = await apiFetch<any[]>("/fixtures/lineups", { fixture: String(fixtureId) });
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const result: MatchLineup[] = (data ?? []).map((item: any) => ({
+      team: {
+        id: item.team?.id ?? 0,
+        name: item.team?.name ?? "",
+        logo: item.team?.logo ?? "",
+      },
+      formation: item.formation ?? "",
+      coach: {
+        name: item.coach?.name ?? "",
+        photo: item.coach?.photo ?? "",
+      },
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      startXI: (item.startXI ?? []).map((entry: any) => ({
+        id: entry.player?.id ?? 0,
+        name: entry.player?.name ?? "",
+        number: entry.player?.number ?? 0,
+        pos: entry.player?.pos ?? "",
+      })),
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      substitutes: (item.substitutes ?? []).map((entry: any) => ({
+        id: entry.player?.id ?? 0,
+        name: entry.player?.name ?? "",
+        number: entry.player?.number ?? 0,
+        pos: entry.player?.pos ?? "",
+      })),
+    }));
+
+    await setCache(cacheKey, result, CACHE_5_MIN);
+    return result;
+  } catch (error) {
+    console.error(`Failed to fetch lineups for fixture ${fixtureId}:`, error);
+    return [];
   }
 }

@@ -26,6 +26,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     ...leagueSlugs.flatMap((slug) => [
       { url: `${baseUrl}/lich-thi-dau/${slug}`, lastModified: new Date(), changeFrequency: "daily" as const, priority: 0.9 },
       { url: `${baseUrl}/bang-xep-hang/${slug}`, lastModified: new Date(), changeFrequency: "daily" as const, priority: 0.9 },
+      { url: `${baseUrl}/soi-keo/${slug}`, lastModified: new Date(), changeFrequency: "daily" as const, priority: 0.9 },
     ]),
   ];
 

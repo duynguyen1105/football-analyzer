@@ -199,20 +199,64 @@ Pass a `slot` prop for specific ad unit IDs from your AdSense dashboard:
 
 ---
 
+## 7. API-Football Migration
+
+**Migrated from:** Football-Data.org (free, 10 req/min)
+**Migrated to:** API-Football Pro ($19/mo, 300 req/min, 7,500 req/day)
+
+### Setup
+
+1. Register at [dashboard.api-football.com](https://dashboard.api-football.com)
+2. Subscribe to the Pro plan
+3. Copy your API key from Account → My Access
+4. Add to `.env.local`:
+
+```
+API_FOOTBALL_KEY=your-api-key-here
+```
+
+### New features enabled by API-Football
+
+- **Odds** (`/soi-keo/[league]` pages + MatchOdds component on match pages)
+- **Injuries** (MatchInjuries component on match pages)
+- **Lineups** (MatchLineups component on match pages)
+
+### Team name mapping
+
+API-Football doesn't provide `shortName` or `tla` (3-letter abbreviation). These are derived from a static map in `src/lib/team-names.ts` covering ~100 teams across 5 leagues. When a team ID isn't found, names are derived by stripping common suffixes (FC, SC, etc.).
+
+### API endpoints used
+
+| Endpoint | Purpose |
+|----------|---------|
+| `/fixtures` | Matches by date, single fixture, recent team matches |
+| `/standings` | League table |
+| `/fixtures/headtohead` | Head-to-head history |
+| `/teams` | Team info |
+| `/coachs` | Coach info |
+| `/players/squads` | Squad roster |
+| `/players/topscorers` | Top scorers |
+| `/players` | Player info + season stats |
+| `/odds` | Bookmaker odds |
+| `/injuries` | Player injuries |
+| `/fixtures/lineups` | Match lineups |
+
+---
+
 ## Environment Variables Summary
 
 | Variable | Purpose | When to set |
 |----------|---------|-------------|
+| `API_FOOTBALL_KEY` | API-Football API key | Immediately (required) |
 | `NEXT_PUBLIC_GA_ID` | Google Analytics 4 Measurement ID | Immediately |
 | `NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION` | Search Console verification | Immediately |
 | `NEXT_PUBLIC_ADSENSE_ID` | AdSense Publisher ID | After AdSense approval |
-
-All are optional — the site works without them, features just won't activate.
 
 ---
 
 ## Traffic Growth Checklist
 
+- [ ] Set `API_FOOTBALL_KEY` in `.env.local` and Vercel
 - [ ] Set up GA4 and add `NEXT_PUBLIC_GA_ID`
 - [ ] Verify in Google Search Console
 - [ ] Submit sitemap.xml

@@ -5,7 +5,7 @@ import { Navbar } from "@/components/Navbar";
 export const metadata: Metadata = {
   title: "About — MatchDay Analyst",
   description:
-    "Learn about MatchDay Analyst, a pre-match football analysis site powered by data from Football-Data.org and AI insights from Claude.",
+    "Learn about MatchDay Analyst, a pre-match football analysis site powered by data from API-Football and AI insights from Claude.",
 };
 
 export default function AboutPage() {
@@ -53,7 +53,7 @@ export default function AboutPage() {
                   rel="noopener noreferrer"
                   className="text-accent underline underline-offset-2 hover:text-accent/80 transition-colors"
                 >
-                  Football-Data.org
+                  API-Football
                 </a>
                 , a trusted open data provider for football.
               </span>
@@ -115,7 +115,7 @@ export default function AboutPage() {
               rel="noopener noreferrer"
               className="text-accent underline underline-offset-2 hover:text-accent/80 transition-colors"
             >
-              Football-Data.org
+              API-Football
             </a>
             . We use their API under the free tier and are grateful for the
             service they provide to the developer community. All match data,

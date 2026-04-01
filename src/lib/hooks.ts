@@ -102,3 +102,30 @@ export function useTeamRecentDetailed(teamId: number) {
     staleTime: 2 * 60 * 60 * 1000, // 2 hours
   });
 }
+
+export function useMatchOdds(matchId: string) {
+  return useQuery({
+    queryKey: ["match", matchId, "odds"],
+    queryFn: () =>
+      fetch(`/api/match?id=${matchId}&section=odds`).then((r) => r.json()),
+    staleTime: 60 * 60 * 1000, // 1 hour
+  });
+}
+
+export function useMatchInjuries(matchId: string) {
+  return useQuery({
+    queryKey: ["match", matchId, "injuries"],
+    queryFn: () =>
+      fetch(`/api/match?id=${matchId}&section=injuries`).then((r) => r.json()),
+    staleTime: 2 * 60 * 60 * 1000, // 2 hours
+  });
+}
+
+export function useMatchLineups(matchId: string) {
+  return useQuery({
+    queryKey: ["match", matchId, "lineups"],
+    queryFn: () =>
+      fetch(`/api/match?id=${matchId}&section=lineups`).then((r) => r.json()),
+    staleTime: 5 * 60 * 1000, // 5 min — lineups update close to kickoff
+  });
+}

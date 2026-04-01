@@ -7,6 +7,9 @@ import {
   getH2H,
   computeH2H,
   computeForm,
+  getMatchOdds,
+  getMatchInjuries,
+  getMatchLineups,
 } from "@/lib/football-data";
 import { computePrediction } from "@/lib/prediction";
 import { computeImportance } from "@/lib/importance";
@@ -92,6 +95,30 @@ export async function GET(request: Request) {
     const topScorers = await getTopScorers(match.competition.code);
     return Response.json(topScorers, {
       headers: { "Cache-Control": "s-maxage=3600, stale-while-revalidate=7200" },
+    });
+  }
+
+  // "odds" = bookmaker odds
+  if (section === "odds") {
+    const odds = await getMatchOdds(matchId);
+    return Response.json(odds, {
+      headers: { "Cache-Control": "s-maxage=3600, stale-while-revalidate=7200" },
+    });
+  }
+
+  // "injuries" = player injuries/suspensions
+  if (section === "injuries") {
+    const injuries = await getMatchInjuries(matchId);
+    return Response.json(injuries, {
+      headers: { "Cache-Control": "s-maxage=7200, stale-while-revalidate=14400" },
+    });
+  }
+
+  // "lineups" = predicted/confirmed lineups
+  if (section === "lineups") {
+    const lineups = await getMatchLineups(matchId);
+    return Response.json(lineups, {
+      headers: { "Cache-Control": "s-maxage=300, stale-while-revalidate=600" },
     });
   }
 

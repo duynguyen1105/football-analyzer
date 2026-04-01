@@ -135,7 +135,7 @@ export default function PrivacyPage() {
 
             <div className="border-l-2 border-accent-2 pl-4">
               <h3 className="text-sm font-semibold text-text-primary mb-1">
-                Football-Data.org
+                API-Football
               </h3>
               <p className="text-text-secondary text-sm leading-relaxed">
                 Match data, statistics, and results displayed on this site are
@@ -146,10 +146,10 @@ export default function PrivacyPage() {
                   rel="noopener noreferrer"
                   className="text-accent underline underline-offset-2 hover:text-accent/80 transition-colors"
                 >
-                  Football-Data.org
+                  API-Football
                 </a>{" "}
                 under their free tier terms. No user data is shared with
-                Football-Data.org.
+                API-Football.
               </p>
             </div>
           </div>
