@@ -3,6 +3,85 @@
 import { useMatchInjuries } from "@/lib/hooks";
 import { MatchInjury } from "@/lib/types";
 
+// Translation maps for injury types and reasons
+const TYPE_VI: Record<string, string> = {
+  "Missing Fixture": "Vắng mặt",
+  "Questionable": "Chưa chắc chắn",
+  "Doubtful": "Nghi ngờ",
+  "Out": "Không thi đấu",
+};
+
+const REASON_VI: Record<string, string> = {
+  // Suspensions
+  "Suspended": "Treo giò",
+  "Red Card": "Thẻ đỏ",
+  "Yellow Cards": "Thẻ vàng",
+  "Accumulated Yellow Cards": "Tích lũy thẻ vàng",
+  "Direct Red Card": "Thẻ đỏ trực tiếp",
+
+  // Injuries
+  "Injury": "Chấn thương",
+  "Knee Injury": "Chấn thương đầu gối",
+  "Muscle Injury": "Chấn thương cơ",
+  "Hamstring": "Chấn thương gân kheo",
+  "Hamstring Injury": "Chấn thương gân kheo",
+  "Groin Injury": "Chấn thương háng",
+  "Ankle Injury": "Chấn thương mắt cá",
+  "Foot Injury": "Chấn thương bàn chân",
+  "Calf Injury": "Chấn thương bắp chân",
+  "Thigh Injury": "Chấn thương đùi",
+  "Back Injury": "Chấn thương lưng",
+  "Hip Injury": "Chấn thương hông",
+  "Shoulder Injury": "Chấn thương vai",
+  "Head Injury": "Chấn thương đầu",
+  "Achilles Tendon Injury": "Chấn thương gân Achilles",
+  "Cruciate Ligament Injury": "Chấn thương dây chằng chéo",
+  "Ligament Injury": "Chấn thương dây chằng",
+  "Meniscus Injury": "Chấn thương sụn chêm",
+  "Broken Leg": "Gãy chân",
+  "Broken Arm": "Gãy tay",
+  "Broken Nose": "Gãy mũi",
+  "Concussion": "Chấn động não",
+
+  // Other
+  "Illness": "Ốm",
+  "Flu": "Cảm cúm",
+  "Covid-19": "Covid-19",
+  "Personal Reasons": "Lý do cá nhân",
+  "Family Reasons": "Lý do gia đình",
+  "Not in Squad": "Không có trong đội hình",
+  "Lack of Match Fitness": "Thiếu thể lực",
+  "Recovery": "Đang hồi phục",
+  "Unknown": "Không rõ",
+  "International Duty": "Nghĩa vụ ĐTQG",
+};
+
+function translateInjury(type: string, reason: string): string {
+  // Try to translate reason first
+  if (reason) {
+    // Check for exact match
+    if (REASON_VI[reason]) return REASON_VI[reason];
+
+    // Check for partial matches (e.g., "Knee Injury" in "Right Knee Injury")
+    for (const [eng, vi] of Object.entries(REASON_VI)) {
+      if (reason.toLowerCase().includes(eng.toLowerCase())) {
+        return vi;
+      }
+    }
+
+    // If contains "Injury", return generic injury + original
+    if (reason.toLowerCase().includes("injury")) {
+      return "Chấn thương";
+    }
+  }
+
+  // Fall back to type translation
+  if (TYPE_VI[type]) return TYPE_VI[type];
+
+  // Return original if no translation found
+  return reason || type;
+}
+
 export function MatchInjuries({
   matchId,
   homeTeamId,
@@ -66,9 +145,9 @@ function InjuryColumn({ teamName, injuries }: { teamName: string; injuries: Matc
         <p className="text-xs text-text-muted">Không có thông tin</p>
       ) : (
         <div className="space-y-1.5">
-          {injuries.map((inj) => (
+          {injuries.map((inj, idx) => (
             <div
-              key={inj.player.id}
+              key={`${inj.player.id}-${idx}`}
               className="flex items-center gap-2 py-1.5 px-2 rounded-lg bg-bg-primary/50 text-xs"
             >
               {inj.player.photo && (
@@ -81,12 +160,12 @@ function InjuryColumn({ teamName, injuries }: { teamName: string; injuries: Matc
               <span className="flex-1 truncate text-text-primary">{inj.player.name}</span>
               <span
                 className={`shrink-0 text-[10px] font-medium px-1.5 py-0.5 rounded ${
-                  inj.type === "Missing Fixture"
+                  inj.type === "Missing Fixture" || inj.type === "Out"
                     ? "bg-accent-red/15 text-accent-red"
                     : "bg-accent-yellow/15 text-accent-yellow"
                 }`}
               >
-                {inj.reason || inj.type}
+                {translateInjury(inj.type, inj.reason)}
               </span>
             </div>
           ))}

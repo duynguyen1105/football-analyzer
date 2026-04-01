@@ -12,6 +12,7 @@ interface Player {
   name: string;
   position: string;
   nationality: string;
+  photo?: string;
 }
 
 const POSITION_MAP: Record<string, string> = {
@@ -52,9 +53,25 @@ function groupByPosition(
 
 function PlayerRow({ player }: { player: Player }) {
   return (
-    <div className="flex items-center gap-2 py-1">
-      <span className="text-sm text-text-primary">{player.name}</span>
-      <span className="text-xs text-text-muted">({player.nationality})</span>
+    <div className="flex items-center gap-2 py-1.5">
+      {player.photo ? (
+        <img
+          src={player.photo}
+          alt={player.name}
+          className="w-8 h-8 rounded-full object-cover bg-border/20 shrink-0"
+          loading="lazy"
+        />
+      ) : (
+        <div className="w-8 h-8 rounded-full bg-border/20 flex items-center justify-center text-xs text-text-muted shrink-0">
+          👤
+        </div>
+      )}
+      <div className="min-w-0">
+        <span className="text-sm text-text-primary block truncate">{player.name}</span>
+        {player.nationality && (
+          <span className="text-[10px] text-text-muted">{player.nationality}</span>
+        )}
+      </div>
     </div>
   );
 }
@@ -117,12 +134,13 @@ function SectionSkeleton() {
       {[0, 1].map((col) => (
         <div key={col} className="space-y-3">
           <div className="h-5 w-32 bg-border/30 rounded animate-pulse" />
-          {[...Array(6)].map((_, i) => (
-            <div
-              key={i}
-              className="h-4 bg-border/30 rounded animate-pulse"
-              style={{ width: `${80 - i * 5}%` }}
-            />
+          {[...Array(4)].map((_, i) => (
+            <div key={i} className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-full bg-border/20 animate-pulse shrink-0" />
+              <div className="flex-1">
+                <div className="h-4 bg-border/30 rounded animate-pulse w-3/4" />
+              </div>
+            </div>
           ))}
         </div>
       ))}

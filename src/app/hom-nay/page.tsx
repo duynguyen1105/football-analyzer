@@ -178,7 +178,7 @@ export default async function HomNayPage() {
     <>
       <Navbar />
 
-      <main className="max-w-3xl mx-auto px-3 py-6">
+      <main className="max-w-6xl mx-auto px-3 py-6 xl:px-6">
         {/* SEO heading */}
         <h1 className="text-xl md:text-2xl font-bold mb-1">
           Nhận Định Bóng Đá Hôm Nay
@@ -200,7 +200,7 @@ export default async function HomNayPage() {
             </Link>
           </div>
         ) : (
-          <div className="space-y-3">
+          <div className="space-y-3 lg:grid lg:grid-cols-2 lg:gap-4 lg:space-y-0">
             {matchData.map(({ match, prediction, importance }) => (
               <MatchDigestCard
                 key={match.id}

@@ -64,7 +64,7 @@ export default async function SoiKeoPage({ params }: Props) {
       />
       <Navbar />
 
-      <main className="max-w-4xl mx-auto px-3 py-6">
+      <main className="max-w-6xl mx-auto px-3 py-6 xl:px-6">
         <div className="flex items-center gap-2 text-xs text-text-muted mb-4">
           <Link href="/" className="hover:text-text-primary transition-colors">Trang chủ</Link>
           <span>/</span>

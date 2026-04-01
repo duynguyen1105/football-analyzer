@@ -129,3 +129,39 @@ export function useMatchLineups(matchId: string) {
     staleTime: 5 * 60 * 1000, // 5 min — lineups update close to kickoff
   });
 }
+
+export function useLiveMatches() {
+  return useQuery<Match[]>({
+    queryKey: ["live-matches"],
+    queryFn: () => fetch("/api/live").then((r) => r.json()),
+    staleTime: 30 * 1000, // 30 seconds for live data
+    refetchInterval: 30 * 1000, // Auto-refresh every 30 seconds
+  });
+}
+
+export function useMatchEvents(matchId: string) {
+  return useQuery({
+    queryKey: ["match", matchId, "events"],
+    queryFn: () =>
+      fetch(`/api/match?id=${matchId}&section=events`).then((r) => r.json()),
+    staleTime: 60 * 1000, // 1 min
+  });
+}
+
+export function useMatchStatistics(matchId: string) {
+  return useQuery({
+    queryKey: ["match", matchId, "statistics"],
+    queryFn: () =>
+      fetch(`/api/match?id=${matchId}&section=statistics`).then((r) => r.json()),
+    staleTime: 5 * 60 * 1000, // 5 min
+  });
+}
+
+export function useTopAssists(leagueCode: string) {
+  return useQuery({
+    queryKey: ["top-assists", leagueCode],
+    queryFn: () =>
+      fetch(`/api/top-assists?code=${leagueCode}`).then((r) => r.json()),
+    staleTime: 30 * 60 * 1000, // 30 min
+  });
+}

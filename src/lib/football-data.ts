@@ -332,6 +332,7 @@ export async function getTeamInfo(teamId: number): Promise<TeamInfo | null> {
         name: p.name ?? "",
         position: mapPosition(p.position ?? ""),
         nationality: "",
+        photo: p.photo ?? "",
         dateOfBirth: undefined,
       })),
     };
@@ -758,6 +759,179 @@ export async function getMatchLineups(fixtureId: number): Promise<MatchLineup[]>
     return result;
   } catch (error) {
     console.error(`Failed to fetch lineups for fixture ${fixtureId}:`, error);
+    return [];
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Live matches — currently playing fixtures
+// ---------------------------------------------------------------------------
+
+export async function getLiveMatches(): Promise<Match[]> {
+  const cacheKey = `live-matches`;
+  const cached = await getCached<Match[]>(cacheKey);
+  if (cached) return cached;
+
+  try {
+    const allLiveFixtures = await Promise.all(
+      LEAGUE_IDS.map((leagueId) =>
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        apiFetch<any[]>("/fixtures", {
+          league: String(leagueId),
+          live: "all",
+        })
+      )
+    );
+
+    const matches: Match[] = allLiveFixtures.flat().map(mapFixture);
+    matches.sort((a, b) => a.time.localeCompare(b.time));
+
+    // Short cache for live data - 30 seconds
+    await setCache(cacheKey, matches, 30 * 1000);
+    return matches;
+  } catch (error) {
+    console.error("Failed to fetch live matches:", error);
+    return [];
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Match events — goals, cards, substitutions
+// ---------------------------------------------------------------------------
+
+export interface MatchEvent {
+  time: { elapsed: number; extra: number | null };
+  team: { id: number; name: string; logo: string };
+  player: { id: number; name: string };
+  assist: { id: number | null; name: string | null };
+  type: string; // "Goal", "Card", "subst", "Var"
+  detail: string; // "Normal Goal", "Yellow Card", "Red Card", "Substitution 1"
+  comments: string | null;
+}
+
+export async function getMatchEvents(fixtureId: number): Promise<MatchEvent[]> {
+  const cacheKey = `events:${fixtureId}`;
+  const cached = await getCached<MatchEvent[]>(cacheKey);
+  if (cached) return cached;
+
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const data = await apiFetch<any[]>("/fixtures/events", { fixture: String(fixtureId) });
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const result: MatchEvent[] = (data ?? []).map((event: any) => ({
+      time: {
+        elapsed: event.time?.elapsed ?? 0,
+        extra: event.time?.extra ?? null,
+      },
+      team: {
+        id: event.team?.id ?? 0,
+        name: event.team?.name ?? "",
+        logo: event.team?.logo ?? "",
+      },
+      player: {
+        id: event.player?.id ?? 0,
+        name: event.player?.name ?? "",
+      },
+      assist: {
+        id: event.assist?.id ?? null,
+        name: event.assist?.name ?? null,
+      },
+      type: event.type ?? "",
+      detail: event.detail ?? "",
+      comments: event.comments ?? null,
+    }));
+
+    // Cache for 1 minute for finished matches, 30 seconds for live
+    await setCache(cacheKey, result, 60 * 1000);
+    return result;
+  } catch (error) {
+    console.error(`Failed to fetch events for fixture ${fixtureId}:`, error);
+    return [];
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Match statistics — possession, shots, corners, etc.
+// ---------------------------------------------------------------------------
+
+export interface TeamStatistics {
+  teamId: number;
+  teamName: string;
+  teamLogo: string;
+  stats: Record<string, string | number | null>;
+}
+
+export async function getMatchStatistics(fixtureId: number): Promise<TeamStatistics[]> {
+  const cacheKey = `statistics:${fixtureId}`;
+  const cached = await getCached<TeamStatistics[]>(cacheKey);
+  if (cached) return cached;
+
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const data = await apiFetch<any[]>("/fixtures/statistics", { fixture: String(fixtureId) });
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const result: TeamStatistics[] = (data ?? []).map((teamStats: any) => {
+      const stats: Record<string, string | number | null> = {};
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (teamStats.statistics ?? []).forEach((s: any) => {
+        stats[s.type] = s.value;
+      });
+      return {
+        teamId: teamStats.team?.id ?? 0,
+        teamName: teamStats.team?.name ?? "",
+        teamLogo: teamStats.team?.logo ?? "",
+        stats,
+      };
+    });
+
+    await setCache(cacheKey, result, CACHE_5_MIN);
+    return result;
+  } catch (error) {
+    console.error(`Failed to fetch statistics for fixture ${fixtureId}:`, error);
+    return [];
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Top assists — league top assist providers
+// ---------------------------------------------------------------------------
+
+export async function getTopAssists(
+  competitionCode: string
+): Promise<{ name: string; team: string; teamLogo: string; assists: number; goals: number; photo: string }[]> {
+  const cacheKey = `assists:${competitionCode}`;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const cached = await getCached<any[]>(cacheKey);
+  if (cached) return cached;
+
+  const leagueId = getLeagueId(competitionCode);
+  if (!leagueId) return [];
+
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const data = await apiFetch<any[]>("/players/topassists", {
+      league: String(leagueId),
+      season: String(CURRENT_SEASON),
+    });
+
+    const result = (data ?? []).slice(0, 20).map(
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (s: any) => ({
+        name: s.player?.name ?? "",
+        team: s.statistics?.[0]?.team?.name ?? "",
+        teamLogo: s.statistics?.[0]?.team?.logo ?? "",
+        assists: s.statistics?.[0]?.goals?.assists ?? 0,
+        goals: s.statistics?.[0]?.goals?.total ?? 0,
+        photo: s.player?.photo ?? "",
+      })
+    );
+
+    await setCache(cacheKey, result, CACHE_30_MIN);
+    return result;
+  } catch (error) {
+    console.error(`Failed to fetch top assists for ${competitionCode}:`, error);
     return [];
   }
 }

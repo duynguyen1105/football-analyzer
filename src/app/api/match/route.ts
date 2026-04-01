@@ -10,6 +10,8 @@ import {
   getMatchOdds,
   getMatchInjuries,
   getMatchLineups,
+  getMatchEvents,
+  getMatchStatistics,
 } from "@/lib/football-data";
 import { computePrediction } from "@/lib/prediction";
 import { computeImportance } from "@/lib/importance";
@@ -118,6 +120,22 @@ export async function GET(request: Request) {
   if (section === "lineups") {
     const lineups = await getMatchLineups(matchId);
     return Response.json(lineups, {
+      headers: { "Cache-Control": "s-maxage=300, stale-while-revalidate=600" },
+    });
+  }
+
+  // "events" = match events (goals, cards, subs)
+  if (section === "events") {
+    const events = await getMatchEvents(matchId);
+    return Response.json(events, {
+      headers: { "Cache-Control": "s-maxage=60, stale-while-revalidate=120" },
+    });
+  }
+
+  // "statistics" = match statistics (possession, shots, etc.)
+  if (section === "statistics") {
+    const statistics = await getMatchStatistics(matchId);
+    return Response.json(statistics, {
       headers: { "Cache-Control": "s-maxage=300, stale-while-revalidate=600" },
     });
   }

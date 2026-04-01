@@ -16,6 +16,8 @@ import { ShareButton } from "@/components/ShareButton";
 import { MatchOdds } from "@/components/MatchOdds";
 import { MatchInjuries } from "@/components/MatchInjuries";
 import { MatchLineups } from "@/components/MatchLineups";
+import { MatchEvents } from "@/components/MatchEvents";
+import { MatchStatistics } from "@/components/MatchStatistics";
 import {
   useMatchCore,
   useMatchForm,
@@ -206,7 +208,7 @@ export default function MatchPage({ params }: { params: Promise<{ id: string }> 
     return (
       <>
         <Navbar />
-        <div className="max-w-4xl mx-auto px-4 py-6">
+        <div className="max-w-6xl mx-auto px-4 py-6 xl:px-8">
           {/* Breadcrumb */}
           <div className="flex items-center gap-2 mb-6">
             <div className="h-3 w-16 bg-border/30 rounded animate-pulse" />
@@ -259,7 +261,7 @@ export default function MatchPage({ params }: { params: Promise<{ id: string }> 
     return (
       <>
         <Navbar />
-        <main className="max-w-4xl mx-auto px-4 py-20 text-center">
+        <main className="max-w-6xl mx-auto px-4 py-20 text-center xl:px-8">
           <p className="text-text-muted text-lg">Không tìm thấy trận đấu.</p>
           <Link href="/" className="text-accent mt-4 inline-block hover:underline">Về trang chủ</Link>
         </main>
@@ -272,7 +274,7 @@ export default function MatchPage({ params }: { params: Promise<{ id: string }> 
   return (
     <>
       <Navbar />
-      <main className="max-w-4xl mx-auto px-4 py-6">
+      <main className="max-w-6xl mx-auto px-4 py-6 xl:px-8">
         {/* Breadcrumb */}
         <div className="flex items-center gap-2 text-xs text-text-muted mb-6">
           <Link href="/" className="hover:text-text-primary transition-colors">Trang chủ</Link>
@@ -381,6 +383,24 @@ export default function MatchPage({ params }: { params: Promise<{ id: string }> 
                 </div>
               </div>
             </section>
+
+            {/* Match Events — shows for finished/live matches */}
+            {(match.status === "FINISHED" || match.status === "IN_PLAY" || match.status === "LIVE") && (
+              <MatchEvents
+                matchId={id}
+                homeTeamId={match.homeTeam.id}
+                awayTeamId={match.awayTeam.id}
+              />
+            )}
+
+            {/* Match Statistics — shows for finished/live matches */}
+            {(match.status === "FINISHED" || match.status === "IN_PLAY" || match.status === "LIVE") && (
+              <MatchStatistics
+                matchId={id}
+                homeTeamName={match.homeTeam.shortName}
+                awayTeamName={match.awayTeam.shortName}
+              />
+            )}
 
             {/* Odds — loads independently */}
             <MatchOdds matchId={id} />

@@ -34,8 +34,9 @@ function MatchCard({ match }: { match: Match }) {
       onTouchStart={prefetch}
     >
       {/* League header */}
-      <div className="px-3 py-1.5 border-b border-border/50 text-[10px] md:text-xs text-text-muted truncate">
-        {league?.flag} {match.competition.name}
+      <div className="px-3 py-1.5 border-b border-border/50 text-[10px] md:text-xs text-text-muted flex items-center gap-1.5">
+        {league?.logo && <img src={league.logo} alt="" className="w-4 h-4 object-contain" />}
+        <span className="truncate">{match.competition.name}</span>
       </div>
 
       {/* Mobile: row-based layout */}
@@ -127,7 +128,10 @@ function StandingsCard({ league }: { league: (typeof LEAGUES)[number] }) {
   return (
     <div className="bg-bg-card rounded-lg border border-border p-3">
       <Link href={`/giai-dau/${league.code}`}>
-        <h3 className="font-semibold text-xs mb-2 hover:text-accent transition-colors">{league.flag} {league.name}</h3>
+        <h3 className="font-semibold text-xs mb-2 hover:text-accent transition-colors flex items-center gap-1.5">
+          <img src={league.logo} alt="" className="w-5 h-5 object-contain" />
+          {league.name}
+        </h3>
       </Link>
       <table className="w-full text-[11px]">
         <thead>
@@ -185,7 +189,7 @@ export default function Home() {
     <>
       <Navbar />
 
-      <div className="max-w-5xl mx-auto px-3 py-4">
+      <div className="max-w-7xl mx-auto px-3 py-4 xl:px-6">
         {/* Title */}
         <h1 className="text-lg font-bold mb-0.5">Lịch thi đấu &amp; Nhận định</h1>
         <p className="text-text-secondary text-xs mb-4">Phân tích trước trận cho 5 giải hàng đầu Châu Âu</p>
@@ -206,13 +210,15 @@ export default function Home() {
             <button
               key={l.code}
               onClick={() => setLeagueFilter(l.code)}
-              className={`px-2.5 py-1.5 rounded-full text-[11px] font-medium transition-colors ${
+              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-full text-[11px] font-medium transition-colors ${
                 leagueFilter === l.code
                   ? "bg-accent/15 text-accent border border-accent/30"
                   : "text-text-secondary border border-border hover:bg-bg-card-hover"
               }`}
             >
-              {l.flag} {l.name}
+              <img src={l.logo} alt="" className="w-4 h-4 object-contain" />
+              <span className="hidden sm:inline">{l.name}</span>
+              <span className="sm:hidden">{l.code === "BL1" ? "BL" : l.code}</span>
             </button>
           ))}
         </div>
@@ -238,7 +244,7 @@ export default function Home() {
             {Object.entries(grouped).map(([date, dateMatches]) => (
               <section key={date}>
                 <h2 className="text-xs font-semibold text-text-secondary uppercase tracking-wide mb-2">{date}</h2>
-                <div className="space-y-2 md:grid md:grid-cols-2 md:gap-3 md:space-y-0">
+                <div className="space-y-2 md:grid md:grid-cols-2 xl:grid-cols-3 md:gap-3 md:space-y-0">
                   {dateMatches.map((m: Match) => (
                     <MatchCard key={m.id} match={m} />
                   ))}
@@ -253,7 +259,7 @@ export default function Home() {
         {/* Standings */}
         <section className="mt-8">
           <h2 className="text-base font-bold mb-3">Bảng xếp hạng</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3">
             {LEAGUES.map((l) => (
               <StandingsCard key={l.code} league={l} />
             ))}
