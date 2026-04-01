@@ -26,22 +26,27 @@ const CACHE_2_HR = 2 * 60 * 60 * 1000;
 const CACHE_24_HR = 24 * 60 * 60 * 1000;
 
 // ---------------------------------------------------------------------------
-// Rate limiter — sequential queue (max 9 req/min to stay safe under 10 limit)
+// Rate limiter — sliding window (10 requests per 60 seconds)
 // ---------------------------------------------------------------------------
-const MIN_DELAY_MS = 7000; // ~8.5 req/min, safe margin under 10/min
-let lastRequestTime = 0;
-let requestQueue: Promise<void> = Promise.resolve();
+const RATE_WINDOW_MS = 60_000;
+const MAX_REQUESTS = 9; // stay under 10/min limit
+const requestTimestamps: number[] = [];
 
-function enqueueRequest(): Promise<void> {
-  requestQueue = requestQueue.then(async () => {
-    const now = Date.now();
-    const elapsed = now - lastRequestTime;
-    if (elapsed < MIN_DELAY_MS) {
-      await new Promise((r) => setTimeout(r, MIN_DELAY_MS - elapsed));
-    }
-    lastRequestTime = Date.now();
-  });
-  return requestQueue;
+async function waitForRateLimit(): Promise<void> {
+  const now = Date.now();
+
+  // Remove timestamps older than the window
+  while (requestTimestamps.length > 0 && requestTimestamps[0] < now - RATE_WINDOW_MS) {
+    requestTimestamps.shift();
+  }
+
+  // If at capacity, wait until the oldest request falls out of the window
+  if (requestTimestamps.length >= MAX_REQUESTS) {
+    const waitMs = requestTimestamps[0] + RATE_WINDOW_MS - now + 100;
+    await new Promise((r) => setTimeout(r, waitMs));
+  }
+
+  requestTimestamps.push(Date.now());
 }
 
 // ---------------------------------------------------------------------------
@@ -60,8 +65,8 @@ async function apiFetch<T>(path: string, params?: Record<string, string>): Promi
     });
   }
 
-  // Wait in queue
-  await enqueueRequest();
+  // Wait if at rate limit
+  await waitForRateLimit();
 
   const res = await fetch(url.toString(), {
     headers: { "X-Auth-Token": apiKey },

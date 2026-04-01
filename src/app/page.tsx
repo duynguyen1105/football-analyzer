@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useCallback } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { Navbar } from "@/components/Navbar";
 import { AdSlot } from "@/components/AdSlot";
 import { useMatches, useStandings } from "@/lib/hooks";
@@ -14,9 +15,24 @@ import Link from "next/link";
 function MatchCard({ match }: { match: Match }) {
   const league = LEAGUES.find((l) => l.code === match.competition.code);
   const fin = match.status === "FINISHED";
+  const queryClient = useQueryClient();
+
+  // Prefetch match data on hover so detail page loads instantly
+  const prefetch = useCallback(() => {
+    queryClient.prefetchQuery({
+      queryKey: ["match", String(match.id), "core"],
+      queryFn: () => fetch(`/api/match?id=${match.id}&section=core`).then((r) => r.json()),
+      staleTime: 5 * 60 * 1000,
+    });
+  }, [match.id, queryClient]);
 
   return (
-    <Link href={`/match/${match.id}`} className="block bg-bg-card rounded-lg border border-border hover:border-accent/30 transition-colors">
+    <Link
+      href={`/match/${match.id}`}
+      className="block bg-bg-card rounded-lg border border-border hover:border-accent/30 transition-colors"
+      onMouseEnter={prefetch}
+      onTouchStart={prefetch}
+    >
       {/* League header */}
       <div className="px-3 py-1.5 border-b border-border/50 text-[10px] text-text-muted truncate">
         {league?.flag} {match.competition.name}
