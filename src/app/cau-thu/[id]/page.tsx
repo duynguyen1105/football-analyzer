@@ -1,6 +1,6 @@
 "use client";
 
-import { use } from "react";
+import { use, useState, useMemo } from "react";
 import { Navbar } from "@/components/Navbar";
 import { usePlayerProfile, usePlayerTransfers, usePlayerTrophies } from "@/lib/hooks";
 import Link from "next/link";
@@ -11,6 +11,94 @@ const POSITION_VI: Record<string, string> = {
   Midfielder: "Tiền vệ",
   Attacker: "Tiền đạo",
 };
+
+function aggregateStats(statistics: any[]) {
+  const agg = {
+    league: { name: "Tất cả", logo: "" },
+    games: { appearences: 0, minutes: 0, rating: null as string | null },
+    goals: { total: 0, assists: 0 },
+    shots: { total: 0, on: 0 },
+    passes: { total: 0, accuracy: null as number | null },
+    tackles: { total: 0, interceptions: 0 },
+    dribbles: { attempts: 0, success: 0 },
+    fouls: { drawn: 0, committed: 0 },
+    cards: { yellow: 0, red: 0 },
+  };
+  let ratingSum = 0;
+  let ratingCount = 0;
+  let accuracySum = 0;
+  let accuracyCount = 0;
+
+  for (const s of statistics) {
+    agg.games.appearences += s.games?.appearences ?? 0;
+    agg.games.minutes += s.games?.minutes ?? 0;
+    if (s.games?.rating) {
+      ratingSum += parseFloat(s.games.rating);
+      ratingCount++;
+    }
+    agg.goals.total += s.goals?.total ?? 0;
+    agg.goals.assists += s.goals?.assists ?? 0;
+    agg.shots.total += s.shots?.total ?? 0;
+    agg.shots.on += s.shots?.on ?? 0;
+    agg.passes.total += s.passes?.total ?? 0;
+    if (s.passes?.accuracy) {
+      accuracySum += s.passes.accuracy;
+      accuracyCount++;
+    }
+    agg.tackles.total += s.tackles?.total ?? 0;
+    agg.tackles.interceptions += s.tackles?.interceptions ?? 0;
+    agg.dribbles.attempts += s.dribbles?.attempts ?? 0;
+    agg.dribbles.success += s.dribbles?.success ?? 0;
+    agg.fouls.drawn += s.fouls?.drawn ?? 0;
+    agg.fouls.committed += s.fouls?.committed ?? 0;
+    agg.cards.yellow += s.cards?.yellow ?? 0;
+    agg.cards.red += s.cards?.red ?? 0;
+  }
+
+  if (ratingCount > 0) agg.games.rating = (ratingSum / ratingCount).toFixed(2);
+  if (accuracyCount > 0) agg.passes.accuracy = Math.round(accuracySum / accuracyCount);
+
+  return agg;
+}
+
+function CompetitionTabs({
+  statistics,
+  selected,
+  onSelect,
+}: {
+  statistics: any[];
+  selected: number; // -1 = "Tất cả"
+  onSelect: (idx: number) => void;
+}) {
+  const base = "flex items-center gap-2 px-4 py-2 rounded-full text-xs font-medium whitespace-nowrap transition-colors cursor-pointer border";
+  const active = "bg-accent/15 text-accent border-accent";
+  const inactive = "bg-transparent text-text-secondary border-border hover:border-text-muted hover:text-text-primary";
+
+  return (
+    <div className="flex flex-wrap gap-2 mb-4">
+      <button
+        onClick={() => onSelect(-1)}
+        className={`${base} ${selected === -1 ? active : inactive}`}
+      >
+        Tất cả
+      </button>
+      {statistics.map((stat: any, i: number) => (
+        <button
+          key={i}
+          onClick={() => onSelect(i)}
+          className={`${base} ${selected === i ? active : inactive}`}
+        >
+          {stat.league?.logo && (
+            <span className="w-6 h-6 rounded-full bg-white/90 flex items-center justify-center shrink-0">
+              <img src={stat.league.logo} alt="" className="w-4 h-4 object-contain" />
+            </span>
+          )}
+          {stat.league?.name}
+        </button>
+      ))}
+    </div>
+  );
+}
 
 function StatCard({ label, value, sub }: { label: string; value: string | number; sub?: string }) {
   return (
@@ -133,6 +221,9 @@ function TrophiesSection({ playerId }: { playerId: string }) {
 export default function PlayerPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const { data: player, isLoading, error } = usePlayerProfile(id);
+  const [selectedComp, setSelectedComp] = useState(-1); // -1 = "Tất cả"
+  const stats = player?.statistics ?? [];
+  const aggregated = useMemo(() => stats.length > 0 ? aggregateStats(stats) : null, [stats]);
 
   if (isLoading) {
     return (
@@ -155,7 +246,7 @@ export default function PlayerPage({ params }: { params: Promise<{ id: string }>
     );
   }
 
-  const mainStats = player.statistics?.[0];
+  const displayStats = selectedComp === -1 ? aggregated : stats[selectedComp];
   const position = POSITION_VI[player.position] || player.position;
 
   return (
@@ -229,43 +320,48 @@ export default function PlayerPage({ params }: { params: Promise<{ id: string }>
           {/* Main Content */}
           <div className="lg:col-span-2 space-y-6">
             {/* Season Stats */}
-            {mainStats && (
+            {displayStats && (
               <section className="bg-bg-card rounded-2xl border border-border p-5">
                 <h2 className="font-bold text-sm mb-4 flex items-center gap-2">
                   <span className="w-1.5 h-1.5 rounded-full bg-accent" />
                   Thống kê mùa giải
-                  {mainStats.league?.name && (
-                    <span className="text-text-muted font-normal">— {mainStats.league.name}</span>
-                  )}
                 </h2>
 
+                {stats.length > 1 && (
+                  <CompetitionTabs
+                    statistics={stats}
+                    selected={selectedComp}
+                    onSelect={setSelectedComp}
+                  />
+                )}
+
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
-                  <StatCard label="Trận đấu" value={mainStats.games?.appearences ?? 0} sub={`${mainStats.games?.minutes ?? 0} phút`} />
-                  <StatCard label="Bàn thắng" value={mainStats.goals?.total ?? 0} />
-                  <StatCard label="Kiến tạo" value={mainStats.goals?.assists ?? 0} />
-                  <StatCard label="Đánh giá" value={mainStats.games?.rating ? parseFloat(mainStats.games.rating).toFixed(1) : "—"} />
+                  <StatCard label="Trận đấu" value={displayStats.games?.appearences ?? 0} sub={`${displayStats.games?.minutes ?? 0} phút`} />
+                  <StatCard label="Bàn thắng" value={displayStats.goals?.total ?? 0} />
+                  <StatCard label="Kiến tạo" value={displayStats.goals?.assists ?? 0} />
+                  <StatCard label="Đánh giá" value={displayStats.games?.rating ? parseFloat(displayStats.games.rating).toFixed(1) : "—"} />
                 </div>
 
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                  <StatCard label="Sút" value={mainStats.shots?.total ?? 0} sub={`${mainStats.shots?.on ?? 0} trúng đích`} />
-                  <StatCard label="Chuyền" value={mainStats.passes?.total ?? 0} sub={mainStats.passes?.accuracy ? `${mainStats.passes.accuracy}% chính xác` : undefined} />
-                  <StatCard label="Tắc bóng" value={mainStats.tackles?.total ?? 0} sub={`${mainStats.tackles?.interceptions ?? 0} chặn`} />
-                  <StatCard label="Rê bóng" value={mainStats.dribbles?.success ?? 0} sub={`/${mainStats.dribbles?.attempts ?? 0} lần thử`} />
+                  <StatCard label="Sút" value={displayStats.shots?.total ?? 0} sub={`${displayStats.shots?.on ?? 0} trúng đích`} />
+                  <StatCard label="Chuyền" value={displayStats.passes?.total ?? 0} sub={displayStats.passes?.accuracy ? `${displayStats.passes.accuracy}% chính xác` : undefined} />
+                  <StatCard label="Tắc bóng" value={displayStats.tackles?.total ?? 0} sub={`${displayStats.tackles?.interceptions ?? 0} chặn`} />
+                  <StatCard label="Rê bóng" value={displayStats.dribbles?.success ?? 0} sub={`/${displayStats.dribbles?.attempts ?? 0} lần thử`} />
                 </div>
 
                 <div className="flex gap-4 mt-4 pt-4 border-t border-border/50 justify-center">
                   <div className="flex items-center gap-2">
                     <span className="w-4 h-5 bg-yellow-400 rounded-sm" />
-                    <span className="text-sm">{mainStats.cards?.yellow ?? 0}</span>
+                    <span className="text-sm">{displayStats.cards?.yellow ?? 0}</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <span className="w-4 h-5 bg-red-500 rounded-sm" />
-                    <span className="text-sm">{mainStats.cards?.red ?? 0}</span>
+                    <span className="text-sm">{displayStats.cards?.red ?? 0}</span>
                   </div>
                   <div className="flex items-center gap-2 text-sm text-text-muted">
-                    <span>Phạm lỗi: {mainStats.fouls?.committed ?? 0}</span>
+                    <span>Phạm lỗi: {displayStats.fouls?.committed ?? 0}</span>
                     <span>•</span>
-                    <span>Bị phạm lỗi: {mainStats.fouls?.drawn ?? 0}</span>
+                    <span>Bị phạm lỗi: {displayStats.fouls?.drawn ?? 0}</span>
                   </div>
                 </div>
               </section>
@@ -292,31 +388,6 @@ export default function PlayerPage({ params }: { params: Promise<{ id: string }>
               <TrophiesSection playerId={id} />
             </section>
 
-            {/* Other leagues stats */}
-            {player.statistics && player.statistics.length > 1 && (
-              <section className="bg-bg-card rounded-2xl border border-border p-5">
-                <h2 className="font-bold text-sm mb-4 flex items-center gap-2">
-                  <span className="w-1.5 h-1.5 rounded-full bg-purple-500" />
-                  Thống kê các giải khác
-                </h2>
-                <div className="space-y-3">
-                  {player.statistics.slice(1, 4).map((stat: any, i: number) => (
-                    <div key={i} className="flex items-center justify-between py-2 px-3 bg-bg-primary/50 rounded-lg">
-                      <div className="flex items-center gap-2">
-                        {stat.league?.logo && (
-                          <img src={stat.league.logo} alt="" className="w-5 h-5 object-contain" />
-                        )}
-                        <span className="text-sm truncate">{stat.league?.name}</span>
-                      </div>
-                      <div className="flex gap-3 text-xs">
-                        <span>{stat.games?.appearences ?? 0} trận</span>
-                        <span className="text-accent font-bold">{stat.goals?.total ?? 0} bàn</span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </section>
-            )}
           </div>
         </div>
 

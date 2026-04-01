@@ -1,6 +1,7 @@
 "use client";
 
 import { useMatchEvents } from "@/lib/hooks";
+import Link from "next/link";
 
 interface MatchEvent {
   time: { elapsed: number; extra: number | null };
@@ -48,24 +49,19 @@ function EventIcon({ type, detail }: { type: string; detail: string }) {
   return null;
 }
 
+function PlayerLink({ id, name }: { id: number; name: string }) {
+  if (!id) return <span>{name}</span>;
+  return (
+    <Link href={`/cau-thu/${id}`} className="hover:text-accent transition-colors">
+      {name}
+    </Link>
+  );
+}
+
 function EventDetail({ event }: { event: MatchEvent }) {
   const timeStr = event.time.extra
     ? `${event.time.elapsed}+${event.time.extra}'`
     : `${event.time.elapsed}'`;
-
-  let description = event.player.name;
-  if (event.type === "Goal" && event.assist.name) {
-    description += ` (kiến tạo: ${event.assist.name})`;
-  }
-  if (event.type === "subst" && event.assist.name) {
-    description = `${event.assist.name} → ${event.player.name}`;
-  }
-  if (event.type === "Goal" && event.detail === "Own Goal") {
-    description += " (phản lưới)";
-  }
-  if (event.type === "Goal" && event.detail === "Penalty") {
-    description += " (penalty)";
-  }
 
   const typeLabel =
     event.type === "Goal"
@@ -82,6 +78,10 @@ function EventDetail({ event }: { event: MatchEvent }) {
             ? "VAR"
             : event.type;
 
+  let suffix = "";
+  if (event.type === "Goal" && event.detail === "Own Goal") suffix = " (phản lưới)";
+  if (event.type === "Goal" && event.detail === "Penalty") suffix = " (penalty)";
+
   return (
     <div className="flex items-start gap-3 py-3">
       <div className="w-10 text-center shrink-0">
@@ -92,10 +92,28 @@ function EventDetail({ event }: { event: MatchEvent }) {
       </div>
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
-          <img src={event.team.logo} alt="" className="w-4 h-4 object-contain" />
+          <Link href={`/doi-bong/${event.team.id}`}>
+            <img src={event.team.logo} alt="" className="w-4 h-4 object-contain hover:opacity-80 transition-opacity" />
+          </Link>
           <span className="text-xs text-text-muted">{typeLabel}</span>
         </div>
-        <p className="text-sm mt-0.5 truncate">{description}</p>
+        <p className="text-sm mt-0.5 truncate">
+          {event.type === "subst" && event.assist.name ? (
+            <>
+              <PlayerLink id={event.assist.id ?? 0} name={event.assist.name} />
+              {" → "}
+              <PlayerLink id={event.player.id} name={event.player.name} />
+            </>
+          ) : (
+            <>
+              <PlayerLink id={event.player.id} name={event.player.name} />
+              {event.type === "Goal" && event.assist.name && (
+                <> (kiến tạo: <PlayerLink id={event.assist.id ?? 0} name={event.assist.name} />)</>
+              )}
+              {suffix}
+            </>
+          )}
+        </p>
       </div>
     </div>
   );

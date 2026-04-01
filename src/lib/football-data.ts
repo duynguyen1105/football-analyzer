@@ -126,6 +126,47 @@ async function apiFetch<T = any>(path: string, params?: Record<string, string>):
   return json.response as T;
 }
 
+/** Like apiFetch but returns the full JSON envelope (response + paging) for paginated endpoints */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function apiFetchRaw(path: string, params?: Record<string, string>): Promise<{ response: any[]; paging: { current: number; total: number } }> {
+  const apiKey = process.env.API_FOOTBALL_KEY;
+  if (!apiKey) throw new Error("API_FOOTBALL_KEY environment variable is not set");
+
+  const url = new URL(`${BASE_URL}${path}`);
+  if (params) {
+    for (const [k, v] of Object.entries(params)) url.searchParams.set(k, v);
+  }
+
+  await waitForRateLimit();
+
+  const res = await fetch(url.toString(), {
+    headers: { "x-apisports-key": apiKey },
+    next: { revalidate: 300 },
+  } as RequestInit);
+
+  if (res.status === 429) {
+    await new Promise((r) => setTimeout(r, 5000));
+    const retry = await fetch(url.toString(), {
+      headers: { "x-apisports-key": apiKey },
+      next: { revalidate: 300 },
+    } as RequestInit);
+    if (!retry.ok) throw new Error(`API-Football error ${retry.status}`);
+    const json = await retry.json();
+    return { response: json.response ?? [], paging: json.paging ?? { current: 1, total: 1 } };
+  }
+
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
+    throw new Error(`API-Football error ${res.status}: ${text}`);
+  }
+
+  const json = await res.json();
+  if (json.errors && Object.keys(json.errors).length > 0) {
+    throw new Error(`API-Football error: ${JSON.stringify(json.errors)}`);
+  }
+  return { response: json.response ?? [], paging: json.paging ?? { current: 1, total: 1 } };
+}
+
 // ---------------------------------------------------------------------------
 // Date helpers — convert UTC ISO string to GMT+7
 // ---------------------------------------------------------------------------
@@ -315,15 +356,16 @@ export async function getTeamInfo(teamId: number): Promise<TeamInfo | null> {
     const team = teamData?.[0];
     const squad = squadData?.[0]?.players ?? [];
 
-    // Find the current coach - the one whose career entry for this team has no end date
+    // Find the current coach - prefer the one with the most recent start date and no end date
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const currentCoach = (coachData ?? []).find((c: any) => {
-      const currentCareer = c.career?.find(
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (career: any) => career.team?.id === teamId && !career.end
-      );
-      return currentCareer;
-    });
+    const currentCoach = (coachData ?? [])
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .filter((c: any) => c.career?.some((career: any) => career.team?.id === teamId && !career.end))
+      .sort((a: any, b: any) => {
+        const aStart = a.career?.find((c: any) => c.team?.id === teamId && !c.end)?.start ?? "";
+        const bStart = b.career?.find((c: any) => c.team?.id === teamId && !c.end)?.start ?? "";
+        return bStart.localeCompare(aStart); // most recent first
+      })[0];
 
     const result: TeamInfo = {
       id: team?.team?.id ?? teamId,
@@ -911,7 +953,7 @@ export async function getMatchStatistics(fixtureId: number): Promise<TeamStatist
 
 export async function getTopAssists(
   competitionCode: string
-): Promise<{ name: string; team: string; teamLogo: string; assists: number; goals: number; photo: string }[]> {
+): Promise<{ id: number; name: string; team: string; teamLogo: string; assists: number; goals: number; photo: string }[]> {
   const cacheKey = `assists:${competitionCode}`;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const cached = await getCached<any[]>(cacheKey);
@@ -930,6 +972,7 @@ export async function getTopAssists(
     const result = (data ?? []).slice(0, 20).map(
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (s: any) => ({
+        id: s.player?.id ?? 0,
         name: s.player?.name ?? "",
         team: s.statistics?.[0]?.team?.name ?? "",
         teamLogo: s.statistics?.[0]?.team?.logo ?? "",
@@ -1331,6 +1374,39 @@ export async function getTeamSeasonStats(teamId: number, leagueId: number): Prom
 }
 
 // ---------------------------------------------------------------------------
+// Detect which supported league a team belongs to
+// ---------------------------------------------------------------------------
+
+export async function getTeamLeagueId(teamId: number): Promise<number | null> {
+  const cacheKey = `team-league:${teamId}`;
+  const cached = await getCached<number>(cacheKey);
+  if (cached) return cached;
+
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const data = await apiFetch<any[]>("/leagues", {
+      team: String(teamId),
+      season: String(CURRENT_SEASON),
+    });
+
+    if (!data || data.length === 0) return null;
+
+    const supportedIds = new Set(LEAGUE_IDS);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const match = data.find((l: any) => supportedIds.has(l.league?.id));
+    const leagueId = match?.league?.id ?? null;
+
+    if (leagueId) {
+      await setCache(cacheKey, leagueId, CACHE_24_HR);
+    }
+    return leagueId;
+  } catch (error) {
+    console.error(`Failed to detect league for team ${teamId}:`, error);
+    return null;
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Team Squad with detailed info
 // ---------------------------------------------------------------------------
 
@@ -1369,6 +1445,87 @@ export async function getTeamSquad(teamId: number): Promise<SquadPlayer[]> {
     return result;
   } catch (error) {
     console.error(`Failed to fetch squad for team ${teamId}:`, error);
+    return [];
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Team Top Performers — players sorted by goals + assists
+// ---------------------------------------------------------------------------
+
+export interface TopPerformer {
+  id: number;
+  name: string;
+  photo: string;
+  position: string;
+  goals: number;
+  assists: number;
+  appearances: number;
+  rating: string | null;
+}
+
+export async function getTeamTopPerformers(teamId: number, leagueId: number): Promise<TopPerformer[]> {
+  const cacheKey = `team-top-performers:${teamId}:${leagueId}`;
+  const cached = await getCached<TopPerformer[]>(cacheKey);
+  if (cached) return cached;
+
+  try {
+    // Fetch all pages of players for this team in the specific league
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const allData: any[] = [];
+    let page = 1;
+    const maxPages = 3; // Safety limit — squads rarely exceed 60 players
+    while (page <= maxPages) {
+      const raw = await apiFetchRaw("/players", {
+        team: String(teamId),
+        league: String(leagueId),
+        season: String(CURRENT_SEASON),
+        page: String(page),
+      });
+      const items = raw.response ?? [];
+      allData.push(...items);
+      const totalPages = raw.paging?.total ?? 1;
+      if (page >= totalPages) break;
+      page++;
+    }
+
+    if (allData.length === 0) return [];
+
+    // Map and sort players by performance (goals + assists, then appearances)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const performers: TopPerformer[] = allData.map((item: any) => {
+      const player = item.player ?? {};
+      // Find stats matching the specific league + team (not blindly [0])
+      const stats = item.statistics?.find(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (s: any) => s.league?.id === leagueId && s.team?.id === teamId
+      ) ?? item.statistics?.[0] ?? {};
+      return {
+        id: player.id ?? 0,
+        name: player.name ?? "",
+        photo: player.photo ?? "",
+        position: mapPosition(stats.games?.position ?? ""),
+        goals: stats.goals?.total ?? 0,
+        assists: stats.goals?.assists ?? 0,
+        appearances: stats.games?.appearences ?? 0,
+        rating: stats.games?.rating ?? null,
+      };
+    });
+
+    // Sort by goals + assists first, then by appearances
+    performers.sort((a, b) => {
+      const scoreA = a.goals + a.assists;
+      const scoreB = b.goals + b.assists;
+      if (scoreB !== scoreA) return scoreB - scoreA;
+      return b.appearances - a.appearances;
+    });
+
+    // Return top 16 players
+    const result = performers.slice(0, 16);
+    await setCache(cacheKey, result, CACHE_2_HR);
+    return result;
+  } catch (error) {
+    console.error(`Failed to fetch top performers for team ${teamId}:`, error);
     return [];
   }
 }

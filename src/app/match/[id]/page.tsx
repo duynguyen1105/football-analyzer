@@ -316,7 +316,7 @@ export default function MatchPage({ params }: { params: Promise<{ id: string }> 
             <span className="text-[10px] md:text-xs text-text-muted">{match.competition.name} — {match.venue}</span>
           </div>
           <div className="flex items-center justify-between py-3 md:py-4">
-            <div className="flex-1 text-center min-w-0">
+            <Link href={`/doi-bong/${match.homeTeam.id}`} className="flex-1 text-center min-w-0 hover:opacity-80 transition-opacity">
               <div className="flex justify-center mb-2 md:mb-3">
                 <img src={match.homeTeam.crest} alt={match.homeTeam.shortName} className="w-14 h-14 md:w-20 md:h-20 object-contain" />
               </div>
@@ -324,7 +324,7 @@ export default function MatchPage({ params }: { params: Promise<{ id: string }> 
               {homeStanding && (
                 <p className="text-[10px] md:text-xs text-text-muted mt-1">{ordinal(homeStanding.position)} — {homeStanding.points} pts</p>
               )}
-            </div>
+            </Link>
             <div className="px-2 md:px-6 text-center shrink-0">
               {match.status === "FINISHED" && match.score ? (
                 <p className="text-2xl md:text-4xl font-bold">{match.score.home} - {match.score.away}</p>
@@ -340,7 +340,7 @@ export default function MatchPage({ params }: { params: Promise<{ id: string }> 
                 })}
               </p>
             </div>
-            <div className="flex-1 text-center min-w-0">
+            <Link href={`/doi-bong/${match.awayTeam.id}`} className="flex-1 text-center min-w-0 hover:opacity-80 transition-opacity">
               <div className="flex justify-center mb-2 md:mb-3">
                 <img src={match.awayTeam.crest} alt={match.awayTeam.shortName} className="w-14 h-14 md:w-20 md:h-20 object-contain" />
               </div>
@@ -348,7 +348,7 @@ export default function MatchPage({ params }: { params: Promise<{ id: string }> 
               {awayStanding && (
                 <p className="text-[10px] md:text-xs text-text-muted mt-1">{ordinal(awayStanding.position)} — {awayStanding.points} pts</p>
               )}
-            </div>
+            </Link>
           </div>
           {/* Form loads independently */}
           <FormSection matchId={id} />
@@ -486,8 +486,7 @@ export default function MatchPage({ params }: { params: Promise<{ id: string }> 
 
             {/* Player Analysis — loads independently */}
             <PlayerAnalysis
-              homeTeamId={match.homeTeam.id}
-              awayTeamId={match.awayTeam.id}
+              matchId={id}
               homeTeamName={match.homeTeam.shortName}
               awayTeamName={match.awayTeam.shortName}
             />
@@ -531,10 +530,10 @@ export default function MatchPage({ params }: { params: Promise<{ id: string }> 
                         <tr key={s.team.id} className={`border-t border-border/30 ${isHome ? "text-accent" : isAway ? "text-accent-2" : "text-text-secondary"}`}>
                           <td className="py-1.5">{s.position}</td>
                           <td className="py-1.5">
-                            <div className="flex items-center gap-1">
+                            <Link href={`/doi-bong/${s.team.id}`} className="flex items-center gap-1 hover:opacity-80 transition-opacity">
                               <img src={s.team.crest} alt="" className="w-3.5 h-3.5 object-contain" />
                               <span className="font-medium">{s.team.tla}</span>
-                            </div>
+                            </Link>
                           </td>
                           <td className="py-1.5 text-center">{s.won}</td>
                           <td className="py-1.5 text-center">{s.draw}</td>

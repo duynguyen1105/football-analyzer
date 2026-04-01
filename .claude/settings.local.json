@@ -5,7 +5,14 @@
       "Bash(npx next build:*)",
       "Bash(npm install:*)",
       "Bash(./node_modules/.bin/next build)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nfeat: add player and team profile pages\n\n- Add player profile page \\(/cau-thu/[id]\\) with stats, transfers, trophies\n- Add team profile page \\(/doi-bong/[id]\\) with squad, season stats, recent matches\n- Add API endpoints for player and team data\n- Link players in KeyPlayers component to their profile pages\n- Support for Vietnamese translations\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(git push:*)",
+      "Bash(git diff:*)",
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nstyle: improve soi-keo page layout\n\n- Increase club logo size from 20px to 40px\n- Make team names more prominent \\(font-semibold\\)\n- Reduce odds badge size for better balance\n- Add 2-column grid layout on large screens\n- Better date/time display in center\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nfix: use league logo images in soi-keo page\n\nReplace text flags \\(ES, IT, DE, FR\\) with actual league logo images\nin the header, breadcrumb, and filter buttons.\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(git restore:*)",
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nfix: add photos for coaches and top scorers + fix current coach selection\n\n- Add coach photo from API-Football /coachs endpoint\n- Fix coach selection to find current coach \\(career entry with no end date\\)\n- Add player id and photo to top scorers data\n- Update UI to display coach photos and top scorer photos\n- Make top scorers clickable to player profiles\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")"
     ]
   }
 }

@@ -3,6 +3,7 @@ import {
   getTeamSeasonStats,
   getTeamSquad,
   getTeamRecentMatches,
+  getTeamLeagueId,
 } from "@/lib/football-data";
 
 export async function GET(request: Request) {
@@ -18,11 +19,14 @@ export async function GET(request: Request) {
   const teamId = parseInt(id, 10);
 
   if (section === "profile") {
-    const profile = await getTeamProfile(teamId);
+    const [profile, leagueId] = await Promise.all([
+      getTeamProfile(teamId),
+      getTeamLeagueId(teamId),
+    ]);
     if (!profile) {
       return Response.json({ error: "Team not found" }, { status: 404 });
     }
-    return Response.json(profile, {
+    return Response.json({ ...profile, leagueId }, {
       headers: { "Cache-Control": "s-maxage=86400, stale-while-revalidate=172800" },
     });
   }

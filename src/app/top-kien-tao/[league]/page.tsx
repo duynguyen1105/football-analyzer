@@ -24,6 +24,7 @@ const CODE_TO_SLUG: Record<string, string> = {
 };
 
 interface AssistPlayer {
+  id: number;
   name: string;
   team: string;
   teamLogo: string;
@@ -34,7 +35,10 @@ interface AssistPlayer {
 
 function PlayerRow({ player, rank }: { player: AssistPlayer; rank: number }) {
   return (
-    <div className="flex items-center gap-3 py-3 border-b border-border/30 last:border-0">
+    <Link
+      href={player.id ? `/cau-thu/${player.id}` : "#"}
+      className="flex items-center gap-3 py-3 border-b border-border/30 last:border-0 hover:bg-bg-primary/50 transition-colors rounded-lg px-2 -mx-2"
+    >
       {/* Rank */}
       <div className="w-8 text-center">
         <span
@@ -88,7 +92,7 @@ function PlayerRow({ player, rank }: { player: AssistPlayer; rank: number }) {
           <p className="text-[10px] text-text-muted">Bàn thắng</p>
         </div>
       </div>
-    </div>
+    </Link>
   );
 }
 

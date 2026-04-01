@@ -157,6 +157,15 @@ export function useMatchStatistics(matchId: string) {
   });
 }
 
+export function useMatchPerformers(matchId: string) {
+  return useQuery({
+    queryKey: ["match", matchId, "performers"],
+    queryFn: () =>
+      fetch(`/api/match?id=${matchId}&section=performers`).then((r) => r.json()),
+    staleTime: 2 * 60 * 60 * 1000, // 2 hours
+  });
+}
+
 export function useTopAssists(leagueCode: string) {
   return useQuery({
     queryKey: ["top-assists", leagueCode],

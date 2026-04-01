@@ -2,6 +2,7 @@
 
 import { useMatchLineups } from "@/lib/hooks";
 import { MatchLineup } from "@/lib/types";
+import Link from "next/link";
 
 export function MatchLineups({ matchId }: { matchId: string }) {
   const { data, isLoading } = useMatchLineups(matchId);
@@ -47,10 +48,12 @@ function LineupColumn({ lineup }: { lineup: MatchLineup }) {
     <div>
       {/* Team header + formation */}
       <div className="flex items-center gap-2 mb-3">
-        {lineup.team.logo && (
-          <img src={lineup.team.logo} alt="" className="w-5 h-5 object-contain" />
-        )}
-        <span className="text-xs font-semibold text-text-primary">{lineup.team.name}</span>
+        <Link href={`/doi-bong/${lineup.team.id}`} className="flex items-center gap-2 hover:opacity-80 transition-opacity">
+          {lineup.team.logo && (
+            <img src={lineup.team.logo} alt="" className="w-5 h-5 object-contain" />
+          )}
+          <span className="text-xs font-semibold text-text-primary">{lineup.team.name}</span>
+        </Link>
         {lineup.formation && (
           <span className="text-[10px] font-medium text-accent bg-accent/10 px-1.5 py-0.5 rounded-full ml-auto">
             {lineup.formation}
@@ -61,16 +64,17 @@ function LineupColumn({ lineup }: { lineup: MatchLineup }) {
       {/* Starting XI */}
       <div className="space-y-1">
         {lineup.startXI.map((p) => (
-          <div
+          <Link
             key={p.id || p.name}
-            className="flex items-center gap-2 py-1 px-2 rounded bg-bg-primary/50 text-xs"
+            href={p.id ? `/cau-thu/${p.id}` : "#"}
+            className="flex items-center gap-2 py-1 px-2 rounded bg-bg-primary/50 text-xs hover:bg-bg-primary/80 transition-colors"
           >
             <span className="w-5 text-center text-text-muted font-mono text-[10px]">
               {p.number || ""}
             </span>
             <span className="flex-1 truncate text-text-secondary">{p.name}</span>
             <span className="text-[10px] text-text-muted">{p.pos}</span>
-          </div>
+          </Link>
         ))}
       </div>
 
@@ -82,15 +86,16 @@ function LineupColumn({ lineup }: { lineup: MatchLineup }) {
           </p>
           <div className="space-y-0.5">
             {lineup.substitutes.slice(0, 7).map((p) => (
-              <div
+              <Link
                 key={p.id || p.name}
-                className="flex items-center gap-2 py-0.5 px-2 text-[11px] text-text-muted"
+                href={p.id ? `/cau-thu/${p.id}` : "#"}
+                className="flex items-center gap-2 py-0.5 px-2 text-[11px] text-text-muted hover:text-text-secondary transition-colors"
               >
                 <span className="w-5 text-center font-mono text-[10px]">
                   {p.number || ""}
                 </span>
                 <span className="flex-1 truncate">{p.name}</span>
-              </div>
+              </Link>
             ))}
           </div>
         </>

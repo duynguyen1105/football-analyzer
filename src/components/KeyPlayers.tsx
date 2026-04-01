@@ -1,6 +1,6 @@
 "use client";
 
-import { useMatchTeams } from "@/lib/hooks";
+import { useMatchPerformers } from "@/lib/hooks";
 import Link from "next/link";
 
 interface KeyPlayersProps {
@@ -9,12 +9,15 @@ interface KeyPlayersProps {
   awayTeam: { name: string; shortName: string; crest: string };
 }
 
-interface Player {
+interface Performer {
   id: number;
   name: string;
+  photo: string;
   position: string;
-  nationality: string;
-  photo?: string;
+  goals: number;
+  assists: number;
+  appearances: number;
+  rating: string | null;
 }
 
 const POSITION_MAP: Record<string, string> = {
@@ -22,93 +25,65 @@ const POSITION_MAP: Record<string, string> = {
   Midfield: "Tiền vệ",
   Defence: "Hậu vệ",
   Goalkeeper: "Thủ môn",
+  Attacker: "Tấn công",
+  Midfielder: "Tiền vệ",
+  Defender: "Hậu vệ",
 };
 
-const POSITION_ORDER = ["Offence", "Midfield", "Defence", "Goalkeeper"];
-const MAX_PER_POSITION = 4;
+function PlayerRow({ player }: { player: Performer }) {
+  const hasStats = player.goals > 0 || player.assists > 0;
 
-function groupByPosition(
-  squad: Player[]
-): Record<string, Player[]> {
-  const groups: Record<string, Player[]> = {};
-
-  for (const pos of POSITION_ORDER) {
-    groups[pos] = [];
-  }
-
-  for (const player of squad) {
-    const pos = POSITION_ORDER.includes(player.position)
-      ? player.position
-      : null;
-    if (pos) {
-      groups[pos].push(player);
-    }
-  }
-
-  // Limit per position
-  for (const pos of POSITION_ORDER) {
-    groups[pos] = groups[pos].slice(0, MAX_PER_POSITION);
-  }
-
-  return groups;
-}
-
-function PlayerRow({ player }: { player: Player }) {
   return (
     <Link
       href={`/cau-thu/${player.id}`}
-      className="flex items-center gap-2 py-1.5 hover:bg-bg-primary/50 rounded-lg px-1 -mx-1 transition-colors"
+      className="flex items-center gap-3 py-2 px-2 -mx-2 rounded-lg hover:bg-bg-primary/50 transition-colors"
     >
       {player.photo ? (
         <img
           src={player.photo}
           alt={player.name}
-          className="w-8 h-8 rounded-full object-cover bg-border/20 shrink-0"
+          className="w-10 h-10 rounded-full object-cover bg-border/20 shrink-0"
           loading="lazy"
         />
       ) : (
-        <div className="w-8 h-8 rounded-full bg-border/20 flex items-center justify-center text-xs text-text-muted shrink-0">
+        <div className="w-10 h-10 rounded-full bg-border/20 flex items-center justify-center text-sm text-text-muted shrink-0">
           👤
         </div>
       )}
-      <div className="min-w-0">
-        <span className="text-sm text-text-primary block truncate hover:text-accent transition-colors">{player.name}</span>
-        {player.nationality && (
-          <span className="text-[10px] text-text-muted">{player.nationality}</span>
-        )}
+      <div className="flex-1 min-w-0">
+        <p className="text-sm font-medium text-text-primary truncate">{player.name}</p>
+        <p className="text-[10px] text-text-muted">
+          {POSITION_MAP[player.position] || player.position}
+          {player.appearances > 0 && ` • ${player.appearances} trận`}
+        </p>
       </div>
+      {hasStats && (
+        <div className="flex gap-2 shrink-0">
+          {player.goals > 0 && (
+            <span className="text-xs px-1.5 py-0.5 rounded bg-accent/10 text-accent font-medium">
+              {player.goals} bàn
+            </span>
+          )}
+          {player.assists > 0 && (
+            <span className="text-xs px-1.5 py-0.5 rounded bg-purple-500/10 text-purple-400 font-medium">
+              {player.assists} kiến tạo
+            </span>
+          )}
+        </div>
+      )}
     </Link>
   );
 }
 
-function PositionGroup({
-  label,
-  players,
-}: {
-  label: string;
-  players: Player[];
-}) {
-  if (players.length === 0) return null;
-  return (
-    <div className="mb-3 last:mb-0">
-      <p className="text-xs font-semibold text-text-muted uppercase tracking-wide mb-1">
-        {label}
-      </p>
-      {players.map((p, i) => (
-        <PlayerRow key={`${p.name}-${i}`} player={p} />
-      ))}
-    </div>
-  );
-}
-
-function SquadColumn({
+function PerformersColumn({
   team,
-  squad,
+  performers,
 }: {
   team: { name: string; shortName: string; crest: string };
-  squad: Player[];
+  performers: Performer[];
 }) {
-  const groups = groupByPosition(squad);
+  // Show top 8 performers
+  const topPerformers = performers.slice(0, 8);
 
   return (
     <div>
@@ -122,13 +97,11 @@ function SquadColumn({
           {team.shortName}
         </span>
       </div>
-      {POSITION_ORDER.map((pos) => (
-        <PositionGroup
-          key={pos}
-          label={POSITION_MAP[pos] || pos}
-          players={groups[pos]}
-        />
-      ))}
+      <div className="space-y-0.5">
+        {topPerformers.map((p) => (
+          <PlayerRow key={p.id} player={p} />
+        ))}
+      </div>
     </div>
   );
 }
@@ -139,11 +112,12 @@ function SectionSkeleton() {
       {[0, 1].map((col) => (
         <div key={col} className="space-y-3">
           <div className="h-5 w-32 bg-border/30 rounded animate-pulse" />
-          {[...Array(4)].map((_, i) => (
-            <div key={i} className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-full bg-border/20 animate-pulse shrink-0" />
+          {[...Array(6)].map((_, i) => (
+            <div key={i} className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-border/20 animate-pulse shrink-0" />
               <div className="flex-1">
-                <div className="h-4 bg-border/30 rounded animate-pulse w-3/4" />
+                <div className="h-4 bg-border/30 rounded animate-pulse w-3/4 mb-1" />
+                <div className="h-3 bg-border/20 rounded animate-pulse w-1/2" />
               </div>
             </div>
           ))}
@@ -154,7 +128,7 @@ function SectionSkeleton() {
 }
 
 export function KeyPlayers({ matchId, homeTeam, awayTeam }: KeyPlayersProps) {
-  const { data, isLoading } = useMatchTeams(matchId);
+  const { data, isLoading } = useMatchPerformers(matchId);
 
   return (
     <section className="bg-bg-card rounded-2xl border border-border p-4 md:p-5">
@@ -166,19 +140,19 @@ export function KeyPlayers({ matchId, homeTeam, awayTeam }: KeyPlayersProps) {
       {isLoading && <SectionSkeleton />}
 
       {!isLoading && data && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {data.homeTeamInfo && (
-            <SquadColumn team={homeTeam} squad={data.homeTeamInfo.squad} />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {data.homePerformers && data.homePerformers.length > 0 && (
+            <PerformersColumn team={homeTeam} performers={data.homePerformers} />
           )}
-          {data.awayTeamInfo && (
-            <SquadColumn team={awayTeam} squad={data.awayTeamInfo.squad} />
+          {data.awayPerformers && data.awayPerformers.length > 0 && (
+            <PerformersColumn team={awayTeam} performers={data.awayPerformers} />
           )}
         </div>
       )}
 
-      {!isLoading && !data?.homeTeamInfo && !data?.awayTeamInfo && (
+      {!isLoading && (!data?.homePerformers?.length && !data?.awayPerformers?.length) && (
         <p className="text-xs text-text-muted text-center py-4">
-          Không có dữ liệu đội hình.
+          Không có dữ liệu cầu thủ.
         </p>
       )}
     </section>

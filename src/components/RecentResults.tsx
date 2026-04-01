@@ -1,6 +1,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
+import Link from "next/link";
 
 interface RecentResultsProps {
   matchId: string;
@@ -22,6 +23,7 @@ interface RawMatch {
 interface ParsedResult {
   id: number;
   date: string;
+  opponentId: number;
   opponentName: string;
   opponentCrest: string;
   teamGoals: number;
@@ -71,6 +73,7 @@ function parseResults(teamId: number, matches: RawMatch[]): ParsedResult[] {
       return {
         id: m.id,
         date: `${day}/${month}`,
+        opponentId: opponent.id,
         opponentName: opponent.shortName || opponent.name,
         opponentCrest: opponent.crest,
         teamGoals,
@@ -142,14 +145,16 @@ function TeamColumn({
           className="flex items-center gap-1.5 md:gap-2 py-1.5 px-1.5 md:px-2 rounded-lg bg-bg-primary/50 text-xs md:text-sm"
         >
           <ResultIndicator result={r.result} />
-          <img
-            src={r.opponentCrest}
-            alt={r.opponentName}
-            className="w-4 h-4 md:w-5 md:h-5 object-contain shrink-0"
-          />
-          <span className="flex-1 truncate text-xs text-text-secondary min-w-0">
-            {r.isHome ? "vs" : "@"} {r.opponentName}
-          </span>
+          <Link href={`/doi-bong/${r.opponentId}`} className="flex items-center gap-1.5 flex-1 min-w-0 hover:opacity-80 transition-opacity">
+            <img
+              src={r.opponentCrest}
+              alt={r.opponentName}
+              className="w-4 h-4 md:w-5 md:h-5 object-contain shrink-0"
+            />
+            <span className="flex-1 truncate text-xs text-text-secondary min-w-0">
+              {r.isHome ? "vs" : "@"} {r.opponentName}
+            </span>
+          </Link>
           <span className="font-bold text-xs whitespace-nowrap shrink-0">
             {r.teamGoals}-{r.opponentGoals}
           </span>

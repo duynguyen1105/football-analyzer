@@ -12,7 +12,9 @@ import {
   getMatchLineups,
   getMatchEvents,
   getMatchStatistics,
+  getTeamTopPerformers,
 } from "@/lib/football-data";
+import { getLeagueId } from "@/lib/constants";
 import { computePrediction } from "@/lib/prediction";
 import { computeImportance } from "@/lib/importance";
 
@@ -137,6 +139,23 @@ export async function GET(request: Request) {
     const statistics = await getMatchStatistics(matchId);
     return Response.json(statistics, {
       headers: { "Cache-Control": "s-maxage=300, stale-while-revalidate=600" },
+    });
+  }
+
+  // "performers" = top performers for both teams (sorted by goals + assists)
+  if (section === "performers") {
+    const leagueId = getLeagueId(match.competition.code);
+    if (!leagueId) {
+      return Response.json({ homePerformers: [], awayPerformers: [] }, {
+        headers: { "Cache-Control": "s-maxage=7200, stale-while-revalidate=14400" },
+      });
+    }
+    const [homePerformers, awayPerformers] = await Promise.all([
+      getTeamTopPerformers(match.homeTeam.id, leagueId),
+      getTeamTopPerformers(match.awayTeam.id, leagueId),
+    ]);
+    return Response.json({ homePerformers, awayPerformers }, {
+      headers: { "Cache-Control": "s-maxage=7200, stale-while-revalidate=14400" },
     });
   }
 

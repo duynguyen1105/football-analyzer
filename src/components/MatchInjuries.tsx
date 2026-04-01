@@ -2,6 +2,7 @@
 
 import { useMatchInjuries } from "@/lib/hooks";
 import { MatchInjury } from "@/lib/types";
+import Link from "next/link";
 
 // Translation maps for injury types and reasons
 const TYPE_VI: Record<string, string> = {
@@ -146,9 +147,10 @@ function InjuryColumn({ teamName, injuries }: { teamName: string; injuries: Matc
       ) : (
         <div className="space-y-1.5">
           {injuries.map((inj, idx) => (
-            <div
+            <Link
               key={`${inj.player.id}-${idx}`}
-              className="flex items-center gap-2 py-1.5 px-2 rounded-lg bg-bg-primary/50 text-xs"
+              href={inj.player.id ? `/cau-thu/${inj.player.id}` : "#"}
+              className="flex items-center gap-2 py-1.5 px-2 rounded-lg bg-bg-primary/50 text-xs hover:bg-bg-primary/80 transition-colors"
             >
               {inj.player.photo && (
                 <img
@@ -167,7 +169,7 @@ function InjuryColumn({ teamName, injuries }: { teamName: string; injuries: Matc
               >
                 {translateInjury(inj.type, inj.reason)}
               </span>
-            </div>
+            </Link>
           ))}
         </div>
       )}

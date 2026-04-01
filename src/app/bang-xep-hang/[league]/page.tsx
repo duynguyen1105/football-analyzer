@@ -127,10 +127,10 @@ export default async function StandingsPage({ params }: Props) {
                     <tr key={r.team.id} className={`border-t border-border/30 ${borderClass}`}>
                       <td className="py-2 px-2 text-text-muted">{r.position}</td>
                       <td className="py-2 px-2">
-                        <div className="flex items-center gap-1.5">
+                        <Link href={`/doi-bong/${r.team.id}`} className="flex items-center gap-1.5 hover:opacity-80 transition-opacity">
                           <img src={r.team.crest} alt="" className="w-4 h-4 object-contain shrink-0" loading="lazy" />
                           <span className="text-text-primary font-medium truncate">{r.team.shortName}</span>
-                        </div>
+                        </Link>
                       </td>
                       <td className="py-2 px-1.5 text-center">{r.playedGames}</td>
                       <td className="py-2 px-1.5 text-center">{r.won}</td>

@@ -216,7 +216,9 @@ export default function Home() {
                   : "text-text-secondary border border-border hover:bg-bg-card-hover"
               }`}
             >
-              <img src={l.logo} alt="" className="w-4 h-4 object-contain" />
+              <span className="w-5 h-5 rounded-full bg-white/90 flex items-center justify-center shrink-0">
+                <img src={l.logo} alt="" className="w-3.5 h-3.5 object-contain" />
+              </span>
               <span className="hidden sm:inline">{l.name}</span>
               <span className="sm:hidden">{l.code === "BL1" ? "BL" : l.code}</span>
             </button>

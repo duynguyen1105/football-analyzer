@@ -243,8 +243,8 @@ export default function TeamPage({ params }: { params: Promise<{ id: string }> }
   const { id } = use(params);
   const { data: team, isLoading, error } = useTeamProfile(id);
 
-  // Try to find league for this team (for stats)
-  const defaultLeague = LEAGUES[0]; // Default to Premier League
+  // Use the leagueId from the profile (detected via API), fallback to PL
+  const teamLeagueId = team?.leagueId ?? LEAGUES[0].id;
 
   if (isLoading) {
     return (
@@ -334,7 +334,7 @@ export default function TeamPage({ params }: { params: Promise<{ id: string }> }
                 <span className="w-1.5 h-1.5 rounded-full bg-accent" />
                 Thống kê mùa giải
               </h2>
-              <StatsSection teamId={id} leagueId={defaultLeague.id} />
+              <StatsSection teamId={id} leagueId={teamLeagueId} />
             </section>
 
             {/* Squad */}

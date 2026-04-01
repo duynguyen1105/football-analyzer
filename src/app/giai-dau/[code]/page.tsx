@@ -146,7 +146,7 @@ export default async function LeaguePage({ params }: Props) {
                           {r.position}
                         </td>
                         <td className="py-2 px-2">
-                          <div className="flex items-center gap-1.5">
+                          <Link href={`/doi-bong/${r.team.id}`} className="flex items-center gap-1.5 hover:opacity-80 transition-opacity">
                             <img
                               src={r.team.crest}
                               alt=""
@@ -156,7 +156,7 @@ export default async function LeaguePage({ params }: Props) {
                             <span className="text-text-primary font-medium truncate">
                               {r.team.shortName}
                             </span>
-                          </div>
+                          </Link>
                         </td>
                         <td className="py-2 px-1.5 text-center">
                           {r.playedGames}
