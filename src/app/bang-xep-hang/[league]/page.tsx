@@ -18,10 +18,10 @@ export function generateStaticParams() {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { league: slug } = await params;
   const league = getLeagueBySlug(slug);
-  if (!league) return { title: "Bang xep hang" };
+  if (!league) return { title: "Bảng xếp hạng" };
 
-  const title = `Bang xep hang ${league.name} moi nhat`;
-  const description = `Bang xep hang ${league.name} mua giai 2025/26. Thong ke chi tiet: diem, thang, hoa, thua, ban thang, hieu so.`;
+  const title = `Bảng xếp hạng ${league.name} mới nhất`;
+  const description = `Bảng xếp hạng ${league.name} mùa giải 2025/26. Thống kê chi tiết: điểm, thắng, hòa, thua, bàn thắng, hiệu số.`;
 
   return {
     title,
@@ -41,8 +41,8 @@ export default async function StandingsPage({ params }: Props) {
   const totalTeams = standings.length;
 
   const breadcrumb = buildBreadcrumbSchema([
-    { name: "Trang chu", url: baseUrl },
-    { name: `Bang xep hang ${league.name}`, url: `${baseUrl}/bang-xep-hang/${slug}` },
+    { name: "Trang chủ", url: baseUrl },
+    { name: `Bảng xếp hạng ${league.name}`, url: `${baseUrl}/bang-xep-hang/${slug}` },
   ]);
 
   return (
@@ -58,16 +58,16 @@ export default async function StandingsPage({ params }: Props) {
       <main className="max-w-4xl mx-auto px-3 py-6">
         {/* Breadcrumb */}
         <div className="flex items-center gap-2 text-xs text-text-muted mb-4">
-          <Link href="/" className="hover:text-text-primary transition-colors">Trang chu</Link>
+          <Link href="/" className="hover:text-text-primary transition-colors">Trang chủ</Link>
           <span>/</span>
-          <span className="text-text-secondary">{league.flag} Bang xep hang {league.name}</span>
+          <span className="text-text-secondary">{league.flag} Bảng xếp hạng {league.name}</span>
         </div>
 
         <h1 className="text-xl md:text-2xl font-bold mb-2">
-          {league.flag} Bang xep hang {league.name}
+          {league.flag} Bảng xếp hạng {league.name}
         </h1>
         <p className="text-sm text-text-secondary mb-6">
-          Mua giai 2025/26 &middot; Cap nhat moi 30 phut
+          Mùa giải 2025/26 &middot; Cập nhật mỗi 30 phút
         </p>
 
         {/* Other league links */}
@@ -94,7 +94,7 @@ export default async function StandingsPage({ params }: Props) {
 
         {standings.length === 0 ? (
           <div className="text-center py-16 text-text-muted text-sm">
-            Chua co du lieu bang xep hang.
+            Chưa có dữ liệu bảng xếp hạng.
           </div>
         ) : (
           <div className="bg-bg-card rounded-xl border border-border overflow-x-auto">
@@ -102,7 +102,7 @@ export default async function StandingsPage({ params }: Props) {
               <thead>
                 <tr className="text-text-muted border-b border-border">
                   <th className="text-left py-2.5 px-2 w-8">#</th>
-                  <th className="text-left py-2.5 px-2">Doi</th>
+                  <th className="text-left py-2.5 px-2">Đội</th>
                   <th className="text-center py-2.5 px-1.5 w-8">Tr</th>
                   <th className="text-center py-2.5 px-1.5 w-8">T</th>
                   <th className="text-center py-2.5 px-1.5 w-8">H</th>
@@ -158,7 +158,7 @@ export default async function StandingsPage({ params }: Props) {
           </div>
           <div className="flex items-center gap-1">
             <span className="w-2.5 h-2.5 bg-red-500 rounded-sm" />
-            <span>Xuong hang</span>
+            <span>Xuống hạng</span>
           </div>
         </div>
 
@@ -168,13 +168,13 @@ export default async function StandingsPage({ params }: Props) {
             href={`/lich-thi-dau/${slug}`}
             className="text-sm text-accent hover:underline"
           >
-            Xem lich thi dau {league.name} &rarr;
+            Xem lịch thi đấu {league.name} &rarr;
           </Link>
         </div>
 
         <footer className="mt-10 py-4 border-t border-border text-center text-[10px] text-text-muted">
-          <p>MatchDay Analyst &mdash; Nhan dinh bong da truoc tran</p>
-          <p className="mt-0.5">Du lieu tu Football-Data.org</p>
+          <p>MatchDay Analyst &mdash; Nhận định bóng đá trước trận</p>
+          <p className="mt-0.5">Dữ liệu từ Football-Data.org</p>
         </footer>
       </main>
     </>

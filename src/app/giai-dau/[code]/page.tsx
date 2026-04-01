@@ -15,9 +15,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { code } = await params;
   const league = LEAGUES.find((l) => l.code === code);
   return {
-    title: league ? `Bang xep hang ${league.name}` : "Giai dau",
+    title: league ? `Bảng xếp hạng ${league.name}` : "Giải đấu",
     description: league
-      ? `Bang xep hang va lich thi dau ${league.name} mua giai 2025/26`
+      ? `Bảng xếp hạng và lịch thi đấu ${league.name} mùa giải 2025/26`
       : "",
   };
 }
@@ -43,13 +43,13 @@ export default async function LeaguePage({ params }: Props) {
         <Navbar />
         <main className="max-w-4xl mx-auto px-4 py-20 text-center">
           <p className="text-text-muted text-lg">
-            Khong tim thay giai dau nay.
+            Không tìm thấy giải đấu này.
           </p>
           <Link
             href="/"
             className="text-accent mt-4 inline-block hover:underline"
           >
-            Ve trang chu
+            Về trang chủ
           </Link>
         </main>
       </>
@@ -89,7 +89,7 @@ export default async function LeaguePage({ params }: Props) {
             href="/"
             className="hover:text-text-primary transition-colors"
           >
-            Trang chu
+            Trang chủ
           </Link>
           <span>/</span>
           <span className="text-text-secondary">
@@ -104,13 +104,13 @@ export default async function LeaguePage({ params }: Props) {
         {/* Standings table */}
         {standings.length > 0 && (
           <section className="mb-8">
-            <h2 className="text-base font-bold mb-3">Bang xep hang</h2>
+            <h2 className="text-base font-bold mb-3">Bảng xếp hạng</h2>
             <div className="bg-bg-card rounded-xl border border-border overflow-x-auto">
               <table className="w-full text-xs md:text-sm">
                 <thead>
                   <tr className="text-text-muted border-b border-border">
                     <th className="text-left py-2.5 px-2 w-8">#</th>
-                    <th className="text-left py-2.5 px-2">Doi</th>
+                    <th className="text-left py-2.5 px-2">Đội</th>
                     <th className="text-center py-2.5 px-1.5 w-8">Tr</th>
                     <th className="text-center py-2.5 px-1.5 w-8">T</th>
                     <th className="text-center py-2.5 px-1.5 w-8">H</th>
@@ -192,7 +192,7 @@ export default async function LeaguePage({ params }: Props) {
               </div>
               <div className="flex items-center gap-1">
                 <span className="w-2.5 h-2.5 bg-red-500 rounded-sm" />
-                <span>Xuong hang</span>
+                <span>Xuống hạng</span>
               </div>
             </div>
           </section>
@@ -201,12 +201,12 @@ export default async function LeaguePage({ params }: Props) {
         {/* Upcoming matches */}
         <section>
           <h2 className="text-base font-bold mb-3">
-            Lich thi dau 7 ngay toi
+            Lịch thi đấu 7 ngày tới
           </h2>
 
           {leagueMatches.length === 0 ? (
             <div className="text-center py-10 text-text-muted text-sm">
-              Khong co tran dau nao trong 7 ngay toi.
+              Không có trận đấu nào trong 7 ngày tới.
             </div>
           ) : (
             <div className="space-y-4">
@@ -258,8 +258,8 @@ export default async function LeaguePage({ params }: Props) {
                         </div>
                         <span className="text-[10px] font-medium text-accent bg-accent/10 px-2 py-0.5 rounded-full shrink-0">
                           {m.status === "FINISHED"
-                            ? "Xem lai"
-                            : "Phan tich"}
+                            ? "Xem lại"
+                            : "Phân tích"}
                         </span>
                       </Link>
                     ))}
@@ -272,8 +272,8 @@ export default async function LeaguePage({ params }: Props) {
 
         {/* Footer */}
         <footer className="mt-10 py-4 border-t border-border text-center text-[10px] text-text-muted">
-          <p>MatchDay Analyst &mdash; Nhan dinh bong da truoc tran</p>
-          <p className="mt-0.5">Du lieu tu Football-Data.org</p>
+          <p>MatchDay Analyst &mdash; Nhận định bóng đá trước trận</p>
+          <p className="mt-0.5">Dữ liệu từ Football-Data.org</p>
         </footer>
       </main>
     </>

@@ -18,10 +18,10 @@ export function generateStaticParams() {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { league: slug } = await params;
   const league = getLeagueBySlug(slug);
-  if (!league) return { title: "Lich thi dau" };
+  if (!league) return { title: "Lịch thi đấu" };
 
-  const title = `Lich thi dau ${league.name} moi nhat`;
-  const description = `Lich thi dau ${league.name} mua giai 2025/26. Cap nhat hang ngay voi thoi gian Viet Nam (GMT+7).`;
+  const title = `Lịch thi đấu ${league.name} mới nhất`;
+  const description = `Lịch thi đấu ${league.name} mùa giải 2025/26. Cập nhật hàng ngày với thời gian Việt Nam (GMT+7).`;
 
   return {
     title,
@@ -52,8 +52,8 @@ export default async function SchedulePage({ params }: Props) {
   }
 
   const breadcrumb = buildBreadcrumbSchema([
-    { name: "Trang chu", url: baseUrl },
-    { name: `Lich thi dau ${league.name}`, url: `${baseUrl}/lich-thi-dau/${slug}` },
+    { name: "Trang chủ", url: baseUrl },
+    { name: `Lịch thi đấu ${league.name}`, url: `${baseUrl}/lich-thi-dau/${slug}` },
   ]);
 
   return (
@@ -69,16 +69,16 @@ export default async function SchedulePage({ params }: Props) {
       <main className="max-w-4xl mx-auto px-3 py-6">
         {/* Breadcrumb */}
         <div className="flex items-center gap-2 text-xs text-text-muted mb-4">
-          <Link href="/" className="hover:text-text-primary transition-colors">Trang chu</Link>
+          <Link href="/" className="hover:text-text-primary transition-colors">Trang chủ</Link>
           <span>/</span>
-          <span className="text-text-secondary">{league.flag} Lich thi dau {league.name}</span>
+          <span className="text-text-secondary">{league.flag} Lịch thi đấu {league.name}</span>
         </div>
 
         <h1 className="text-xl md:text-2xl font-bold mb-2">
-          {league.flag} Lich thi dau {league.name}
+          {league.flag} Lịch thi đấu {league.name}
         </h1>
         <p className="text-sm text-text-secondary mb-6">
-          Cap nhat lich dau 10 ngay toi &middot; Gio Viet Nam (GMT+7)
+          Cập nhật lịch đấu 10 ngày tới &middot; Giờ Việt Nam (GMT+7)
         </p>
 
         {/* Other league links */}
@@ -105,7 +105,7 @@ export default async function SchedulePage({ params }: Props) {
 
         {matches.length === 0 ? (
           <div className="text-center py-16 text-text-muted text-sm">
-            Khong co tran dau nao trong 14 ngay toi.
+            Không có trận đấu nào trong 14 ngày tới.
           </div>
         ) : (
           <div className="space-y-4">
@@ -137,7 +137,7 @@ export default async function SchedulePage({ params }: Props) {
                         <img src={m.awayTeam.crest} alt="" className="w-5 h-5 object-contain shrink-0" loading="lazy" />
                       </div>
                       <span className="text-[10px] font-medium text-accent bg-accent/10 px-2 py-0.5 rounded-full shrink-0">
-                        {m.status === "FINISHED" ? "Xem lai" : "Phan tich"}
+                        {m.status === "FINISHED" ? "Xem lại" : "Phân tích"}
                       </span>
                     </Link>
                   ))}
@@ -153,13 +153,13 @@ export default async function SchedulePage({ params }: Props) {
             href={`/bang-xep-hang/${slug}`}
             className="text-sm text-accent hover:underline"
           >
-            Xem bang xep hang {league.name} &rarr;
+            Xem bảng xếp hạng {league.name} &rarr;
           </Link>
         </div>
 
         <footer className="mt-10 py-4 border-t border-border text-center text-[10px] text-text-muted">
-          <p>MatchDay Analyst &mdash; Nhan dinh bong da truoc tran</p>
-          <p className="mt-0.5">Du lieu tu Football-Data.org</p>
+          <p>MatchDay Analyst &mdash; Nhận định bóng đá trước trận</p>
+          <p className="mt-0.5">Dữ liệu từ Football-Data.org</p>
         </footer>
       </main>
     </>

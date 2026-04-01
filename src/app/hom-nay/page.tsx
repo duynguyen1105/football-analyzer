@@ -7,9 +7,9 @@ import { Match, Standing } from "@/lib/types";
 import Link from "next/link";
 
 export const metadata = {
-  title: "Nhan Dinh Bong Da Hom Nay",
+  title: "Nhận Định Bóng Đá Hôm Nay",
   description:
-    "Nhan dinh va du doan tat ca tran dau hom nay tu Premier League, La Liga, Serie A, Bundesliga, Ligue 1.",
+    "Nhận định và dự đoán tất cả trận đấu hôm nay từ Premier League, La Liga, Serie A, Bundesliga, Ligue 1.",
 };
 
 export const revalidate = 300;
@@ -43,12 +43,12 @@ function PredictionBar({
       <div
         className="bg-accent transition-all"
         style={{ width: `${homeWin}%` }}
-        title={`Thang: ${homeWin}%`}
+        title={`Thắng: ${homeWin}%`}
       />
       <div
         className="bg-accent-yellow transition-all"
         style={{ width: `${draw}%` }}
-        title={`Hoa: ${draw}%`}
+        title={`Hòa: ${draw}%`}
       />
       <div
         className="bg-accent-2 transition-all"
@@ -140,7 +140,7 @@ function MatchDigestCard({
         href={`/match/${match.id}`}
         className="mt-3 block text-center text-xs font-medium text-accent bg-accent/10 px-3 py-1.5 rounded-lg hover:bg-accent/20 transition-colors"
       >
-        Xem nhan dinh &rarr;
+        Xem nhận định &rarr;
       </Link>
     </div>
   );
@@ -181,7 +181,7 @@ export default async function HomNayPage() {
       <main className="max-w-3xl mx-auto px-3 py-6">
         {/* SEO heading */}
         <h1 className="text-xl md:text-2xl font-bold mb-1">
-          Nhan Dinh Bong Da Hom Nay
+          Nhận Định Bóng Đá Hôm Nay
         </h1>
         <p className="text-sm text-text-secondary mb-6">
           {formatVietnameseDate(today)}
@@ -190,13 +190,13 @@ export default async function HomNayPage() {
         {matches.length === 0 ? (
           <div className="text-center py-16 text-text-muted">
             <p className="text-lg mb-2">
-              Hom nay khong co tran dau nao tu 5 giai hang dau.
+              Hôm nay không có trận đấu nào từ 5 giải hàng đầu.
             </p>
             <Link
               href="/"
               className="text-accent text-sm hover:underline"
             >
-              Xem lich dau sap toi &rarr;
+              Xem lịch đấu sắp tới &rarr;
             </Link>
           </div>
         ) : (
@@ -214,8 +214,8 @@ export default async function HomNayPage() {
 
         {/* Footer */}
         <footer className="mt-10 py-4 border-t border-border text-center text-[10px] text-text-muted">
-          <p>MatchDay Analyst &mdash; Nhan dinh bong da truoc tran</p>
-          <p className="mt-0.5">Du lieu tu Football-Data.org</p>
+          <p>MatchDay Analyst &mdash; Nhận định bóng đá trước trận</p>
+          <p className="mt-0.5">Dữ liệu từ Football-Data.org</p>
         </footer>
       </main>
     </>

@@ -11,10 +11,9 @@ export function Navbar() {
           </span>
         </Link>
         <nav className="flex items-center gap-3 sm:gap-4 text-xs text-text-secondary">
-          <Link href="/hom-nay" className="hover:text-text-primary transition-colors">Hom nay</Link>
-          <Link href="/lich-thi-dau/premier-league" className="hover:text-text-primary transition-colors">Lich dau</Link>
-          <Link href="/bang-xep-hang/premier-league" className="hover:text-text-primary transition-colors">BXH</Link>
-          <Link href="/about" className="hover:text-text-primary transition-colors">Gioi thieu</Link>
+          <Link href="/hom-nay" className="hover:text-text-primary transition-colors">Hôm nay</Link>
+          <Link href="/" className="hover:text-text-primary transition-colors">Lịch đấu</Link>
+          <Link href="/about" className="hover:text-text-primary transition-colors">Giới thiệu</Link>
         </nav>
       </div>
     </header>
