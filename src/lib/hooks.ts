@@ -17,9 +17,8 @@ export function useMatches() {
   return useQuery<Match[]>({
     queryKey: ["matches", dateFrom, dateTo],
     queryFn: () =>
-      fetch(`/api/matches?dateFrom=${dateFrom}&dateTo=${dateTo}`).then((r) =>
-        r.json()
-      ),
+      fetch(`/api/matches?dateFrom=${dateFrom}&dateTo=${dateTo}`).then((r) => r.json()),
+    staleTime: 30 * 60 * 1000, // 30 min — matches don't change often
   });
 }
 
@@ -28,7 +27,7 @@ export function useStandings(code: string) {
     queryKey: ["standings", code],
     queryFn: () =>
       fetch(`/api/standings?code=${code}`).then((r) => r.json()),
-    staleTime: 30 * 60 * 1000, // 30 min
+    staleTime: 60 * 60 * 1000, // 1 hour — standings update after matches
   });
 }
 
@@ -37,6 +36,7 @@ export function useMatchCore(matchId: string) {
     queryKey: ["match", matchId, "core"],
     queryFn: () =>
       fetch(`/api/match?id=${matchId}&section=core`).then((r) => r.json()),
+    staleTime: 30 * 60 * 1000, // 30 min — core data is stable
   });
 }
 
@@ -45,7 +45,7 @@ export function useMatchForm(matchId: string) {
     queryKey: ["match", matchId, "form"],
     queryFn: () =>
       fetch(`/api/match?id=${matchId}&section=form`).then((r) => r.json()),
-    staleTime: 60 * 60 * 1000,
+    staleTime: 2 * 60 * 60 * 1000, // 2 hours
   });
 }
 
@@ -54,7 +54,7 @@ export function useMatchH2H(matchId: string) {
     queryKey: ["match", matchId, "h2h"],
     queryFn: () =>
       fetch(`/api/match?id=${matchId}&section=h2h`).then((r) => r.json()),
-    staleTime: 24 * 60 * 60 * 1000,
+    staleTime: 24 * 60 * 60 * 1000, // 24 hours — historical data
   });
 }
 
@@ -63,7 +63,7 @@ export function useMatchTeams(matchId: string) {
     queryKey: ["match", matchId, "teams"],
     queryFn: () =>
       fetch(`/api/match?id=${matchId}&section=teams`).then((r) => r.json()),
-    staleTime: 2 * 60 * 60 * 1000,
+    staleTime: 4 * 60 * 60 * 1000, // 4 hours — squads rarely change
   });
 }
 
@@ -72,7 +72,7 @@ export function useMatchScorers(matchId: string) {
     queryKey: ["match", matchId, "scorers"],
     queryFn: () =>
       fetch(`/api/match?id=${matchId}&section=scorers`).then((r) => r.json()),
-    staleTime: 60 * 60 * 1000,
+    staleTime: 2 * 60 * 60 * 1000, // 2 hours
   });
 }
 
@@ -81,7 +81,7 @@ export function useQuickSummary(matchId: string) {
     queryKey: ["quick-summary", matchId],
     queryFn: () =>
       fetch(`/api/quick-summary?matchId=${matchId}`).then((r) => r.json()),
-    staleTime: 6 * 60 * 60 * 1000, // 6 hours
+    staleTime: 12 * 60 * 60 * 1000, // 12 hours — AI content, cached in Redis
   });
 }
 
@@ -89,10 +89,8 @@ export function usePlayerAnalysis(homeTeamId: number, awayTeamId: number) {
   return useQuery({
     queryKey: ["players", homeTeamId, awayTeamId],
     queryFn: () =>
-      fetch(
-        `/api/players?homeTeamId=${homeTeamId}&awayTeamId=${awayTeamId}`
-      ).then((r) => r.json()),
-    staleTime: 60 * 60 * 1000, // 1 hour
+      fetch(`/api/players?homeTeamId=${homeTeamId}&awayTeamId=${awayTeamId}`).then((r) => r.json()),
+    staleTime: 4 * 60 * 60 * 1000, // 4 hours — player data is stable
   });
 }
 
@@ -100,9 +98,7 @@ export function useTeamRecentDetailed(teamId: number) {
   return useQuery({
     queryKey: ["recent-detailed", teamId],
     queryFn: () =>
-      fetch(`/api/match/recent?teamId=${teamId}&limit=10`).then((r) =>
-        r.json()
-      ),
-    staleTime: 30 * 60 * 1000, // 30 min
+      fetch(`/api/match/recent?teamId=${teamId}&limit=10`).then((r) => r.json()),
+    staleTime: 2 * 60 * 60 * 1000, // 2 hours
   });
 }

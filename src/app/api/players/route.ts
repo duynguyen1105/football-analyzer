@@ -24,12 +24,12 @@ function pickKeyPlayers(
   const picked: typeof squad = [];
 
   for (const pos of POSITION_PRIORITY) {
-    if (picked.length >= 3) break;
+    if (picked.length >= 2) break;
     const candidates = squad.filter(
       (p) => p.position === pos && p.id > 0 && !picked.some((x) => x.id === p.id)
     );
     for (const c of candidates) {
-      if (picked.length >= 3) break;
+      if (picked.length >= 2) break;
       picked.push(c);
     }
   }

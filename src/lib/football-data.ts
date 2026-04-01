@@ -1,23 +1,39 @@
 import { Match, Standing, TeamInfo, H2HMatch } from "./types";
 import { COMPETITION_CODES } from "./constants";
+import { getCached as getRedis, setCached as setRedis } from "./cache";
 
 const BASE_URL = "https://api.football-data.org/v4";
 const GMT_PLUS_7_OFFSET = 7 * 60 * 60 * 1000; // 7 hours in ms
 
 // ---------------------------------------------------------------------------
-// In-memory cache — avoids redundant API calls across navigations
+// Two-level cache: in-memory (fast) + Redis (persistent across deploys)
 // ---------------------------------------------------------------------------
 const memCache = new Map<string, { data: unknown; expiresAt: number }>();
 
-function getCached<T>(key: string): T | null {
-  const entry = memCache.get(key);
-  if (entry && Date.now() < entry.expiresAt) return entry.data as T;
-  if (entry) memCache.delete(key);
+async function getCached<T>(key: string): Promise<T | null> {
+  // Level 1: in-memory (instant)
+  const mem = memCache.get(key);
+  if (mem && Date.now() < mem.expiresAt) return mem.data as T;
+  if (mem) memCache.delete(key);
+
+  // Level 2: Redis (persistent)
+  const redisVal = await getRedis(`fd:${key}`);
+  if (redisVal) {
+    try {
+      const parsed = JSON.parse(redisVal) as T;
+      // Warm memory cache from Redis (5 min TTL for memory layer)
+      memCache.set(key, { data: parsed, expiresAt: Date.now() + 5 * 60 * 1000 });
+      return parsed;
+    } catch { /* ignore parse errors */ }
+  }
+
   return null;
 }
 
-function setCache(key: string, data: unknown, ttlMs: number): void {
+async function setCache(key: string, data: unknown, ttlMs: number): Promise<void> {
   memCache.set(key, { data, expiresAt: Date.now() + ttlMs });
+  // Also persist to Redis
+  await setRedis(`fd:${key}`, JSON.stringify(data), Math.floor(ttlMs / 1000)).catch(() => {});
 }
 
 const CACHE_5_MIN = 5 * 60 * 1000;
@@ -171,7 +187,7 @@ function mapMatch(raw: any): Match {
  */
 export async function getMatches(dateFrom: string, dateTo: string): Promise<Match[]> {
   const cacheKey = `matches:${dateFrom}:${dateTo}`;
-  const cached = getCached<Match[]>(cacheKey);
+  const cached = await getCached<Match[]>(cacheKey);
   if (cached) return cached;
 
   try {
@@ -183,7 +199,7 @@ export async function getMatches(dateFrom: string, dateTo: string): Promise<Matc
     });
 
     const matches: Match[] = (data.matches ?? []).map(mapMatch);
-    setCache(cacheKey, matches, CACHE_5_MIN);
+    await setCache(cacheKey, matches, CACHE_5_MIN);
     return matches;
   } catch (error) {
     console.error("Failed to fetch matches:", error);
@@ -196,14 +212,14 @@ export async function getMatches(dateFrom: string, dateTo: string): Promise<Matc
  */
 export async function getMatch(matchId: number): Promise<Match | null> {
   const cacheKey = `match:${matchId}`;
-  const cached = getCached<Match>(cacheKey);
+  const cached = await getCached<Match>(cacheKey);
   if (cached) return cached;
 
   try {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const raw = await apiFetch<any>(`/matches/${matchId}`);
     const match = mapMatch(raw);
-    setCache(cacheKey, match, CACHE_5_MIN);
+    await setCache(cacheKey, match, CACHE_5_MIN);
     return match;
   } catch (error) {
     console.error(`Failed to fetch match ${matchId}:`, error);
@@ -216,7 +232,7 @@ export async function getMatch(matchId: number): Promise<Match | null> {
  */
 export async function getStandings(competitionCode: string): Promise<Standing[]> {
   const cacheKey = `standings:${competitionCode}`;
-  const cached = getCached<Standing[]>(cacheKey);
+  const cached = await getCached<Standing[]>(cacheKey);
   if (cached) return cached;
 
   try {
@@ -249,7 +265,7 @@ export async function getStandings(competitionCode: string): Promise<Standing[]>
       goalDifference: row.goalDifference ?? 0,
       points: row.points ?? 0,
     }));
-    setCache(cacheKey, result, CACHE_30_MIN);
+    await setCache(cacheKey, result, CACHE_30_MIN);
     return result;
   } catch (error) {
     console.error(`Failed to fetch standings for ${competitionCode}:`, error);
@@ -262,7 +278,7 @@ export async function getStandings(competitionCode: string): Promise<Standing[]>
  */
 export async function getTeamInfo(teamId: number): Promise<TeamInfo | null> {
   const cacheKey = `team:${teamId}`;
-  const cached = getCached<TeamInfo>(cacheKey);
+  const cached = await getCached<TeamInfo>(cacheKey);
   if (cached) return cached;
 
   try {
@@ -290,7 +306,7 @@ export async function getTeamInfo(teamId: number): Promise<TeamInfo | null> {
         })
       ),
     };
-    setCache(cacheKey, result, CACHE_2_HR);
+    await setCache(cacheKey, result, CACHE_2_HR);
     return result;
   } catch (error) {
     console.error(`Failed to fetch team info for ${teamId}:`, error);
@@ -304,7 +320,7 @@ export async function getTeamInfo(teamId: number): Promise<TeamInfo | null> {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function getTeamRecentMatches(teamId: number, limit: number): Promise<any[]> {
   const cacheKey = `recent:${teamId}:${limit}`;
-  const cached = getCached<any[]>(cacheKey);
+  const cached = await getCached<any[]>(cacheKey);
   if (cached) return cached;
 
   try {
@@ -314,7 +330,7 @@ export async function getTeamRecentMatches(teamId: number, limit: number): Promi
       limit: String(limit),
     });
     const result = data.matches ?? [];
-    setCache(cacheKey, result, CACHE_30_MIN);
+    await setCache(cacheKey, result, CACHE_30_MIN);
     return result;
   } catch (error) {
     console.error(`Failed to fetch recent matches for team ${teamId}:`, error);
@@ -331,7 +347,7 @@ export async function getTopScorers(
   { name: string; team: string; goals: number; assists: number | null; nationality: string }[]
 > {
   const cacheKey = `scorers:${competitionCode}`;
-  const cached = getCached<any[]>(cacheKey);
+  const cached = await getCached<any[]>(cacheKey);
   if (cached) return cached;
 
   try {
@@ -350,7 +366,7 @@ export async function getTopScorers(
         nationality: s.player?.nationality ?? "",
       })
     );
-    setCache(cacheKey, result, CACHE_30_MIN);
+    await setCache(cacheKey, result, CACHE_30_MIN);
     return result;
   } catch (error) {
     console.error(`Failed to fetch top scorers for ${competitionCode}:`, error);
@@ -372,7 +388,7 @@ export async function getH2H(
   lastMatches: H2HMatch[];
 } | null> {
   const cacheKey = `h2h:${matchId}`;
-  const cached = getCached<{
+  const cached = await getCached<{
     homeWins: number;
     draws: number;
     awayWins: number;
@@ -403,7 +419,7 @@ export async function getH2H(
     }));
 
     const result = { homeWins, draws, awayWins, totalGoals, lastMatches };
-    setCache(cacheKey, result, CACHE_24_HR);
+    await setCache(cacheKey, result, CACHE_24_HR);
     return result;
   } catch (error) {
     console.error(`Failed to fetch H2H for match ${matchId}, falling back to computeH2H:`, error);
@@ -535,7 +551,7 @@ export async function getPlayerInfo(playerId: number): Promise<{
   shirtNumber?: number;
 } | null> {
   const cacheKey = `player:${playerId}`;
-  const cached = getCached<{
+  const cached = await getCached<{
     id: number;
     name: string;
     dateOfBirth: string;
@@ -557,7 +573,7 @@ export async function getPlayerInfo(playerId: number): Promise<{
       position: raw.position ?? "",
       shirtNumber: raw.shirtNumber ?? undefined,
     };
-    setCache(cacheKey, result, CACHE_2_HR);
+    await setCache(cacheKey, result, CACHE_2_HR);
     return result;
   } catch (error) {
     console.error(`Failed to fetch player info for ${playerId}:`, error);
@@ -582,7 +598,7 @@ export async function getPlayerMatches(
   matchesPlayed: number;
 } | null> {
   const cacheKey = `player-matches:${playerId}:${limit}`;
-  const cached = getCached<{
+  const cached = await getCached<{
     goals: number;
     assists: number;
     yellowCards: number;
@@ -609,7 +625,7 @@ export async function getPlayerMatches(
       minutesPlayed: resultSet.minutesPlayed ?? 0,
       matchesPlayed: matches.length,
     };
-    setCache(cacheKey, result, CACHE_1_HR);
+    await setCache(cacheKey, result, CACHE_1_HR);
     return result;
   } catch (error) {
     console.error(`Failed to fetch player matches for ${playerId}:`, error);
