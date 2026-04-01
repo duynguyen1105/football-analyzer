@@ -935,3 +935,429 @@ export async function getTopAssists(
     return [];
   }
 }
+
+// ---------------------------------------------------------------------------
+// Player Profile — detailed player information
+// ---------------------------------------------------------------------------
+
+export interface PlayerProfile {
+  id: number;
+  name: string;
+  firstname: string;
+  lastname: string;
+  photo: string;
+  age: number;
+  nationality: string;
+  height: string;
+  weight: string;
+  birthDate: string;
+  birthPlace: string;
+  birthCountry: string;
+  currentTeam: {
+    id: number;
+    name: string;
+    logo: string;
+  } | null;
+  position: string;
+  number: number | null;
+  statistics: {
+    team: { id: number; name: string; logo: string };
+    league: { id: number; name: string; country: string; logo: string };
+    games: { appearences: number; minutes: number; rating: string | null };
+    goals: { total: number; assists: number };
+    passes: { total: number; accuracy: number | null };
+    shots: { total: number; on: number };
+    tackles: { total: number; interceptions: number };
+    duels: { total: number; won: number };
+    dribbles: { attempts: number; success: number };
+    fouls: { drawn: number; committed: number };
+    cards: { yellow: number; red: number };
+  }[];
+}
+
+export async function getPlayerProfile(playerId: number): Promise<PlayerProfile | null> {
+  const cacheKey = `player-profile:${playerId}`;
+  const cached = await getCached<PlayerProfile>(cacheKey);
+  if (cached) return cached;
+
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const data = await apiFetch<any[]>("/players", {
+      id: String(playerId),
+      season: String(CURRENT_SEASON),
+    });
+
+    if (!data || data.length === 0) return null;
+
+    const raw = data[0];
+    const player = raw.player;
+    const stats = raw.statistics ?? [];
+
+    const result: PlayerProfile = {
+      id: player?.id ?? playerId,
+      name: player?.name ?? "",
+      firstname: player?.firstname ?? "",
+      lastname: player?.lastname ?? "",
+      photo: player?.photo ?? "",
+      age: player?.age ?? 0,
+      nationality: player?.nationality ?? "",
+      height: player?.height ?? "",
+      weight: player?.weight ?? "",
+      birthDate: player?.birth?.date ?? "",
+      birthPlace: player?.birth?.place ?? "",
+      birthCountry: player?.birth?.country ?? "",
+      currentTeam: stats[0]?.team ? {
+        id: stats[0].team.id,
+        name: stats[0].team.name,
+        logo: stats[0].team.logo,
+      } : null,
+      position: stats[0]?.games?.position ?? "",
+      number: player?.number ?? null,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      statistics: stats.map((s: any) => ({
+        team: {
+          id: s.team?.id ?? 0,
+          name: s.team?.name ?? "",
+          logo: s.team?.logo ?? "",
+        },
+        league: {
+          id: s.league?.id ?? 0,
+          name: s.league?.name ?? "",
+          country: s.league?.country ?? "",
+          logo: s.league?.logo ?? "",
+        },
+        games: {
+          appearences: s.games?.appearences ?? 0,
+          minutes: s.games?.minutes ?? 0,
+          rating: s.games?.rating ?? null,
+        },
+        goals: {
+          total: s.goals?.total ?? 0,
+          assists: s.goals?.assists ?? 0,
+        },
+        passes: {
+          total: s.passes?.total ?? 0,
+          accuracy: s.passes?.accuracy ?? null,
+        },
+        shots: {
+          total: s.shots?.total ?? 0,
+          on: s.shots?.on ?? 0,
+        },
+        tackles: {
+          total: s.tackles?.total ?? 0,
+          interceptions: s.tackles?.interceptions ?? 0,
+        },
+        duels: {
+          total: s.duels?.total ?? 0,
+          won: s.duels?.won ?? 0,
+        },
+        dribbles: {
+          attempts: s.dribbles?.attempts ?? 0,
+          success: s.dribbles?.success ?? 0,
+        },
+        fouls: {
+          drawn: s.fouls?.drawn ?? 0,
+          committed: s.fouls?.committed ?? 0,
+        },
+        cards: {
+          yellow: s.cards?.yellow ?? 0,
+          red: s.cards?.red ?? 0,
+        },
+      })),
+    };
+
+    await setCache(cacheKey, result, CACHE_2_HR);
+    return result;
+  } catch (error) {
+    console.error(`Failed to fetch player profile for ${playerId}:`, error);
+    return null;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Player Transfers — transfer history
+// ---------------------------------------------------------------------------
+
+export interface PlayerTransfer {
+  date: string;
+  type: string;
+  teamIn: { id: number; name: string; logo: string };
+  teamOut: { id: number; name: string; logo: string };
+}
+
+export async function getPlayerTransfers(playerId: number): Promise<PlayerTransfer[]> {
+  const cacheKey = `player-transfers:${playerId}`;
+  const cached = await getCached<PlayerTransfer[]>(cacheKey);
+  if (cached) return cached;
+
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const data = await apiFetch<any[]>("/transfers", { player: String(playerId) });
+
+    if (!data || data.length === 0) return [];
+
+    const transfers = data[0]?.transfers ?? [];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const result: PlayerTransfer[] = transfers.slice(0, 10).map((t: any) => ({
+      date: t.date ?? "",
+      type: t.type ?? "",
+      teamIn: {
+        id: t.teams?.in?.id ?? 0,
+        name: t.teams?.in?.name ?? "",
+        logo: t.teams?.in?.logo ?? "",
+      },
+      teamOut: {
+        id: t.teams?.out?.id ?? 0,
+        name: t.teams?.out?.name ?? "",
+        logo: t.teams?.out?.logo ?? "",
+      },
+    }));
+
+    await setCache(cacheKey, result, CACHE_24_HR);
+    return result;
+  } catch (error) {
+    console.error(`Failed to fetch transfers for player ${playerId}:`, error);
+    return [];
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Player Trophies
+// ---------------------------------------------------------------------------
+
+export interface PlayerTrophy {
+  league: string;
+  country: string;
+  season: string;
+  place: string;
+}
+
+export async function getPlayerTrophies(playerId: number): Promise<PlayerTrophy[]> {
+  const cacheKey = `player-trophies:${playerId}`;
+  const cached = await getCached<PlayerTrophy[]>(cacheKey);
+  if (cached) return cached;
+
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const data = await apiFetch<any[]>("/trophies", { player: String(playerId) });
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const result: PlayerTrophy[] = (data ?? []).slice(0, 20).map((t: any) => ({
+      league: t.league ?? "",
+      country: t.country ?? "",
+      season: t.season ?? "",
+      place: t.place ?? "",
+    }));
+
+    await setCache(cacheKey, result, CACHE_24_HR);
+    return result;
+  } catch (error) {
+    console.error(`Failed to fetch trophies for player ${playerId}:`, error);
+    return [];
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Team Profile — detailed team/club information
+// ---------------------------------------------------------------------------
+
+export interface TeamProfile {
+  id: number;
+  name: string;
+  code: string;
+  country: string;
+  founded: number;
+  logo: string;
+  venue: {
+    name: string;
+    address: string;
+    city: string;
+    capacity: number;
+    image: string;
+  };
+}
+
+export async function getTeamProfile(teamId: number): Promise<TeamProfile | null> {
+  const cacheKey = `team-profile:${teamId}`;
+  const cached = await getCached<TeamProfile>(cacheKey);
+  if (cached) return cached;
+
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const data = await apiFetch<any[]>("/teams", { id: String(teamId) });
+
+    if (!data || data.length === 0) return null;
+
+    const raw = data[0];
+    const team = raw.team;
+    const venue = raw.venue;
+
+    const result: TeamProfile = {
+      id: team?.id ?? teamId,
+      name: team?.name ?? "",
+      code: team?.code ?? "",
+      country: team?.country ?? "",
+      founded: team?.founded ?? 0,
+      logo: team?.logo ?? "",
+      venue: {
+        name: venue?.name ?? "",
+        address: venue?.address ?? "",
+        city: venue?.city ?? "",
+        capacity: venue?.capacity ?? 0,
+        image: venue?.image ?? "",
+      },
+    };
+
+    await setCache(cacheKey, result, CACHE_24_HR);
+    return result;
+  } catch (error) {
+    console.error(`Failed to fetch team profile for ${teamId}:`, error);
+    return null;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Team Season Statistics
+// ---------------------------------------------------------------------------
+
+export interface TeamSeasonStats {
+  form: string;
+  fixtures: {
+    played: { home: number; away: number; total: number };
+    wins: { home: number; away: number; total: number };
+    draws: { home: number; away: number; total: number };
+    loses: { home: number; away: number; total: number };
+  };
+  goals: {
+    for: { home: number; away: number; total: number; average: { total: string } };
+    against: { home: number; away: number; total: number; average: { total: string } };
+  };
+  cleanSheet: { home: number; away: number; total: number };
+  failedToScore: { home: number; away: number; total: number };
+  biggestWin: { home: string; away: string };
+  biggestLose: { home: string; away: string };
+}
+
+export async function getTeamSeasonStats(teamId: number, leagueId: number): Promise<TeamSeasonStats | null> {
+  const cacheKey = `team-stats:${teamId}:${leagueId}`;
+  const cached = await getCached<TeamSeasonStats>(cacheKey);
+  if (cached) return cached;
+
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const data = await apiFetch<any>("/teams/statistics", {
+      team: String(teamId),
+      league: String(leagueId),
+      season: String(CURRENT_SEASON),
+    });
+
+    if (!data) return null;
+
+    const result: TeamSeasonStats = {
+      form: data.form ?? "",
+      fixtures: {
+        played: {
+          home: data.fixtures?.played?.home ?? 0,
+          away: data.fixtures?.played?.away ?? 0,
+          total: data.fixtures?.played?.total ?? 0,
+        },
+        wins: {
+          home: data.fixtures?.wins?.home ?? 0,
+          away: data.fixtures?.wins?.away ?? 0,
+          total: data.fixtures?.wins?.total ?? 0,
+        },
+        draws: {
+          home: data.fixtures?.draws?.home ?? 0,
+          away: data.fixtures?.draws?.away ?? 0,
+          total: data.fixtures?.draws?.total ?? 0,
+        },
+        loses: {
+          home: data.fixtures?.loses?.home ?? 0,
+          away: data.fixtures?.loses?.away ?? 0,
+          total: data.fixtures?.loses?.total ?? 0,
+        },
+      },
+      goals: {
+        for: {
+          home: data.goals?.for?.total?.home ?? 0,
+          away: data.goals?.for?.total?.away ?? 0,
+          total: data.goals?.for?.total?.total ?? 0,
+          average: { total: data.goals?.for?.average?.total ?? "0" },
+        },
+        against: {
+          home: data.goals?.against?.total?.home ?? 0,
+          away: data.goals?.against?.total?.away ?? 0,
+          total: data.goals?.against?.total?.total ?? 0,
+          average: { total: data.goals?.against?.average?.total ?? "0" },
+        },
+      },
+      cleanSheet: {
+        home: data.clean_sheet?.home ?? 0,
+        away: data.clean_sheet?.away ?? 0,
+        total: data.clean_sheet?.total ?? 0,
+      },
+      failedToScore: {
+        home: data.failed_to_score?.home ?? 0,
+        away: data.failed_to_score?.away ?? 0,
+        total: data.failed_to_score?.total ?? 0,
+      },
+      biggestWin: {
+        home: data.biggest?.wins?.home ?? "",
+        away: data.biggest?.wins?.away ?? "",
+      },
+      biggestLose: {
+        home: data.biggest?.loses?.home ?? "",
+        away: data.biggest?.loses?.away ?? "",
+      },
+    };
+
+    await setCache(cacheKey, result, CACHE_2_HR);
+    return result;
+  } catch (error) {
+    console.error(`Failed to fetch team stats for ${teamId}:`, error);
+    return null;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Team Squad with detailed info
+// ---------------------------------------------------------------------------
+
+export interface SquadPlayer {
+  id: number;
+  name: string;
+  age: number;
+  number: number | null;
+  position: string;
+  photo: string;
+}
+
+export async function getTeamSquad(teamId: number): Promise<SquadPlayer[]> {
+  const cacheKey = `team-squad:${teamId}`;
+  const cached = await getCached<SquadPlayer[]>(cacheKey);
+  if (cached) return cached;
+
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const data = await apiFetch<any[]>("/players/squads", { team: String(teamId) });
+
+    if (!data || data.length === 0) return [];
+
+    const players = data[0]?.players ?? [];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const result: SquadPlayer[] = players.map((p: any) => ({
+      id: p.id ?? 0,
+      name: p.name ?? "",
+      age: p.age ?? 0,
+      number: p.number ?? null,
+      position: p.position ?? "",
+      photo: p.photo ?? "",
+    }));
+
+    await setCache(cacheKey, result, CACHE_2_HR);
+    return result;
+  } catch (error) {
+    console.error(`Failed to fetch squad for team ${teamId}:`, error);
+    return [];
+  }
+}

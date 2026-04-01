@@ -1,6 +1,7 @@
 "use client";
 
 import { useMatchTeams } from "@/lib/hooks";
+import Link from "next/link";
 
 interface KeyPlayersProps {
   matchId: string;
@@ -9,6 +10,7 @@ interface KeyPlayersProps {
 }
 
 interface Player {
+  id: number;
   name: string;
   position: string;
   nationality: string;
@@ -53,7 +55,10 @@ function groupByPosition(
 
 function PlayerRow({ player }: { player: Player }) {
   return (
-    <div className="flex items-center gap-2 py-1.5">
+    <Link
+      href={`/cau-thu/${player.id}`}
+      className="flex items-center gap-2 py-1.5 hover:bg-bg-primary/50 rounded-lg px-1 -mx-1 transition-colors"
+    >
       {player.photo ? (
         <img
           src={player.photo}
@@ -67,12 +72,12 @@ function PlayerRow({ player }: { player: Player }) {
         </div>
       )}
       <div className="min-w-0">
-        <span className="text-sm text-text-primary block truncate">{player.name}</span>
+        <span className="text-sm text-text-primary block truncate hover:text-accent transition-colors">{player.name}</span>
         {player.nationality && (
           <span className="text-[10px] text-text-muted">{player.nationality}</span>
         )}
       </div>
-    </div>
+    </Link>
   );
 }
 

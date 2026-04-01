@@ -165,3 +165,68 @@ export function useTopAssists(leagueCode: string) {
     staleTime: 30 * 60 * 1000, // 30 min
   });
 }
+
+// Player hooks
+export function usePlayerProfile(playerId: string) {
+  return useQuery({
+    queryKey: ["player", playerId, "profile"],
+    queryFn: () =>
+      fetch(`/api/player?id=${playerId}&section=profile`).then((r) => r.json()),
+    staleTime: 2 * 60 * 60 * 1000, // 2 hours
+  });
+}
+
+export function usePlayerTransfers(playerId: string) {
+  return useQuery({
+    queryKey: ["player", playerId, "transfers"],
+    queryFn: () =>
+      fetch(`/api/player?id=${playerId}&section=transfers`).then((r) => r.json()),
+    staleTime: 24 * 60 * 60 * 1000, // 24 hours
+  });
+}
+
+export function usePlayerTrophies(playerId: string) {
+  return useQuery({
+    queryKey: ["player", playerId, "trophies"],
+    queryFn: () =>
+      fetch(`/api/player?id=${playerId}&section=trophies`).then((r) => r.json()),
+    staleTime: 24 * 60 * 60 * 1000, // 24 hours
+  });
+}
+
+// Team hooks
+export function useTeamProfile(teamId: string) {
+  return useQuery({
+    queryKey: ["team", teamId, "profile"],
+    queryFn: () =>
+      fetch(`/api/team?id=${teamId}&section=profile`).then((r) => r.json()),
+    staleTime: 24 * 60 * 60 * 1000, // 24 hours
+  });
+}
+
+export function useTeamStats(teamId: string, leagueId: number) {
+  return useQuery({
+    queryKey: ["team", teamId, "stats", leagueId],
+    queryFn: () =>
+      fetch(`/api/team?id=${teamId}&section=stats&leagueId=${leagueId}`).then((r) => r.json()),
+    staleTime: 2 * 60 * 60 * 1000, // 2 hours
+  });
+}
+
+export function useTeamSquad(teamId: string) {
+  return useQuery({
+    queryKey: ["team", teamId, "squad"],
+    queryFn: () =>
+      fetch(`/api/team?id=${teamId}&section=squad`).then((r) => r.json()),
+    staleTime: 2 * 60 * 60 * 1000, // 2 hours
+  });
+}
+
+export function useTeamRecent(teamId: string) {
+  return useQuery({
+    queryKey: ["team", teamId, "recent"],
+    queryFn: () =>
+      fetch(`/api/team?id=${teamId}&section=recent`).then((r) => r.json()),
+    staleTime: 30 * 60 * 1000, // 30 min
+  });
+}
