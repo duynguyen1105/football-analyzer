@@ -72,6 +72,11 @@ UPSTASH_REDIS_REST_TOKEN       # Redis auth
 NEXT_PUBLIC_GA_ID              # Google Analytics (optional)
 NEXT_PUBLIC_ADSENSE_ID         # Google AdSense (optional)
 NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION  # Search Console (optional)
+NEXT_PUBLIC_KOFI_URL              # Ko-fi donation page URL (shown on /ung-ho support page)
+NEXT_PUBLIC_SPONSOR_NAME          # Sponsored content: sponsor display name
+NEXT_PUBLIC_SPONSOR_LOGO          # Sponsored content: sponsor logo URL
+NEXT_PUBLIC_SPONSOR_URL           # Sponsored content: sponsor link URL
+NEXT_PUBLIC_SPONSOR_TAGLINE       # Sponsored content: short tagline text
 ```
 
 ## Domain & Deployment
