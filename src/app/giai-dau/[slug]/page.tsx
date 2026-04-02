@@ -88,9 +88,27 @@ async function TournamentOverview({ league }: { league: ReturnType<typeof getLea
 
   return (
     <>
+      {/* Upcoming matches */}
+      <section className="mb-8">
+        <h2 className="text-base font-bold mb-3">Trận đấu sắp tới</h2>
+        <MatchList matches={upcoming.slice(0, 20)} grouped={upcomingGrouped} emptyText="Chưa có lịch thi đấu." />
+      </section>
+
+      {/* Recent results */}
+      {recent.length > 0 && (
+        <section className="mb-8">
+          <h2 className="text-base font-bold mb-3">Kết quả gần đây</h2>
+          <div className="space-y-2">
+            {recent.map((m) => (
+              <MatchRow key={m.id} match={m} showRound />
+            ))}
+          </div>
+        </section>
+      )}
+
       {/* Group standings preview (first 4 groups) */}
       {groups.length > 0 && (
-        <section className="mb-8">
+        <section>
           <div className="flex items-center justify-between mb-3">
             <h2 className="text-base font-bold">Bảng đấu</h2>
             {groups.length > 4 && (
@@ -102,24 +120,6 @@ async function TournamentOverview({ league }: { league: ReturnType<typeof getLea
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {groups.slice(0, 4).map((g) => (
               <GroupTable key={g.group} group={g} />
-            ))}
-          </div>
-        </section>
-      )}
-
-      {/* Upcoming matches */}
-      <section className="mb-8">
-        <h2 className="text-base font-bold mb-3">Trận đấu sắp tới</h2>
-        <MatchList matches={upcoming.slice(0, 20)} grouped={upcomingGrouped} emptyText="Chưa có lịch thi đấu." />
-      </section>
-
-      {/* Recent results */}
-      {recent.length > 0 && (
-        <section>
-          <h2 className="text-base font-bold mb-3">Kết quả gần đây</h2>
-          <div className="space-y-2">
-            {recent.map((m) => (
-              <MatchRow key={m.id} match={m} showRound />
             ))}
           </div>
         </section>
