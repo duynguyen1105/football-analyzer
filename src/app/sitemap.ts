@@ -1,6 +1,6 @@
 import type { MetadataRoute } from "next";
 import { getMatches } from "@/lib/football-data";
-import { getAllLeagueSlugs } from "@/lib/league-slugs";
+import { getAllLeagueSlugs, getLeagueBySlug } from "@/lib/league-slugs";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = "https://nhandinhbongdavn.com";
@@ -17,13 +17,21 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const leagueSlugs = getAllLeagueSlugs();
   const leaguePages: MetadataRoute.Sitemap = [
     // League detail hub + sub-pages
-    ...leagueSlugs.flatMap((slug) => [
-      { url: `${baseUrl}/giai-dau/${slug}`, lastModified: new Date(), changeFrequency: "daily" as const, priority: 0.9 },
-      { url: `${baseUrl}/giai-dau/${slug}/lich-thi-dau`, lastModified: new Date(), changeFrequency: "daily" as const, priority: 0.8 },
-      { url: `${baseUrl}/giai-dau/${slug}/top-ghi-ban`, lastModified: new Date(), changeFrequency: "daily" as const, priority: 0.8 },
-      { url: `${baseUrl}/giai-dau/${slug}/top-kien-tao`, lastModified: new Date(), changeFrequency: "daily" as const, priority: 0.8 },
-      { url: `${baseUrl}/giai-dau/${slug}/soi-keo`, lastModified: new Date(), changeFrequency: "daily" as const, priority: 0.8 },
-    ]),
+    ...leagueSlugs.flatMap((slug) => {
+      const league = getLeagueBySlug(slug);
+      const pages = [
+        { url: `${baseUrl}/giai-dau/${slug}`, lastModified: new Date(), changeFrequency: "daily" as const, priority: 0.9 },
+        { url: `${baseUrl}/giai-dau/${slug}/lich-thi-dau`, lastModified: new Date(), changeFrequency: "daily" as const, priority: 0.8 },
+        { url: `${baseUrl}/giai-dau/${slug}/top-ghi-ban`, lastModified: new Date(), changeFrequency: "daily" as const, priority: 0.8 },
+        { url: `${baseUrl}/giai-dau/${slug}/top-kien-tao`, lastModified: new Date(), changeFrequency: "daily" as const, priority: 0.8 },
+      ];
+      if (league?.isTournament) {
+        pages.push({ url: `${baseUrl}/giai-dau/${slug}/bang-dau`, lastModified: new Date(), changeFrequency: "daily" as const, priority: 0.8 });
+      } else {
+        pages.push({ url: `${baseUrl}/giai-dau/${slug}/soi-keo`, lastModified: new Date(), changeFrequency: "daily" as const, priority: 0.8 });
+      }
+      return pages;
+    }),
     // Standalone SEO pages
     ...leagueSlugs.flatMap((slug) => [
       { url: `${baseUrl}/lich-thi-dau/${slug}`, lastModified: new Date(), changeFrequency: "daily" as const, priority: 0.9 },

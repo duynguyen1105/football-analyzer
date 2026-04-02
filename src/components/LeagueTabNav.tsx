@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-const TABS = [
+const LEAGUE_TABS = [
   { label: "Tổng quan", segment: "" },
   { label: "Lịch thi đấu", segment: "lich-thi-dau" },
   { label: "Vua phá lưới", segment: "top-ghi-ban" },
@@ -11,13 +11,22 @@ const TABS = [
   { label: "Soi kèo", segment: "soi-keo" },
 ];
 
-export function LeagueTabNav({ slug }: { slug: string }) {
+const TOURNAMENT_TABS = [
+  { label: "Tổng quan", segment: "" },
+  { label: "Bảng đấu", segment: "bang-dau" },
+  { label: "Lịch thi đấu", segment: "lich-thi-dau" },
+  { label: "Vua phá lưới", segment: "top-ghi-ban" },
+  { label: "Kiến tạo", segment: "top-kien-tao" },
+];
+
+export function LeagueTabNav({ slug, isTournament }: { slug: string; isTournament?: boolean }) {
   const pathname = usePathname();
   const base = `/giai-dau/${slug}`;
+  const tabs = isTournament ? TOURNAMENT_TABS : LEAGUE_TABS;
 
   return (
     <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-none mb-6">
-      {TABS.map((tab) => {
+      {tabs.map((tab) => {
         const href = tab.segment ? `${base}/${tab.segment}` : base;
         const isActive = tab.segment
           ? pathname === href

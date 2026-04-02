@@ -1,4 +1,4 @@
-import { Match, Standing, TeamInfo, H2HMatch, MatchOdds, MatchInjury, MatchLineup } from "./types";
+import { Match, Standing, GroupStanding, TeamInfo, H2HMatch, MatchOdds, MatchInjury, MatchLineup } from "./types";
 import { LEAGUE_IDS, CURRENT_SEASON, getLeagueId, getLeagueCode, getSeasonForLeague } from "./constants";
 import { getCached as getRedis, setCached as setRedis } from "./cache";
 import { getShortName, getTla } from "./team-names";
@@ -225,6 +225,7 @@ function mapFixture(raw: any): Match {
       crest: raw.teams?.away?.logo ?? "",
     },
     venue: raw.fixture?.venue?.name ?? "",
+    round: raw.league?.round ?? undefined,
     homeForm: [],
     awayForm: [],
     score:
@@ -334,6 +335,94 @@ export async function getStandings(competitionCode: string): Promise<Standing[]>
     return result;
   } catch (error) {
     console.error(`Failed to fetch standings for ${competitionCode}:`, error);
+    return [];
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Group standings — for tournaments (WC, CL) with multiple groups
+// ---------------------------------------------------------------------------
+
+export async function getGroupStandings(competitionCode: string): Promise<GroupStanding[]> {
+  const cacheKey = `group-standings:${competitionCode}`;
+  const cached = await getCached<GroupStanding[]>(cacheKey);
+  if (cached) return cached;
+
+  const leagueId = getLeagueId(competitionCode);
+  if (!leagueId) return [];
+
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const data = await apiFetch<any[]>("/standings", {
+      league: String(leagueId),
+      season: String(getSeasonForLeague(leagueId)),
+    });
+
+    const allGroups = data?.[0]?.league?.standings ?? [];
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const result: GroupStanding[] = allGroups.map((group: any[], idx: number) => ({
+      group: group?.[0]?.group ?? `Group ${String.fromCharCode(65 + idx)}`,
+      standings: group.map(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (row: any): Standing => ({
+          position: row.rank ?? 0,
+          team: {
+            id: row.team?.id ?? 0,
+            name: row.team?.name ?? "",
+            shortName: getShortName(row.team?.id, row.team?.name ?? ""),
+            tla: getTla(row.team?.id, row.team?.name ?? ""),
+            crest: row.team?.logo ?? "",
+          },
+          playedGames: row.all?.played ?? 0,
+          won: row.all?.win ?? 0,
+          draw: row.all?.draw ?? 0,
+          lost: row.all?.lose ?? 0,
+          goalsFor: row.all?.goals?.for ?? 0,
+          goalsAgainst: row.all?.goals?.against ?? 0,
+          goalDifference: row.goalsDiff ?? 0,
+          points: row.points ?? 0,
+        })
+      ),
+    }));
+
+    await setCache(cacheKey, result, CACHE_30_MIN);
+    return result;
+  } catch (error) {
+    console.error(`Failed to fetch group standings for ${competitionCode}:`, error);
+    return [];
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Tournament fixtures — all matches for a tournament (no date range)
+// ---------------------------------------------------------------------------
+
+export async function getTournamentFixtures(competitionCode: string): Promise<Match[]> {
+  const cacheKey = `tournament-fixtures:${competitionCode}`;
+  const cached = await getCached<Match[]>(cacheKey);
+  if (cached) return cached;
+
+  const leagueId = getLeagueId(competitionCode);
+  if (!leagueId) return [];
+
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const data = await apiFetch<any[]>("/fixtures", {
+      league: String(leagueId),
+      season: String(getSeasonForLeague(leagueId)),
+    });
+
+    const matches: Match[] = (data ?? []).map(mapFixture);
+    matches.sort((a, b) => {
+      const dateCompare = a.date.localeCompare(b.date);
+      return dateCompare !== 0 ? dateCompare : a.time.localeCompare(b.time);
+    });
+
+    await setCache(cacheKey, matches, CACHE_30_MIN);
+    return matches;
+  } catch (error) {
+    console.error(`Failed to fetch tournament fixtures for ${competitionCode}:`, error);
     return [];
   }
 }
@@ -826,19 +915,39 @@ export async function getLiveMatches(): Promise<Match[]> {
   const cached = await getCached<Match[]>(cacheKey);
   if (cached) return cached;
 
+  // Get today's date in UTC for the API query
+  const today = new Date().toISOString().slice(0, 10);
+
   try {
-    const allLiveFixtures = await Promise.all(
+    const allFixtures = await Promise.all(
       LEAGUE_IDS.map((leagueId) =>
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         apiFetch<any[]>("/fixtures", {
           league: String(leagueId),
-          live: "all",
+          date: today,
         })
       )
     );
 
-    const matches: Match[] = allLiveFixtures.flat().map(mapFixture);
-    matches.sort((a, b) => a.time.localeCompare(b.time));
+    const matches: Match[] = allFixtures
+      .flat()
+      .map(mapFixture)
+      // Only return live + recently finished matches
+      .filter(
+        (m) =>
+          m.status === "IN_PLAY" ||
+          m.status === "LIVE" ||
+          m.status === "FINISHED" ||
+          m.status === "FT"
+      );
+
+    // Sort: live first, then finished
+    matches.sort((a, b) => {
+      const aLive = a.status === "IN_PLAY" || a.status === "LIVE" ? 0 : 1;
+      const bLive = b.status === "IN_PLAY" || b.status === "LIVE" ? 0 : 1;
+      if (aLive !== bLive) return aLive - bLive;
+      return a.time.localeCompare(b.time);
+    });
 
     // Short cache for live data - 30 seconds
     await setCache(cacheKey, matches, 30 * 1000);
@@ -1528,5 +1637,54 @@ export async function getTeamTopPerformers(teamId: number, leagueId: number): Pr
   } catch (error) {
     console.error(`Failed to fetch top performers for team ${teamId}:`, error);
     return [];
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Search — teams and players
+// ---------------------------------------------------------------------------
+
+export interface SearchResult {
+  teams: { id: number; name: string; crest: string; country: string }[];
+  players: { id: number; name: string; photo: string; team: string; teamCrest: string }[];
+}
+
+export async function searchTeamsAndPlayers(query: string): Promise<SearchResult> {
+  const trimmed = query.trim();
+  if (trimmed.length < 2) return { teams: [], players: [] };
+
+  const cacheKey = `search:${trimmed.toLowerCase()}`;
+  const cached = await getCached<SearchResult>(cacheKey);
+  if (cached) return cached;
+
+  try {
+    const [teamsRaw, playersRaw] = await Promise.all([
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      apiFetch<any[]>("/teams", { search: trimmed }),
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      apiFetch<any[]>("/players", { search: trimmed, league: "39" }).catch(() => []),
+    ]);
+
+    const teams = (teamsRaw || []).slice(0, 8).map((t) => ({
+      id: t.team?.id ?? 0,
+      name: t.team?.name ?? "",
+      crest: t.team?.logo ?? "",
+      country: t.team?.country ?? "",
+    }));
+
+    const players = (playersRaw || []).slice(0, 5).map((p) => ({
+      id: p.player?.id ?? 0,
+      name: p.player?.name ?? "",
+      photo: p.player?.photo ?? "",
+      team: p.statistics?.[0]?.team?.name ?? "",
+      teamCrest: p.statistics?.[0]?.team?.logo ?? "",
+    }));
+
+    const result: SearchResult = { teams, players };
+    await setCache(cacheKey, result, CACHE_1_HR);
+    return result;
+  } catch (error) {
+    console.error("Search failed:", error);
+    return { teams: [], players: [] };
   }
 }

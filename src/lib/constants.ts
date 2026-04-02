@@ -10,8 +10,8 @@ export const LEAGUES: League[] = [
   { code: "BL1", id: 78, name: "Bundesliga", country: "Germany", flag: "🇩🇪", logo: leagueLogo(78) },
   { code: "FL1", id: 61, name: "Ligue 1", country: "France", flag: "🇫🇷", logo: leagueLogo(61) },
   { code: "VL", id: 340, name: "V-League", country: "Vietnam", flag: "🇻🇳", logo: leagueLogo(340) },
-  { code: "CL", id: 2, name: "Champions League", country: "Europe", flag: "🇪🇺", logo: leagueLogo(2) },
-  { code: "WC", id: 1, name: "World Cup", country: "World", flag: "🌍", logo: leagueLogo(1) },
+  { code: "CL", id: 2, name: "Champions League", country: "Europe", flag: "🇪🇺", logo: leagueLogo(2), isTournament: true },
+  { code: "WC", id: 1, name: "World Cup", country: "World", flag: "🌍", logo: leagueLogo(1), isTournament: true },
 ];
 
 export const LEAGUE_IDS = LEAGUES.map((l) => l.id);

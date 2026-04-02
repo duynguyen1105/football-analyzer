@@ -19,6 +19,7 @@ export interface Match {
     crest: string;
   };
   venue: string;
+  round?: string; // e.g. "Group A - 1", "Quarter-finals", "Regular Season - 10"
   homeForm: string[]; // ["W","D","L",...]
   awayForm: string[];
   score?: { home: number | null; away: number | null };
@@ -100,6 +101,12 @@ export interface League {
   country: string;
   flag: string;
   logo: string;
+  isTournament?: boolean; // true for WC, CL — group stage + knockouts
+}
+
+export interface GroupStanding {
+  group: string; // "Group A", "Group B", etc.
+  standings: Standing[];
 }
 
 export interface MatchOdds {

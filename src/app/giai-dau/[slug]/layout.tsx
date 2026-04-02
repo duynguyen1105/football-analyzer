@@ -81,7 +81,7 @@ export default async function LeagueLayout({ params, children }: Props) {
         </div>
 
         {/* Tab navigation */}
-        <LeagueTabNav slug={slug} />
+        <LeagueTabNav slug={slug} isTournament={league.isTournament} />
 
         {/* Tab content */}
         {children}
