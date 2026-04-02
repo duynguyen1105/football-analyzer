@@ -3,6 +3,7 @@ import {
   getTeamSeasonStats,
   getTeamSquad,
   getTeamRecentMatches,
+  getTeamNextMatches,
   getTeamLeagueId,
 } from "@/lib/football-data";
 
@@ -51,6 +52,16 @@ export async function GET(request: Request) {
   if (section === "recent") {
     const matches = await getTeamRecentMatches(teamId, 10);
     return Response.json(matches, {
+      headers: { "Cache-Control": "s-maxage=1800, stale-while-revalidate=3600" },
+    });
+  }
+
+  if (section === "fixtures") {
+    const [recent, upcoming] = await Promise.all([
+      getTeamRecentMatches(teamId, 5),
+      getTeamNextMatches(teamId, 5),
+    ]);
+    return Response.json({ recent, upcoming }, {
       headers: { "Cache-Control": "s-maxage=1800, stale-while-revalidate=3600" },
     });
   }

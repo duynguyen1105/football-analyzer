@@ -2,7 +2,7 @@
 
 import { use } from "react";
 import { Navbar } from "@/components/Navbar";
-import { useTeamProfile, useTeamSquad, useTeamStats, useTeamRecent } from "@/lib/hooks";
+import { useTeamProfile, useTeamSquad, useTeamStats, useTeamFixtures } from "@/lib/hooks";
 import { LEAGUES } from "@/lib/constants";
 import Link from "next/link";
 
@@ -103,57 +103,102 @@ function SquadSection({ teamId }: { teamId: string }) {
   );
 }
 
-function RecentMatchesSection({ teamId }: { teamId: string }) {
-  const { data: matches, isLoading } = useTeamRecent(teamId);
+function FixturesSection({ teamId }: { teamId: string }) {
+  const { data, isLoading } = useTeamFixtures(teamId);
 
   if (isLoading) {
     return (
       <div className="space-y-2">
-        {[...Array(5)].map((_, i) => (
+        {[...Array(8)].map((_, i) => (
           <div key={i} className="h-12 bg-border/20 rounded-lg animate-pulse" />
         ))}
       </div>
     );
   }
 
-  if (!matches || matches.length === 0) {
+  const recent = data?.recent ?? [];
+  const upcoming = data?.upcoming ?? [];
+  const teamIdNum = parseInt(teamId, 10);
+
+  if (recent.length === 0 && upcoming.length === 0) {
     return <p className="text-sm text-text-muted">Không có dữ liệu trận đấu</p>;
   }
 
-  const teamIdNum = parseInt(teamId, 10);
-
   return (
-    <div className="space-y-2">
-      {matches.slice(0, 8).map((m: any) => {
-        const isHome = m.homeTeam?.id === teamIdNum;
-        const teamGoals = isHome ? m.score?.fullTime?.home : m.score?.fullTime?.away;
-        const oppGoals = isHome ? m.score?.fullTime?.away : m.score?.fullTime?.home;
-        const opponent = isHome ? m.awayTeam : m.homeTeam;
-        const result = teamGoals > oppGoals ? "W" : teamGoals < oppGoals ? "L" : "D";
-        const resultClass = result === "W" ? "bg-green-500/20 text-green-400" :
-                           result === "L" ? "bg-red-500/20 text-red-400" :
-                           "bg-yellow-500/20 text-yellow-400";
+    <div className="space-y-4">
+      {/* Upcoming matches */}
+      {upcoming.length > 0 && (
+        <div>
+          <p className="text-xs font-semibold text-text-muted uppercase tracking-wide mb-2">Sắp tới</p>
+          <div className="space-y-2">
+            {upcoming.map((m: any) => {
+              const isHome = m.homeTeam?.id === teamIdNum;
+              const opponent = isHome ? m.awayTeam : m.homeTeam;
 
-        return (
-          <Link
-            key={m.id}
-            href={`/match/${m.id}`}
-            className="flex items-center gap-3 py-2 px-3 bg-bg-primary/50 rounded-lg hover:bg-bg-primary transition-colors"
-          >
-            <span className={`w-6 h-6 rounded text-xs font-bold flex items-center justify-center ${resultClass}`}>
-              {result}
-            </span>
-            <div className="flex items-center gap-2 flex-1 min-w-0">
-              {opponent?.crest && (
-                <img src={opponent.crest} alt="" className="w-5 h-5 object-contain" />
-              )}
-              <span className="text-sm truncate">{opponent?.shortName || opponent?.name}</span>
-            </div>
-            <span className="text-sm font-bold">{teamGoals} - {oppGoals}</span>
-            <span className="text-[10px] text-text-muted">{isHome ? "Sân nhà" : "Sân khách"}</span>
-          </Link>
-        );
-      })}
+              return (
+                <Link
+                  key={m.id}
+                  href={`/match/${m.id}`}
+                  className="flex items-center gap-3 py-2 px-3 bg-bg-primary/50 rounded-lg hover:bg-bg-primary transition-colors"
+                >
+                  <span className="w-6 h-6 rounded text-[10px] font-bold flex items-center justify-center bg-accent/20 text-accent">
+                    {m.time || "TBD"}
+                  </span>
+                  <div className="flex items-center gap-2 flex-1 min-w-0">
+                    {opponent?.crest && (
+                      <img src={opponent.crest} alt="" className="w-5 h-5 object-contain" />
+                    )}
+                    <span className="text-sm truncate">{opponent?.shortName || opponent?.name}</span>
+                  </div>
+                  <div className="text-right shrink-0">
+                    <p className="text-[10px] text-text-muted">{m.date}</p>
+                    <p className="text-[10px] text-text-muted">{isHome ? "Sân nhà" : "Sân khách"}</p>
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Recent results */}
+      {recent.length > 0 && (
+        <div>
+          <p className="text-xs font-semibold text-text-muted uppercase tracking-wide mb-2">Kết quả gần đây</p>
+          <div className="space-y-2">
+            {recent.map((m: any) => {
+              const isHome = m.homeTeam?.id === teamIdNum;
+              const teamGoals = isHome ? m.score?.fullTime?.home : m.score?.fullTime?.away;
+              const oppGoals = isHome ? m.score?.fullTime?.away : m.score?.fullTime?.home;
+              const opponent = isHome ? m.awayTeam : m.homeTeam;
+              const result = teamGoals > oppGoals ? "W" : teamGoals < oppGoals ? "L" : "D";
+              const resultClass = result === "W" ? "bg-green-500/20 text-green-400" :
+                                 result === "L" ? "bg-red-500/20 text-red-400" :
+                                 "bg-yellow-500/20 text-yellow-400";
+
+              return (
+                <Link
+                  key={m.id}
+                  href={`/match/${m.id}`}
+                  className="flex items-center gap-3 py-2 px-3 bg-bg-primary/50 rounded-lg hover:bg-bg-primary transition-colors"
+                >
+                  <span className={`w-6 h-6 rounded text-xs font-bold flex items-center justify-center ${resultClass}`}>
+                    {result}
+                  </span>
+                  <div className="flex items-center gap-2 flex-1 min-w-0">
+                    {opponent?.crest && (
+                      <img src={opponent.crest} alt="" className="w-5 h-5 object-contain" />
+                    )}
+                    <span className="text-sm truncate">{opponent?.shortName || opponent?.name}</span>
+                  </div>
+                  <span className="text-sm font-bold">{teamGoals} - {oppGoals}</span>
+                  <span className="text-[10px] text-text-muted">{isHome ? "Sân nhà" : "Sân khách"}</span>
+                </Link>
+              );
+            })}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -349,13 +394,13 @@ export default function TeamPage({ params }: { params: Promise<{ id: string }> }
 
           {/* Sidebar */}
           <div className="space-y-6">
-            {/* Recent Matches */}
+            {/* Fixtures */}
             <section className="bg-bg-card rounded-2xl border border-border p-5">
               <h2 className="font-bold text-sm mb-4 flex items-center gap-2">
                 <span className="w-1.5 h-1.5 rounded-full bg-green-500" />
-                Trận đấu gần đây
+                Lịch thi đấu
               </h2>
-              <RecentMatchesSection teamId={id} />
+              <FixturesSection teamId={id} />
             </section>
           </div>
         </div>

@@ -544,6 +544,56 @@ export async function getTeamRecentMatches(teamId: number, limit: number): Promi
   }
 }
 
+export async function getTeamNextMatches(teamId: number, limit: number): Promise<any[]> {
+  const cacheKey = `next:${teamId}:${limit}`;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const cached = await getCached<any[]>(cacheKey);
+  if (cached) return cached;
+
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const data = await apiFetch<any[]>("/fixtures", {
+      team: String(teamId),
+      next: String(limit),
+    });
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const result = (data ?? []).map((raw: any) => {
+      const homeId = raw.teams?.home?.id ?? 0;
+      const awayId = raw.teams?.away?.id ?? 0;
+      const fixtureDate = raw.fixture?.date ?? new Date().toISOString();
+
+      return {
+        id: raw.fixture?.id ?? 0,
+        date: formatDateGmt7(fixtureDate),
+        time: formatTimeGmt7(fixtureDate),
+        utcDate: fixtureDate,
+        status: STATUS_MAP[raw.fixture?.status?.short] ?? "SCHEDULED",
+        competition: raw.league?.name ?? "",
+        round: raw.league?.round ?? "",
+        homeTeam: {
+          id: homeId,
+          name: raw.teams?.home?.name ?? "",
+          shortName: getShortName(homeId, raw.teams?.home?.name ?? ""),
+          crest: raw.teams?.home?.logo ?? "",
+        },
+        awayTeam: {
+          id: awayId,
+          name: raw.teams?.away?.name ?? "",
+          shortName: getShortName(awayId, raw.teams?.away?.name ?? ""),
+          crest: raw.teams?.away?.logo ?? "",
+        },
+      };
+    });
+
+    await setCache(cacheKey, result, CACHE_30_MIN);
+    return result;
+  } catch (error) {
+    console.error(`Failed to fetch next matches for team ${teamId}:`, error);
+    return [];
+  }
+}
+
 export async function getTopScorers(
   competitionCode: string
 ): Promise<{ id: number; name: string; team: string; teamLogo: string; goals: number; assists: number | null; nationality: string; photo: string }[]> {

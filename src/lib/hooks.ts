@@ -239,3 +239,12 @@ export function useTeamRecent(teamId: string) {
     staleTime: 30 * 60 * 1000, // 30 min
   });
 }
+
+export function useTeamFixtures(teamId: string) {
+  return useQuery<{ recent: any[]; upcoming: any[] }>({
+    queryKey: ["team", teamId, "fixtures"],
+    queryFn: () =>
+      fetch(`/api/team?id=${teamId}&section=fixtures`).then((r) => r.json()),
+    staleTime: 30 * 60 * 1000,
+  });
+}
