@@ -252,7 +252,7 @@ export async function getMatches(dateFrom: string, dateTo: string): Promise<Matc
   if (cached) return cached;
 
   try {
-    const allFixtures = await Promise.all(
+    const results = await Promise.allSettled(
       LEAGUE_IDS.map((leagueId) =>
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         apiFetch<any[]>("/fixtures", {
@@ -264,13 +264,27 @@ export async function getMatches(dateFrom: string, dateTo: string): Promise<Matc
       )
     );
 
-    const matches: Match[] = allFixtures.flat().map(mapFixture);
+    // Collect successful results, skip failed ones (rate limits, etc.)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const allFixtures: any[] = [];
+    results.forEach((r, i) => {
+      if (r.status === "fulfilled" && r.value) {
+        allFixtures.push(...r.value);
+      } else if (r.status === "rejected") {
+        console.warn(`Failed to fetch fixtures for league ${LEAGUE_IDS[i]}:`, r.reason?.message ?? r.reason);
+      }
+    });
+
+    const matches: Match[] = allFixtures.map(mapFixture);
     matches.sort((a, b) => {
       const dateCompare = a.date.localeCompare(b.date);
       return dateCompare !== 0 ? dateCompare : a.time.localeCompare(b.time);
     });
 
-    await setCache(cacheKey, matches, CACHE_5_MIN);
+    // Only cache if we got at least some results
+    if (matches.length > 0) {
+      await setCache(cacheKey, matches, CACHE_5_MIN);
+    }
     return matches;
   } catch (error) {
     console.error("Failed to fetch matches:", error);
