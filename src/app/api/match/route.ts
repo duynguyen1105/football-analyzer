@@ -17,6 +17,7 @@ import {
 import { getLeagueId } from "@/lib/constants";
 import { computePrediction } from "@/lib/prediction";
 import { computeImportance } from "@/lib/importance";
+import { storePrediction } from "@/lib/prediction-tracker";
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -43,6 +44,17 @@ export async function GET(request: Request) {
     const awayStanding = standings.find((s) => s.team.id === match.awayTeam.id) || null;
     const prediction = computePrediction(homeStanding, awayStanding, h2h);
     const importance = computeImportance(homeStanding, awayStanding);
+
+    // Store prediction for accuracy tracking (fire-and-forget)
+    if (match.status === "SCHEDULED" || match.status === "TIMED") {
+      storePrediction(matchId, {
+        homeTeam: match.homeTeam.shortName,
+        awayTeam: match.awayTeam.shortName,
+        league: match.competition.code,
+        date: match.date,
+        prediction,
+      }).catch(() => {});
+    }
 
     return Response.json({
       match,

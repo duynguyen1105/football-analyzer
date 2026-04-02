@@ -1,5 +1,6 @@
 @import "tailwindcss";
 
+/* Dark theme (default) */
 :root {
   --bg-primary: #0f172a;
   --bg-secondary: #1e293b;
@@ -13,6 +14,22 @@
   --text-secondary: #94a3b8;
   --text-muted: #64748b;
   --border: #334155;
+}
+
+/* Light theme */
+:root[data-theme="light"] {
+  --bg-primary: #f8fafc;
+  --bg-secondary: #ffffff;
+  --bg-card: #ffffff;
+  --bg-card-hover: #f1f5f9;
+  --accent: #16a34a;
+  --accent-2: #2563eb;
+  --accent-red: #dc2626;
+  --accent-yellow: #ca8a04;
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --text-muted: #94a3b8;
+  --border: #e2e8f0;
 }
 
 @theme inline {
@@ -81,6 +98,6 @@ body {
   transform: rotate(3deg) translate(0px, -4px);
 }
 
-.badge-w { background: #22c55e20; color: #22c55e; }
-.badge-d { background: #eab30820; color: #eab308; }
-.badge-l { background: #ef444420; color: #ef4444; }
+.badge-w { background: #22c55e20; color: var(--accent); }
+.badge-d { background: #eab30820; color: var(--accent-yellow); }
+.badge-l { background: #ef444420; color: var(--accent-red); }

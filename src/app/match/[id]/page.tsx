@@ -2,6 +2,7 @@
 
 import { use } from "react";
 import { Navbar } from "@/components/Navbar";
+import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { AdSlot } from "@/components/AdSlot";
 import { AiAnalysis } from "@/components/AiAnalysis";
 import { RecentResults } from "@/components/RecentResults";
@@ -339,14 +340,10 @@ export default function MatchPage({ params }: { params: Promise<{ id: string }> 
     <>
       <Navbar />
       <main className="max-w-6xl mx-auto px-4 py-6 xl:px-8">
-        {/* Breadcrumb */}
-        <div className="flex items-center gap-2 text-xs text-text-muted mb-6">
-          <Link href="/" className="hover:text-text-primary transition-colors">Trang chủ</Link>
-          <span>/</span>
-          <span>{match.competition.name}</span>
-          <span>/</span>
-          <span className="text-text-secondary">{match.homeTeam.shortName} vs {match.awayTeam.shortName}</span>
-        </div>
+        <Breadcrumbs items={[
+          { label: match.competition.name, href: "/" },
+          { label: `${match.homeTeam.shortName} vs ${match.awayTeam.shortName}` },
+        ]} />
 
         {/* Match header */}
         <div className="bg-bg-card rounded-2xl border border-border p-4 md:p-6 mb-6">

@@ -2,8 +2,9 @@
 
 import { use } from "react";
 import { Navbar } from "@/components/Navbar";
-import { useTeamProfile, useTeamSquad, useTeamStats, useTeamFixtures } from "@/lib/hooks";
+import { useTeamProfile, useTeamSquad, useTeamStats, useTeamFixtures, useStandings } from "@/lib/hooks";
 import { LEAGUES } from "@/lib/constants";
+import { Breadcrumbs } from "@/components/Breadcrumbs";
 import Link from "next/link";
 
 const POSITION_VI: Record<string, string> = {
@@ -103,8 +104,27 @@ function SquadSection({ teamId }: { teamId: string }) {
   );
 }
 
-function FixturesSection({ teamId }: { teamId: string }) {
+/** Get difficulty level based on opponent league position */
+function getDifficulty(
+  opponentId: number,
+  standings: { team: { id: number }; position: number }[] | undefined,
+  totalTeams: number
+): { level: "easy" | "medium" | "hard"; label: string; color: string } {
+  if (!standings || standings.length === 0) {
+    return { level: "medium", label: "?", color: "bg-border/40 text-text-muted" };
+  }
+  const pos = standings.find((s) => s.team.id === opponentId)?.position;
+  if (!pos) return { level: "medium", label: "?", color: "bg-border/40 text-text-muted" };
+  const topQuarter = Math.ceil(totalTeams * 0.25);
+  const topHalf = Math.ceil(totalTeams * 0.5);
+  if (pos <= topQuarter) return { level: "hard", label: String(pos), color: "bg-red-500/20 text-red-400" };
+  if (pos <= topHalf) return { level: "medium", label: String(pos), color: "bg-yellow-500/20 text-yellow-400" };
+  return { level: "easy", label: String(pos), color: "bg-green-500/20 text-green-400" };
+}
+
+function FixturesSection({ teamId, leagueCode }: { teamId: string; leagueCode?: string }) {
   const { data, isLoading } = useTeamFixtures(teamId);
+  const { data: standings } = useStandings(leagueCode || "PL");
 
   if (isLoading) {
     return (
@@ -119,6 +139,7 @@ function FixturesSection({ teamId }: { teamId: string }) {
   const recent = data?.recent ?? [];
   const upcoming = data?.upcoming ?? [];
   const teamIdNum = parseInt(teamId, 10);
+  const totalTeams = standings?.length ?? 20;
 
   if (recent.length === 0 && upcoming.length === 0) {
     return <p className="text-sm text-text-muted">Không có dữ liệu trận đấu</p>;
@@ -126,6 +147,34 @@ function FixturesSection({ teamId }: { teamId: string }) {
 
   return (
     <div className="space-y-4">
+      {/* Difficulty strip */}
+      {upcoming.length > 0 && standings && standings.length > 0 && (
+        <div>
+          <p className="text-xs font-semibold text-text-muted uppercase tracking-wide mb-2">Độ khó lịch đấu</p>
+          <div className="flex gap-1 mb-1">
+            {upcoming.slice(0, 10).map((m: any) => {
+              const isHome = m.homeTeam?.id === teamIdNum;
+              const opponent = isHome ? m.awayTeam : m.homeTeam;
+              const diff = getDifficulty(opponent?.id, standings, totalTeams);
+              return (
+                <div
+                  key={m.id}
+                  className={`w-7 h-7 rounded text-[10px] font-bold flex items-center justify-center ${diff.color}`}
+                  title={`${opponent?.shortName || opponent?.name} (#${diff.label})`}
+                >
+                  {diff.label}
+                </div>
+              );
+            })}
+          </div>
+          <div className="flex gap-3 text-[9px] text-text-muted">
+            <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-sm bg-green-500/40" /> Dễ</span>
+            <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-sm bg-yellow-500/40" /> Vừa</span>
+            <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-sm bg-red-500/40" /> Khó</span>
+          </div>
+        </div>
+      )}
+
       {/* Upcoming matches */}
       {upcoming.length > 0 && (
         <div>
@@ -134,6 +183,7 @@ function FixturesSection({ teamId }: { teamId: string }) {
             {upcoming.map((m: any) => {
               const isHome = m.homeTeam?.id === teamIdNum;
               const opponent = isHome ? m.awayTeam : m.homeTeam;
+              const diff = getDifficulty(opponent?.id, standings, totalTeams);
 
               return (
                 <Link
@@ -141,8 +191,8 @@ function FixturesSection({ teamId }: { teamId: string }) {
                   href={`/match/${m.id}`}
                   className="flex items-center gap-3 py-2 px-3 bg-bg-primary/50 rounded-lg hover:bg-bg-primary transition-colors"
                 >
-                  <span className="w-6 h-6 rounded text-[10px] font-bold flex items-center justify-center bg-accent/20 text-accent">
-                    {m.time || "TBD"}
+                  <span className={`w-6 h-6 rounded text-[10px] font-bold flex items-center justify-center ${diff.color}`}>
+                    {diff.label}
                   </span>
                   <div className="flex items-center gap-2 flex-1 min-w-0">
                     {opponent?.crest && (
@@ -316,14 +366,10 @@ export default function TeamPage({ params }: { params: Promise<{ id: string }> }
     <>
       <Navbar />
       <main className="max-w-6xl mx-auto px-4 py-6 xl:px-8">
-        {/* Breadcrumb */}
-        <div className="flex items-center gap-2 text-xs text-text-muted mb-6">
-          <Link href="/" className="hover:text-text-primary transition-colors">Trang chủ</Link>
-          <span>/</span>
-          <span className="text-text-secondary">Đội bóng</span>
-          <span>/</span>
-          <span className="text-text-secondary">{team.name}</span>
-        </div>
+        <Breadcrumbs items={[
+          { label: "Đội bóng" },
+          { label: team.name },
+        ]} />
 
         {/* Profile Header */}
         <div className="bg-bg-card rounded-2xl border border-border p-6 mb-6">
@@ -400,7 +446,7 @@ export default function TeamPage({ params }: { params: Promise<{ id: string }> }
                 <span className="w-1.5 h-1.5 rounded-full bg-green-500" />
                 Lịch thi đấu
               </h2>
-              <FixturesSection teamId={id} />
+              <FixturesSection teamId={id} leagueCode={LEAGUES.find(l => l.id === teamLeagueId)?.code} />
             </section>
           </div>
         </div>

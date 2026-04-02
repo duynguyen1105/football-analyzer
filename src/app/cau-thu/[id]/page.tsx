@@ -2,6 +2,7 @@
 
 import { use, useState, useMemo } from "react";
 import { Navbar } from "@/components/Navbar";
+import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { usePlayerProfile, usePlayerTransfers, usePlayerTrophies } from "@/lib/hooks";
 import Link from "next/link";
 
@@ -253,14 +254,10 @@ export default function PlayerPage({ params }: { params: Promise<{ id: string }>
     <>
       <Navbar />
       <main className="max-w-6xl mx-auto px-4 py-6 xl:px-8">
-        {/* Breadcrumb */}
-        <div className="flex items-center gap-2 text-xs text-text-muted mb-6">
-          <Link href="/" className="hover:text-text-primary transition-colors">Trang chủ</Link>
-          <span>/</span>
-          <span className="text-text-secondary">Cầu thủ</span>
-          <span>/</span>
-          <span className="text-text-secondary">{player.name}</span>
-        </div>
+        <Breadcrumbs items={[
+          { label: "Cầu thủ" },
+          { label: player.name },
+        ]} />
 
         {/* Profile Header */}
         <div className="bg-bg-card rounded-2xl border border-border p-6 mb-6">

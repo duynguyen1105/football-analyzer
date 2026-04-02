@@ -4,6 +4,8 @@ import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { LEAGUES } from "@/lib/constants";
 import { getSlugByCode } from "@/lib/league-slugs";
+import { SearchBar } from "./SearchBar";
+import { ThemeToggle } from "./ThemeToggle";
 
 export function Navbar() {
   const [open, setOpen] = useState(false);
@@ -63,6 +65,9 @@ export function Navbar() {
           </div>
 
           <Link href="/soi-keo/premier-league" className="hover:text-text-primary transition-colors">Soi kèo</Link>
+          <Link href="/du-doan" className="hover:text-text-primary transition-colors hidden sm:inline">Dự đoán</Link>
+          <SearchBar />
+          <ThemeToggle />
         </nav>
       </div>
     </header>
