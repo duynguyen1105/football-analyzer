@@ -161,7 +161,7 @@ function StandingsCard({ league }: { league: (typeof LEAGUES)[number] }) {
           ))}
         </tbody>
       </table>
-      <Link href={`/giai-dau/${league.code}`} className="block text-center text-[10px] text-accent mt-2 hover:underline">
+      <Link href={`/giai-dau/${getSlugByCode(league.code) || league.code}`} className="block text-center text-[10px] text-accent mt-2 hover:underline">
         Xem đầy đủ &rarr;
       </Link>
     </div>

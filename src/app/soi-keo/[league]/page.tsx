@@ -161,6 +161,13 @@ export default async function SoiKeoPage({ params }: Props) {
           Tỷ lệ kèo chỉ mang tính chất tham khảo, phân tích thông tin.
         </p>
 
+        {/* Cross-link */}
+        <div className="mt-6 text-center">
+          <Link href={`/giai-dau/${slug}`} className="text-sm text-accent hover:underline">
+            Xem trang giải đấu {league.name} &rarr;
+          </Link>
+        </div>
+
         <footer className="mt-10 py-4 border-t border-border text-center text-[10px] text-text-muted">
           <p>MatchDay Analyst &mdash; Nhận định bóng đá trước trận</p>
           <p className="mt-0.5">Dữ liệu từ API-Football</p>

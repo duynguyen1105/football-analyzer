@@ -147,13 +147,13 @@ export default async function SchedulePage({ params }: Props) {
           </div>
         )}
 
-        {/* Link to standings */}
-        <div className="mt-8 text-center">
-          <Link
-            href={`/bang-xep-hang/${slug}`}
-            className="text-sm text-accent hover:underline"
-          >
-            Xem bảng xếp hạng {league.name} &rarr;
+        {/* Cross-links */}
+        <div className="mt-8 flex flex-col items-center gap-2">
+          <Link href={`/giai-dau/${slug}`} className="text-sm text-accent hover:underline">
+            Xem trang giải đấu {league.name} &rarr;
+          </Link>
+          <Link href={`/bang-xep-hang/${slug}`} className="text-xs text-text-secondary hover:text-accent hover:underline">
+            Bảng xếp hạng {league.name}
           </Link>
         </div>
 

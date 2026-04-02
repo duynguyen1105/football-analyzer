@@ -162,13 +162,13 @@ export default async function StandingsPage({ params }: Props) {
           </div>
         </div>
 
-        {/* Link to schedule */}
-        <div className="mt-8 text-center">
-          <Link
-            href={`/lich-thi-dau/${slug}`}
-            className="text-sm text-accent hover:underline"
-          >
-            Xem lịch thi đấu {league.name} &rarr;
+        {/* Cross-links */}
+        <div className="mt-8 flex flex-col items-center gap-2">
+          <Link href={`/giai-dau/${slug}`} className="text-sm text-accent hover:underline">
+            Xem trang giải đấu {league.name} &rarr;
+          </Link>
+          <Link href={`/lich-thi-dau/${slug}`} className="text-xs text-text-secondary hover:text-accent hover:underline">
+            Lịch thi đấu {league.name}
           </Link>
         </div>
 
