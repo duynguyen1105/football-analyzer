@@ -13,16 +13,18 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${baseUrl}/privacy`, lastModified: new Date(), changeFrequency: "monthly", priority: 0.2 },
   ];
 
-  // League pages (existing /giai-dau/ + new SEO pages)
+  // League pages
   const leagueSlugs = getAllLeagueSlugs();
   const leaguePages: MetadataRoute.Sitemap = [
-    // Existing league detail pages
-    { url: `${baseUrl}/giai-dau/PL`, lastModified: new Date(), changeFrequency: "daily", priority: 0.7 },
-    { url: `${baseUrl}/giai-dau/PD`, lastModified: new Date(), changeFrequency: "daily", priority: 0.7 },
-    { url: `${baseUrl}/giai-dau/SA`, lastModified: new Date(), changeFrequency: "daily", priority: 0.7 },
-    { url: `${baseUrl}/giai-dau/BL1`, lastModified: new Date(), changeFrequency: "daily", priority: 0.7 },
-    { url: `${baseUrl}/giai-dau/FL1`, lastModified: new Date(), changeFrequency: "daily", priority: 0.7 },
-    // SEO schedule + standings pages
+    // League detail hub + sub-pages
+    ...leagueSlugs.flatMap((slug) => [
+      { url: `${baseUrl}/giai-dau/${slug}`, lastModified: new Date(), changeFrequency: "daily" as const, priority: 0.9 },
+      { url: `${baseUrl}/giai-dau/${slug}/lich-thi-dau`, lastModified: new Date(), changeFrequency: "daily" as const, priority: 0.8 },
+      { url: `${baseUrl}/giai-dau/${slug}/top-ghi-ban`, lastModified: new Date(), changeFrequency: "daily" as const, priority: 0.8 },
+      { url: `${baseUrl}/giai-dau/${slug}/top-kien-tao`, lastModified: new Date(), changeFrequency: "daily" as const, priority: 0.8 },
+      { url: `${baseUrl}/giai-dau/${slug}/soi-keo`, lastModified: new Date(), changeFrequency: "daily" as const, priority: 0.8 },
+    ]),
+    // Standalone SEO pages
     ...leagueSlugs.flatMap((slug) => [
       { url: `${baseUrl}/lich-thi-dau/${slug}`, lastModified: new Date(), changeFrequency: "daily" as const, priority: 0.9 },
       { url: `${baseUrl}/bang-xep-hang/${slug}`, lastModified: new Date(), changeFrequency: "daily" as const, priority: 0.9 },

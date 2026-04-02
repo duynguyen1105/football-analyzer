@@ -1,5 +1,5 @@
 import { Match, Standing, TeamInfo, H2HMatch, MatchOdds, MatchInjury, MatchLineup } from "./types";
-import { LEAGUE_IDS, CURRENT_SEASON, getLeagueId, getLeagueCode } from "./constants";
+import { LEAGUE_IDS, CURRENT_SEASON, getLeagueId, getLeagueCode, getSeasonForLeague } from "./constants";
 import { getCached as getRedis, setCached as setRedis } from "./cache";
 import { getShortName, getTla } from "./team-names";
 
@@ -252,7 +252,7 @@ export async function getMatches(dateFrom: string, dateTo: string): Promise<Matc
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         apiFetch<any[]>("/fixtures", {
           league: String(leagueId),
-          season: String(CURRENT_SEASON),
+          season: String(getSeasonForLeague(leagueId)),
           from: dateFrom,
           to: dateTo,
         })
@@ -303,7 +303,7 @@ export async function getStandings(competitionCode: string): Promise<Standing[]>
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const data = await apiFetch<any[]>("/standings", {
       league: String(leagueId),
-      season: String(CURRENT_SEASON),
+      season: String(getSeasonForLeague(leagueId)),
     });
 
     // response[0].league.standings[0] = array of team standings
@@ -457,7 +457,7 @@ export async function getTeamRecentMatches(teamId: number, limit: number): Promi
 
 export async function getTopScorers(
   competitionCode: string
-): Promise<{ id: number; name: string; team: string; goals: number; assists: number | null; nationality: string; photo?: string }[]> {
+): Promise<{ id: number; name: string; team: string; teamLogo: string; goals: number; assists: number | null; nationality: string; photo: string }[]> {
   const cacheKey = `scorers:${competitionCode}`;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const cached = await getCached<any[]>(cacheKey);
@@ -470,15 +470,16 @@ export async function getTopScorers(
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const data = await apiFetch<any[]>("/players/topscorers", {
       league: String(leagueId),
-      season: String(CURRENT_SEASON),
+      season: String(getSeasonForLeague(leagueId)),
     });
 
-    const result = (data ?? []).slice(0, 10).map(
+    const result = (data ?? []).slice(0, 20).map(
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (s: any) => ({
         id: s.player?.id ?? 0,
         name: s.player?.name ?? "",
         team: s.statistics?.[0]?.team?.name ?? "",
+        teamLogo: s.statistics?.[0]?.team?.logo ?? "",
         goals: s.statistics?.[0]?.goals?.total ?? 0,
         assists: s.statistics?.[0]?.goals?.assists ?? null,
         nationality: s.player?.nationality ?? "",
@@ -966,7 +967,7 @@ export async function getTopAssists(
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const data = await apiFetch<any[]>("/players/topassists", {
       league: String(leagueId),
-      season: String(CURRENT_SEASON),
+      season: String(getSeasonForLeague(leagueId)),
     });
 
     const result = (data ?? []).slice(0, 20).map(
@@ -1302,7 +1303,7 @@ export async function getTeamSeasonStats(teamId: number, leagueId: number): Prom
     const data = await apiFetch<any>("/teams/statistics", {
       team: String(teamId),
       league: String(leagueId),
-      season: String(CURRENT_SEASON),
+      season: String(getSeasonForLeague(leagueId)),
     });
 
     if (!data) return null;
@@ -1479,7 +1480,7 @@ export async function getTeamTopPerformers(teamId: number, leagueId: number): Pr
       const raw = await apiFetchRaw("/players", {
         team: String(teamId),
         league: String(leagueId),
-        season: String(CURRENT_SEASON),
+        season: String(getSeasonForLeague(leagueId)),
         page: String(page),
       });
       const items = raw.response ?? [];

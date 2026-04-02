@@ -12,13 +12,13 @@ npm run lint      # ESLint
 
 ## Architecture
 
-Vietnamese-first football pre-match analysis site for Europe's top 5 leagues (PL, La Liga, Serie A, Bundesliga, Ligue 1). Next.js 16 App Router + React Query + Zustand + Tailwind CSS 4.
+Vietnamese-first football pre-match analysis site covering Europe's top 5 leagues (PL, La Liga, Serie A, Bundesliga, Ligue 1), V-League (Vietnam), Champions League, and World Cup. Next.js 16 App Router + React Query + Zustand + Tailwind CSS 4. Data sourced from API-Football (api-sports.io).
 
 ### Data Flow
 
 ```
-Football-Data.org API → Rate Limiter (9/60s sliding window) → Two-Level Cache → API Routes → React Query → Components
-                                                                                    ↓
+API-Football (api-sports.io) → Rate Limiter (280/60s sliding window) → Two-Level Cache → API Routes → React Query → Components
+                                                                                              ↓
 Claude Haiku API → Redis Cache (6hr) → AI Analysis / Quick Summary
 ```
 
@@ -34,11 +34,11 @@ Claude Haiku API → Redis Cache (6hr) → AI Analysis / Quick Summary
 - **Prefetch on hover**: MatchCard prefetches core data via React Query on mouseenter/touchstart
 - **H2H fallback chain**: official `/matches/{id}/head2head` endpoint → computed from recent matches
 - **Prediction engine**: Poisson model from standings data with home advantage (1.1x) and optional H2H blending (10%)
-- **Rate limiter**: sliding window in `football-data.ts`, NOT fixed delay — first requests are instant, only throttles at capacity
+- **Rate limiter**: sliding window (280 req/min) in `football-data.ts`, NOT fixed delay — first requests are instant, only throttles at capacity
 
 ### API Integration
 
-- **Football-Data.org** (`src/lib/football-data.ts`): All data fetching. Free tier: 10 req/min, 12 competitions. Auth via `X-Auth-Token` header. Responses use UTC dates, converted to GMT+7 in `mapMatch()`.
+- **API-Football** (`src/lib/football-data.ts`): All data fetching via `v3.football.api-sports.io`. Pro plan: 280 req/min. Auth via `x-apisports-key` header. League IDs: PL=39, La Liga=140, Serie A=135, Bundesliga=78, Ligue 1=61, V-League=340, Champions League=2, World Cup=1. Responses use UTC dates, converted to GMT+7 in `mapMatch()`.
 - **Claude API** (`src/lib/ai-analysis.ts`): Match analysis + quick summaries. Model: `claude-haiku-4-5-20251001`. Prompts in both EN and VI with bold predicted score. Cached in Redis 6hr.
 - **Upstash Redis** (`src/lib/cache.ts`): Persistent KV cache. Falls back to in-memory if env vars not set.
 
@@ -57,7 +57,7 @@ Every route has a `loading.tsx` for instant navigation skeleton.
 ## Important Conventions
 
 - All UI text must be in **Vietnamese with proper diacritics** (dấu). Example: "Nhận định bóng đá" not "Nhan dinh bong da"
-- Football-Data.org dates are UTC — always convert to GMT+7 via `utcToGmt7()` before display
+- API-Football dates are UTC — always convert to GMT+7 via `utcToGmt7()` before display
 - `getCached`/`setCache` in football-data.ts are **async** (Redis I/O) — always `await` them
 - Mobile layout: row-based match cards (team per row). Desktop: horizontal grid (crests above names, 2-column grid)
 - Vietnamese position names: Offence→"Tấn công", Midfield→"Tiền vệ", Defence→"Hậu vệ", Goalkeeper→"Thủ môn"
@@ -65,7 +65,7 @@ Every route has a `loading.tsx` for instant navigation skeleton.
 ## Environment Variables
 
 ```
-FOOTBALL_DATA_API_KEY          # Football-Data.org (free tier, 10 req/min)
+API_FOOTBALL_KEY               # API-Football (api-sports.io, Pro plan, 280 req/min)
 ANTHROPIC_API_KEY              # Claude API for AI analysis
 UPSTASH_REDIS_REST_URL         # Persistent cache (optional, falls back to in-memory)
 UPSTASH_REDIS_REST_TOKEN       # Redis auth

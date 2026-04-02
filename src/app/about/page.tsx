@@ -30,8 +30,9 @@ export default function AboutPage() {
             European football leagues. Before every match, we break down team
             form, head-to-head records, key stats, and tactical insights so you
             can walk into kickoff fully informed. Whether you follow the Premier
-            League, La Liga, Serie A, Bundesliga, or Ligue 1, our goal is to
-            give you a clear, data-driven picture of what to expect.
+            League, La Liga, Serie A, Bundesliga, Ligue 1, V-League,
+            Champions League, or the World Cup, our goal is to give you a
+            clear, data-driven picture of what to expect.
           </p>
         </section>
 

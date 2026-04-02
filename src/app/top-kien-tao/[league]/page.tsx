@@ -13,6 +13,9 @@ const SLUG_TO_CODE: Record<string, string> = {
   "serie-a": "SA",
   "bundesliga": "BL1",
   "ligue-1": "FL1",
+  "v-league": "VL",
+  "champions-league": "CL",
+  "world-cup": "WC",
 };
 
 const CODE_TO_SLUG: Record<string, string> = {
@@ -21,6 +24,9 @@ const CODE_TO_SLUG: Record<string, string> = {
   SA: "serie-a",
   BL1: "bundesliga",
   FL1: "ligue-1",
+  VL: "v-league",
+  CL: "champions-league",
+  WC: "world-cup",
 };
 
 interface AssistPlayer {
@@ -205,7 +211,7 @@ export default function TopAssistsPage({
         {/* Link to top scorers */}
         <div className="mt-6 text-center">
           <Link
-            href={`/giai-dau/${code}`}
+            href={`/giai-dau/${CODE_TO_SLUG[code] || slug}`}
             className="inline-flex items-center gap-2 text-sm text-accent hover:underline"
           >
             Xem vua phá lưới và bảng xếp hạng &rarr;

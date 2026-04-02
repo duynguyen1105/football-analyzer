@@ -9,6 +9,9 @@ export const LEAGUES: League[] = [
   { code: "SA", id: 135, name: "Serie A", country: "Italy", flag: "🇮🇹", logo: leagueLogo(135) },
   { code: "BL1", id: 78, name: "Bundesliga", country: "Germany", flag: "🇩🇪", logo: leagueLogo(78) },
   { code: "FL1", id: 61, name: "Ligue 1", country: "France", flag: "🇫🇷", logo: leagueLogo(61) },
+  { code: "VL", id: 340, name: "V-League", country: "Vietnam", flag: "🇻🇳", logo: leagueLogo(340) },
+  { code: "CL", id: 2, name: "Champions League", country: "Europe", flag: "🇪🇺", logo: leagueLogo(2) },
+  { code: "WC", id: 1, name: "World Cup", country: "World", flag: "🌍", logo: leagueLogo(1) },
 ];
 
 export const LEAGUE_IDS = LEAGUES.map((l) => l.id);
@@ -29,3 +32,13 @@ export function getCurrentSeason(): number {
 }
 
 export const CURRENT_SEASON = getCurrentSeason();
+
+/** Calendar-year leagues (V-League, World Cup) use the current year as season */
+const CALENDAR_YEAR_LEAGUE_IDS = new Set([340, 1]); // V-League, World Cup
+
+export function getSeasonForLeague(leagueId: number): number {
+  if (CALENDAR_YEAR_LEAGUE_IDS.has(leagueId)) {
+    return new Date().getFullYear();
+  }
+  return CURRENT_SEASON;
+}

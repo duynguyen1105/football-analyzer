@@ -7,6 +7,7 @@ import { AdSlot } from "@/components/AdSlot";
 import { useMatches, useStandings } from "@/lib/hooks";
 import { useAppStore } from "@/lib/store";
 import { LEAGUES } from "@/lib/constants";
+import { getSlugByCode } from "@/lib/league-slugs";
 import { Match, Standing } from "@/lib/types";
 import Link from "next/link";
 
@@ -127,7 +128,7 @@ function StandingsCard({ league }: { league: (typeof LEAGUES)[number] }) {
 
   return (
     <div className="bg-bg-card rounded-lg border border-border p-3">
-      <Link href={`/giai-dau/${league.code}`}>
+      <Link href={`/giai-dau/${getSlugByCode(league.code) || league.code}`}>
         <h3 className="font-semibold text-xs mb-2 hover:text-accent transition-colors flex items-center gap-1.5">
           <img src={league.logo} alt="" className="w-5 h-5 object-contain" />
           {league.name}
@@ -192,7 +193,7 @@ export default function Home() {
       <div className="max-w-7xl mx-auto px-3 py-4 xl:px-6">
         {/* Title */}
         <h1 className="text-lg font-bold mb-0.5">Lịch thi đấu &amp; Nhận định</h1>
-        <p className="text-text-secondary text-xs mb-4">Phân tích trước trận cho 5 giải hàng đầu Châu Âu</p>
+        <p className="text-text-secondary text-xs mb-4">Phân tích trước trận cho các giải đấu hàng đầu</p>
 
         {/* League filter — wraps on mobile instead of scrolling */}
         <div className="flex flex-wrap gap-1.5 mb-4">

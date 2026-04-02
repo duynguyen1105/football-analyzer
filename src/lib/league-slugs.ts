@@ -7,6 +7,9 @@ export const LEAGUE_SLUGS: Record<string, string> = {
   "serie-a": "SA",
   "bundesliga": "BL1",
   "ligue-1": "FL1",
+  "v-league": "VL",
+  "champions-league": "CL",
+  "world-cup": "WC",
 };
 
 const SLUG_BY_CODE: Record<string, string> = Object.fromEntries(

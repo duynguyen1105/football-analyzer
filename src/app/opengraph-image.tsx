@@ -38,6 +38,11 @@ export default async function Image() {
           <span>🇮🇹 Serie A</span>
           <span>🇩🇪 Bundesliga</span>
           <span>🇫🇷 Ligue 1</span>
+          <span>🇻🇳 V-League</span>
+        </div>
+        <div style={{ display: "flex", gap: 24, marginTop: 12, fontSize: 20, color: "#64748b" }}>
+          <span>🇪🇺 Champions League</span>
+          <span>🌍 World Cup</span>
         </div>
       </div>
     ),
