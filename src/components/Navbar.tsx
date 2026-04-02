@@ -66,6 +66,7 @@ export function Navbar() {
 
           <Link href="/soi-keo/premier-league" className="hover:text-text-primary transition-colors">Soi kèo</Link>
           <Link href="/du-doan" className="hover:text-text-primary transition-colors hidden sm:inline">Dự đoán</Link>
+          <Link href="/so-sanh" className="hover:text-text-primary transition-colors hidden md:inline">So sánh</Link>
           <SearchBar />
           <ThemeToggle />
         </nav>

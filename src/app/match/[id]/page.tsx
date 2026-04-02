@@ -14,6 +14,7 @@ import { MatchImportance } from "@/components/MatchImportance";
 import { RefereeInfo } from "@/components/RefereeInfo";
 import { QuickSummary } from "@/components/QuickSummary";
 import { ShareButton } from "@/components/ShareButton";
+import { MatchReminder } from "@/components/MatchReminder";
 import { MatchOdds } from "@/components/MatchOdds";
 import { MatchInjuries } from "@/components/MatchInjuries";
 import { MatchLineups } from "@/components/MatchLineups";
@@ -410,8 +411,17 @@ export default function MatchPage({ params }: { params: Promise<{ id: string }> 
             {match.status !== "FINISHED" && (
               <MatchCountdown matchDate={match.date} matchTime={match.time} />
             )}
-            <div className="flex justify-center">
+            <div className="flex justify-center gap-2">
               <ShareButton homeTeam={match.homeTeam.shortName} awayTeam={match.awayTeam.shortName} matchId={match.id} />
+              {match.status !== "FINISHED" && (
+                <MatchReminder
+                  matchId={match.id}
+                  matchDate={match.date}
+                  matchTime={match.time}
+                  homeTeam={match.homeTeam.shortName}
+                  awayTeam={match.awayTeam.shortName}
+                />
+              )}
             </div>
           </div>
         </div>
