@@ -21,6 +21,7 @@ import { MerchandiseSection } from "@/components/MerchandiseSection";
 import { SponsoredSlot } from "@/components/SponsoredSlot";
 import { MatchInjuries } from "@/components/MatchInjuries";
 import { MatchLineups } from "@/components/MatchLineups";
+import { FormationPitch } from "@/components/FormationPitch";
 import { MatchEvents } from "@/components/MatchEvents";
 import { MatchTimeline } from "@/components/MatchTimeline";
 import { MatchStatistics } from "@/components/MatchStatistics";
@@ -499,6 +500,7 @@ export default function MatchPage({ params }: { params: Promise<{ id: string }> 
                   awayTeamName={match.awayTeam.shortName}
                   isLive={isLive}
                 />
+                <FormationPitch matchId={id} />
                 <MatchLineups matchId={id} />
               </>
             )}
@@ -580,6 +582,7 @@ export default function MatchPage({ params }: { params: Promise<{ id: string }> 
             {/* ═══ SCHEDULED: Lineups, Injuries, etc. ═══ */}
             {match.status !== "FINISHED" && match.status !== "IN_PLAY" && match.status !== "LIVE" && (
               <>
+                <FormationPitch matchId={id} />
                 <MatchLineups matchId={id} />
                 <MatchInjuries
                   matchId={id}

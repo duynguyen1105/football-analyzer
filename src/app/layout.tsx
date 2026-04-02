@@ -7,6 +7,7 @@ import { GoogleAnalytics } from "@/components/GoogleAnalytics";
 import { AdSenseScript } from "@/components/AdSenseScript";
 import { buildWebSiteSchema } from "@/lib/json-ld";
 import { MobileNav } from "@/components/MobileNav";
+import { WebVitals } from "@/components/WebVitals";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://nhandinhbongdavn.com"),
@@ -54,6 +55,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
           }}
         />
         <GoogleAnalytics />
+        <WebVitals />
         <AdSenseScript />
       </body>
     </html>
