@@ -77,6 +77,7 @@ NEXT_PUBLIC_SPONSOR_NAME          # Sponsored content: sponsor display name
 NEXT_PUBLIC_SPONSOR_LOGO          # Sponsored content: sponsor logo URL
 NEXT_PUBLIC_SPONSOR_URL           # Sponsored content: sponsor link URL
 NEXT_PUBLIC_SPONSOR_TAGLINE       # Sponsored content: short tagline text
+NEXT_PUBLIC_CONTACT_EMAIL         # Contact email for sponsor inquiries (default: contact@nhandinhbongdavn.com)
 ```
 
 ## Domain & Deployment

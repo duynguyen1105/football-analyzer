@@ -13,6 +13,8 @@ const SPONSOR = {
   tagline: process.env.NEXT_PUBLIC_SPONSOR_TAGLINE || "",
 };
 
+const CONTACT_EMAIL = process.env.NEXT_PUBLIC_CONTACT_EMAIL || "contact@nhandinhbongdavn.com";
+
 export function SponsoredSlot({ className = "" }: { className?: string }) {
   // If a sponsor is configured, show their content
   if (SPONSOR.name && SPONSOR.url) {
@@ -45,7 +47,7 @@ export function SponsoredSlot({ className = "" }: { className?: string }) {
       <p className="text-[8px] text-text-muted/50 uppercase tracking-wider mb-1">Tài trợ</p>
       <p className="text-[10px] text-text-muted">
         Quảng cáo tại đây?{" "}
-        <a href="mailto:contact@nhandinhbongdavn.com" className="text-accent hover:underline">
+        <a href={`mailto:${CONTACT_EMAIL}`} className="text-accent hover:underline">
           Liên hệ
         </a>
       </p>
