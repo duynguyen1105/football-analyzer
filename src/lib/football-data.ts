@@ -232,6 +232,10 @@ function mapFixture(raw: any): Match {
       raw.goals?.home != null || raw.goals?.away != null
         ? { home: raw.goals.home, away: raw.goals.away }
         : undefined,
+    scoreHT:
+      raw.score?.halftime?.home != null || raw.score?.halftime?.away != null
+        ? { home: raw.score.halftime.home, away: raw.score.halftime.away }
+        : undefined,
     referee: raw.fixture?.referee
       ? { name: raw.fixture.referee, nationality: "" }
       : null,

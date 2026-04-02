@@ -9,10 +9,9 @@ interface TeamStatistics {
   stats: Record<string, string | number | null>;
 }
 
-// Map API stat names to Vietnamese
 const STAT_LABELS: Record<string, string> = {
   "Ball Possession": "Kiểm soát bóng",
-  "Total Shots": "Tổng số cú sút",
+  "Total Shots": "Tổng cú sút",
   "Shots on Goal": "Sút trúng đích",
   "Shots off Goal": "Sút ra ngoài",
   "Blocked Shots": "Cú sút bị chặn",
@@ -24,22 +23,33 @@ const STAT_LABELS: Record<string, string> = {
   "Yellow Cards": "Thẻ vàng",
   "Red Cards": "Thẻ đỏ",
   "Goalkeeper Saves": "Thủ môn cứu thua",
-  "Total passes": "Tổng số đường chuyền",
+  "Total passes": "Tổng đường chuyền",
   "Passes accurate": "Chuyền chính xác",
   "Passes %": "Tỷ lệ chuyền (%)",
+  "expected_goals": "Bàn thắng kỳ vọng (xG)",
 };
 
-// Stats to display (in order)
-const DISPLAY_STATS = [
-  "Ball Possession",
-  "Total Shots",
-  "Shots on Goal",
-  "Corner Kicks",
-  "Fouls",
-  "Offsides",
-  "Yellow Cards",
-  "Goalkeeper Saves",
-  "Passes %",
+const STAT_GROUPS: { title: string; icon: string; stats: string[] }[] = [
+  {
+    title: "Tổng quan",
+    icon: "📊",
+    stats: ["Ball Possession"],
+  },
+  {
+    title: "Tấn công",
+    icon: "⚡",
+    stats: ["Total Shots", "Shots on Goal", "Shots off Goal", "Blocked Shots", "Shots insidebox", "Shots outsidebox"],
+  },
+  {
+    title: "Chuyền bóng",
+    icon: "🎯",
+    stats: ["Total passes", "Passes accurate", "Passes %"],
+  },
+  {
+    title: "Phòng ngự & Kỷ luật",
+    icon: "🛡️",
+    stats: ["Fouls", "Corner Kicks", "Offsides", "Yellow Cards", "Red Cards", "Goalkeeper Saves"],
+  },
 ];
 
 function StatBar({
@@ -53,7 +63,6 @@ function StatBar({
   awayVal: string | number | null;
   isPossession?: boolean;
 }) {
-  // Parse values
   const parseVal = (v: string | number | null): number => {
     if (v === null || v === undefined) return 0;
     const str = String(v).replace("%", "");
@@ -70,27 +79,30 @@ function StatBar({
   const homeDisplay = homeVal !== null ? String(homeVal) : "-";
   const awayDisplay = awayVal !== null ? String(awayVal) : "-";
 
+  const homeWins = homeNum > awayNum;
+  const awayWins = awayNum > homeNum;
+
   return (
-    <div className="py-2.5">
-      <div className="flex justify-between text-sm mb-1.5">
-        <span className={homeNum > awayNum ? "font-bold text-accent" : "text-text-secondary"}>
+    <div className="py-2">
+      <div className="flex justify-between text-sm mb-1">
+        <span className={homeWins ? "font-bold text-accent" : "text-text-secondary"}>
           {homeDisplay}
         </span>
-        <span className="text-xs text-text-muted">{STAT_LABELS[label] || label}</span>
-        <span className={awayNum > homeNum ? "font-bold text-accent-2" : "text-text-secondary"}>
+        <span className="text-[11px] text-text-muted">{STAT_LABELS[label] || label}</span>
+        <span className={awayWins ? "font-bold text-accent-2" : "text-text-secondary"}>
           {awayDisplay}
         </span>
       </div>
-      <div className="flex gap-1 h-2">
-        <div className="flex-1 bg-border/30 rounded-full overflow-hidden">
+      <div className="flex gap-0.5 h-1.5">
+        <div className="flex-1 bg-border/20 rounded-full overflow-hidden">
           <div
-            className="h-full bg-accent rounded-full transition-all"
+            className={`h-full rounded-full transition-all ${homeWins ? "bg-accent" : "bg-accent/40"}`}
             style={{ width: `${homePct}%`, marginLeft: "auto" }}
           />
         </div>
-        <div className="flex-1 bg-border/30 rounded-full overflow-hidden">
+        <div className="flex-1 bg-border/20 rounded-full overflow-hidden">
           <div
-            className="h-full bg-accent-2 rounded-full transition-all"
+            className={`h-full rounded-full transition-all ${awayWins ? "bg-accent-2" : "bg-accent-2/40"}`}
             style={{ width: `${awayPct}%` }}
           />
         </div>
@@ -115,8 +127,8 @@ export function MatchStatistics({
       <section className="bg-bg-card rounded-2xl border border-border p-5">
         <div className="h-4 w-32 bg-border/40 rounded animate-pulse mb-4" />
         <div className="space-y-4">
-          {[...Array(6)].map((_, i) => (
-            <div key={i} className="h-10 bg-border/15 rounded-lg animate-pulse" />
+          {[...Array(8)].map((_, i) => (
+            <div key={i} className="h-8 bg-border/15 rounded-lg animate-pulse" />
           ))}
         </div>
       </section>
@@ -147,23 +159,34 @@ export function MatchStatistics({
         </div>
       </div>
 
-      {/* Stats */}
-      <div className="divide-y divide-border/30">
-        {DISPLAY_STATS.map((statKey) => {
-          const homeVal = homeStats.stats[statKey];
-          const awayVal = awayStats.stats[statKey];
-          // Skip if both values are null/0
-          if ((homeVal === null || homeVal === 0) && (awayVal === null || awayVal === 0)) {
-            return null;
-          }
+      {/* Grouped stats */}
+      <div className="space-y-4">
+        {STAT_GROUPS.map((group) => {
+          const visibleStats = group.stats.filter((key) => {
+            const hv = homeStats.stats[key];
+            const av = awayStats.stats[key];
+            return !((hv === null || hv === 0 || hv === "0" || hv === "0%") && (av === null || av === 0 || av === "0" || av === "0%"));
+          });
+          if (visibleStats.length === 0) return null;
+
           return (
-            <StatBar
-              key={statKey}
-              label={statKey}
-              homeVal={homeVal}
-              awayVal={awayVal}
-              isPossession={statKey === "Ball Possession" || statKey === "Passes %"}
-            />
+            <div key={group.title}>
+              <div className="flex items-center gap-1.5 mb-1.5">
+                <span className="text-xs">{group.icon}</span>
+                <span className="text-[10px] font-semibold text-text-muted uppercase tracking-wider">{group.title}</span>
+              </div>
+              <div className="divide-y divide-border/20">
+                {visibleStats.map((statKey) => (
+                  <StatBar
+                    key={statKey}
+                    label={statKey}
+                    homeVal={homeStats.stats[statKey]}
+                    awayVal={awayStats.stats[statKey]}
+                    isPossession={statKey === "Ball Possession" || statKey === "Passes %"}
+                  />
+                ))}
+              </div>
+            </div>
           );
         })}
       </div>

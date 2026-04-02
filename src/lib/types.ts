@@ -23,6 +23,7 @@ export interface Match {
   homeForm: string[]; // ["W","D","L",...]
   awayForm: string[];
   score?: { home: number | null; away: number | null };
+  scoreHT?: { home: number | null; away: number | null };
   referee?: { name: string; nationality: string } | null;
 }
 

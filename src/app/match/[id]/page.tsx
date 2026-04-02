@@ -72,6 +72,44 @@ function SectionSkeleton({ lines = 4 }: { lines?: number }) {
   );
 }
 
+function PredictionAccuracy({ prediction, score, homeTla, awayTla }: {
+  prediction: { homeWin: number; draw: number; awayWin: number; btts: number; over25: number };
+  score: { home: number | null; away: number | null };
+  homeTla: string;
+  awayTla: string;
+}) {
+  const h = score.home ?? 0;
+  const a = score.away ?? 0;
+  const actualResult = h > a ? "home" : h < a ? "away" : "draw";
+  const predictedResult = prediction.homeWin > prediction.draw && prediction.homeWin > prediction.awayWin
+    ? "home" : prediction.awayWin > prediction.draw && prediction.awayWin > prediction.homeWin
+    ? "away" : "draw";
+  const resultCorrect = actualResult === predictedResult;
+  const totalGoals = h + a;
+  const bttsActual = h > 0 && a > 0;
+  const over25Actual = totalGoals > 2.5;
+
+  return (
+    <div className="flex flex-wrap gap-2 mb-4">
+      <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
+        resultCorrect ? "bg-green-500/15 text-green-400" : "bg-red-500/15 text-red-400"
+      }`}>
+        {resultCorrect ? "&#10003;" : "&#10007;"} Kết quả: {actualResult === "home" ? `${homeTla} thắng` : actualResult === "away" ? `${awayTla} thắng` : "Hòa"}
+      </span>
+      <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
+        bttsActual === (prediction.btts > 50) ? "bg-green-500/15 text-green-400" : "bg-red-500/15 text-red-400"
+      }`}>
+        {bttsActual === (prediction.btts > 50) ? "&#10003;" : "&#10007;"} BTTS: {bttsActual ? "Có" : "Không"}
+      </span>
+      <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
+        over25Actual === (prediction.over25 > 50) ? "bg-green-500/15 text-green-400" : "bg-red-500/15 text-red-400"
+      }`}>
+        {over25Actual === (prediction.over25 > 50) ? "&#10003;" : "&#10007;"} O2.5: {totalGoals} bàn
+      </span>
+    </div>
+  );
+}
+
 function ordinal(n: number): string {
   if (n === 1) return "1st";
   if (n === 2) return "2nd";
@@ -327,14 +365,25 @@ export default function MatchPage({ params }: { params: Promise<{ id: string }> 
             </Link>
             <div className="px-2 md:px-6 text-center shrink-0">
               {match.status === "FINISHED" && match.score ? (
-                <p className="text-2xl md:text-4xl font-bold">{match.score.home} - {match.score.away}</p>
+                <>
+                  <span className="inline-block text-[10px] font-semibold text-green-400 bg-green-400/10 px-2 py-0.5 rounded-full mb-1">Kết thúc</span>
+                  <p className="text-2xl md:text-4xl font-bold">{match.score.home} - {match.score.away}</p>
+                  {match.scoreHT && (
+                    <p className="text-[10px] md:text-xs text-text-muted mt-1">Hiệp 1: {match.scoreHT.home} - {match.scoreHT.away}</p>
+                  )}
+                </>
+              ) : match.status === "IN_PLAY" || match.status === "LIVE" ? (
+                <>
+                  <span className="inline-block text-[10px] font-semibold text-red-400 bg-red-400/10 px-2 py-0.5 rounded-full mb-1 animate-pulse">Đang diễn ra</span>
+                  <p className="text-2xl md:text-4xl font-bold">{match.score?.home ?? 0} - {match.score?.away ?? 0}</p>
+                </>
               ) : (
                 <>
                   <p className="text-xs md:text-sm text-text-muted">Giờ đá</p>
                   <p className="text-2xl md:text-3xl font-bold my-1 md:my-2">{match.time}</p>
                 </>
               )}
-              <p className="text-[10px] md:text-xs text-text-muted">
+              <p className="text-[10px] md:text-xs text-text-muted mt-1">
                 {new Date(match.date + "T00:00:00").toLocaleDateString("vi-VN", {
                   weekday: "short", day: "numeric", month: "short", year: "numeric",
                 })}
@@ -377,12 +426,39 @@ export default function MatchPage({ params }: { params: Promise<{ id: string }> 
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
           <div className="lg:col-span-2 space-y-6">
-            {/* Prediction — instant from core */}
+
+            {/* ═══ FINISHED / LIVE: Match result sections first ═══ */}
+            {(match.status === "FINISHED" || match.status === "IN_PLAY" || match.status === "LIVE") && (
+              <>
+                <MatchEvents
+                  matchId={id}
+                  homeTeamId={match.homeTeam.id}
+                  awayTeamId={match.awayTeam.id}
+                />
+                <MatchStatistics
+                  matchId={id}
+                  homeTeamName={match.homeTeam.shortName}
+                  awayTeamName={match.awayTeam.shortName}
+                />
+                <MatchLineups matchId={id} />
+              </>
+            )}
+
+            {/* ═══ Prediction ═══ */}
             <section className="bg-bg-card rounded-2xl border border-border p-4 md:p-5">
               <h3 className="font-bold text-sm mb-3 md:mb-4 flex items-center gap-2">
                 <span className="w-1.5 h-1.5 rounded-full bg-accent" />
-                Dự đoán trận đấu
+                {match.status === "FINISHED" ? "Dự đoán trước trận" : "Dự đoán trận đấu"}
               </h3>
+              {/* Prediction accuracy for finished matches */}
+              {match.status === "FINISHED" && match.score && (
+                <PredictionAccuracy
+                  prediction={prediction}
+                  score={match.score}
+                  homeTla={match.homeTeam.tla}
+                  awayTla={match.awayTeam.tla}
+                />
+              )}
               <div className="flex gap-2 mb-3 md:mb-4">
                 {[
                   { label: match.homeTeam.tla, pct: prediction.homeWin, color: "bg-accent" },
@@ -410,31 +486,15 @@ export default function MatchPage({ params }: { params: Promise<{ id: string }> 
               </div>
             </section>
 
-            {/* Match Events — shows for finished/live matches */}
-            {(match.status === "FINISHED" || match.status === "IN_PLAY" || match.status === "LIVE") && (
-              <MatchEvents
-                matchId={id}
-                homeTeamId={match.homeTeam.id}
-                awayTeamId={match.awayTeam.id}
-              />
+            {/* ═══ SCHEDULED: Odds before other sections ═══ */}
+            {match.status !== "FINISHED" && match.status !== "IN_PLAY" && match.status !== "LIVE" && (
+              <MatchOdds matchId={id} />
             )}
 
-            {/* Match Statistics — shows for finished/live matches */}
-            {(match.status === "FINISHED" || match.status === "IN_PLAY" || match.status === "LIVE") && (
-              <MatchStatistics
-                matchId={id}
-                homeTeamName={match.homeTeam.shortName}
-                awayTeamName={match.awayTeam.shortName}
-              />
-            )}
-
-            {/* Odds — loads independently */}
-            <MatchOdds matchId={id} />
-
-            {/* H2H — loads independently */}
+            {/* H2H */}
             <H2HSection h2h={core.h2h} homeTla={match.homeTeam.tla} awayTla={match.awayTeam.tla} />
 
-            {/* Stats — instant from core standings */}
+            {/* Season Stats */}
             {homeStanding && awayStanding && (
               <section className="bg-bg-card rounded-2xl border border-border p-4 md:p-5">
                 <h3 className="font-bold text-sm mb-3 md:mb-4 flex items-center gap-2">
@@ -456,7 +516,21 @@ export default function MatchPage({ params }: { params: Promise<{ id: string }> 
               </section>
             )}
 
-            {/* Recent Results — loads independently */}
+            {/* ═══ SCHEDULED: Lineups, Injuries, etc. ═══ */}
+            {match.status !== "FINISHED" && match.status !== "IN_PLAY" && match.status !== "LIVE" && (
+              <>
+                <MatchLineups matchId={id} />
+                <MatchInjuries
+                  matchId={id}
+                  homeTeamId={match.homeTeam.id}
+                  awayTeamId={match.awayTeam.id}
+                  homeTeamName={match.homeTeam.shortName}
+                  awayTeamName={match.awayTeam.shortName}
+                />
+              </>
+            )}
+
+            {/* Recent Results */}
             <RecentResults
               matchId={id}
               homeTeamId={match.homeTeam.id}
@@ -465,33 +539,35 @@ export default function MatchPage({ params }: { params: Promise<{ id: string }> 
               awayTeamName={match.awayTeam.shortName}
             />
 
-            {/* Key Players — loads independently */}
+            {/* Key Players */}
             <KeyPlayers
               matchId={id}
               homeTeam={{ name: match.homeTeam.name, shortName: match.homeTeam.shortName, crest: match.homeTeam.crest }}
               awayTeam={{ name: match.awayTeam.name, shortName: match.awayTeam.shortName, crest: match.awayTeam.crest }}
             />
 
-            {/* Injuries — loads independently */}
-            <MatchInjuries
-              matchId={id}
-              homeTeamId={match.homeTeam.id}
-              awayTeamId={match.awayTeam.id}
-              homeTeamName={match.homeTeam.shortName}
-              awayTeamName={match.awayTeam.shortName}
-            />
+            {/* FINISHED: Odds + Injuries after main content */}
+            {(match.status === "FINISHED" || match.status === "IN_PLAY" || match.status === "LIVE") && (
+              <>
+                <MatchOdds matchId={id} />
+                <MatchInjuries
+                  matchId={id}
+                  homeTeamId={match.homeTeam.id}
+                  awayTeamId={match.awayTeam.id}
+                  homeTeamName={match.homeTeam.shortName}
+                  awayTeamName={match.awayTeam.shortName}
+                />
+              </>
+            )}
 
-            {/* Lineups — loads independently */}
-            <MatchLineups matchId={id} />
-
-            {/* Player Analysis — loads independently */}
+            {/* Player Analysis */}
             <PlayerAnalysis
               matchId={id}
               homeTeamName={match.homeTeam.shortName}
               awayTeamName={match.awayTeam.shortName}
             />
 
-            {/* Home/Away Form — loads independently */}
+            {/* Home/Away Form */}
             <HomeAwayForm
               homeTeamId={match.homeTeam.id}
               awayTeamId={match.awayTeam.id}
