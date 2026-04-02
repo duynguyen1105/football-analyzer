@@ -6,6 +6,7 @@ import { useTeamProfile, useTeamSquad, useTeamStats, useTeamFixtures, useStandin
 import { LEAGUES } from "@/lib/constants";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { FavoriteButton } from "@/components/FavoriteButton";
+import { OptImage } from "@/components/OptImage";
 import Link from "next/link";
 
 const POSITION_VI: Record<string, string> = {
@@ -378,7 +379,7 @@ export default function TeamPage({ params }: { params: Promise<{ id: string }> }
             {/* Logo */}
             <div className="shrink-0 mx-auto md:mx-0">
               {team.logo ? (
-                <img src={team.logo} alt={team.name} className="w-24 h-24 object-contain" />
+                <OptImage src={team.logo} alt={team.name} size={96} className="w-24 h-24 object-contain" priority />
               ) : (
                 <div className="w-24 h-24 bg-border/20 flex items-center justify-center text-4xl">⚽</div>
               )}

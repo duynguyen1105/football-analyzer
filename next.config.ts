@@ -1,6 +1,15 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  images: {
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "media.api-sports.io",
+        pathname: "/football/**",
+      },
+    ],
+  },
   async redirects() {
     return [
       { source: "/giai-dau/PL", destination: "/giai-dau/premier-league", permanent: true },

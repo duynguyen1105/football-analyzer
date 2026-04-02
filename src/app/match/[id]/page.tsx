@@ -22,6 +22,7 @@ import { SponsoredSlot } from "@/components/SponsoredSlot";
 import { MatchInjuries } from "@/components/MatchInjuries";
 import { MatchLineups } from "@/components/MatchLineups";
 import { MatchEvents } from "@/components/MatchEvents";
+import { MatchTimeline } from "@/components/MatchTimeline";
 import { MatchStatistics } from "@/components/MatchStatistics";
 import {
   useMatchCore,
@@ -31,6 +32,7 @@ import {
   useMatchScorers,
 } from "@/lib/hooks";
 import { Standing } from "@/lib/types";
+import { OptImage } from "@/components/OptImage";
 import Link from "next/link";
 
 function FormBadge({ result }: { result: string }) {
@@ -394,7 +396,7 @@ export default function MatchPage({ params }: { params: Promise<{ id: string }> 
           <div className="flex items-center justify-between py-3 md:py-4">
             <Link href={`/doi-bong/${match.homeTeam.id}`} className="flex-1 text-center min-w-0 hover:opacity-80 transition-opacity">
               <div className="flex justify-center mb-2 md:mb-3">
-                <img src={match.homeTeam.crest} alt={match.homeTeam.shortName} className="w-14 h-14 md:w-20 md:h-20 object-contain" />
+                <OptImage src={match.homeTeam.crest} alt={match.homeTeam.shortName} size={80} className="w-14 h-14 md:w-20 md:h-20 object-contain" priority />
               </div>
               <h2 className="text-sm md:text-xl font-bold truncate px-1">{match.homeTeam.shortName}</h2>
               {homeStanding && (
@@ -429,7 +431,7 @@ export default function MatchPage({ params }: { params: Promise<{ id: string }> 
             </div>
             <Link href={`/doi-bong/${match.awayTeam.id}`} className="flex-1 text-center min-w-0 hover:opacity-80 transition-opacity">
               <div className="flex justify-center mb-2 md:mb-3">
-                <img src={match.awayTeam.crest} alt={match.awayTeam.shortName} className="w-14 h-14 md:w-20 md:h-20 object-contain" />
+                <OptImage src={match.awayTeam.crest} alt={match.awayTeam.shortName} size={80} className="w-14 h-14 md:w-20 md:h-20 object-contain" priority />
               </div>
               <h2 className="text-sm md:text-xl font-bold truncate px-1">{match.awayTeam.shortName}</h2>
               {awayStanding && (
@@ -477,6 +479,14 @@ export default function MatchPage({ params }: { params: Promise<{ id: string }> 
             {/* ═══ FINISHED / LIVE: Match result sections first ═══ */}
             {(match.status === "FINISHED" || match.status === "IN_PLAY" || match.status === "LIVE") && (
               <>
+                <MatchTimeline
+                  matchId={id}
+                  homeTeamId={match.homeTeam.id}
+                  awayTeamId={match.awayTeam.id}
+                  homeTeamName={match.homeTeam.tla}
+                  awayTeamName={match.awayTeam.tla}
+                  isLive={isLive}
+                />
                 <MatchEvents
                   matchId={id}
                   homeTeamId={match.homeTeam.id}

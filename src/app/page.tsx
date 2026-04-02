@@ -13,6 +13,7 @@ import { getSlugByCode } from "@/lib/league-slugs";
 import { Match, Standing } from "@/lib/types";
 import { Newsletter } from "@/components/Newsletter";
 import { SponsoredSlot } from "@/components/SponsoredSlot";
+import { OptImage } from "@/components/OptImage";
 import Link from "next/link";
 
 /* ───────────────────────── Match Card ───────────────────────── */
@@ -68,7 +69,7 @@ function MatchCard({ match }: { match: Match }) {
       <div className="hidden md:block p-4">
         <div className="grid grid-cols-3 items-center">
           <div className="text-center">
-            <img src={match.homeTeam.crest} alt="" className="w-12 h-12 object-contain mx-auto mb-1" loading="lazy" />
+            <OptImage src={match.homeTeam.crest} alt={match.homeTeam.shortName} size={48} className="w-12 h-12 object-contain mx-auto mb-1" />
             <p className="font-semibold text-sm">{match.homeTeam.shortName}</p>
           </div>
           <div className="text-center">
@@ -83,7 +84,7 @@ function MatchCard({ match }: { match: Match }) {
             </span>
           </div>
           <div className="text-center">
-            <img src={match.awayTeam.crest} alt="" className="w-12 h-12 object-contain mx-auto mb-1" loading="lazy" />
+            <OptImage src={match.awayTeam.crest} alt={match.awayTeam.shortName} size={48} className="w-12 h-12 object-contain mx-auto mb-1" />
             <p className="font-semibold text-sm">{match.awayTeam.shortName}</p>
           </div>
         </div>
