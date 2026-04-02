@@ -1,6 +1,7 @@
 import { getMatches, getStandings, getGroupStandings, getTournamentFixtures } from "@/lib/football-data";
 import { getLeagueBySlug } from "@/lib/league-slugs";
 import { Standing, Match, GroupStanding } from "@/lib/types";
+import { StandingsChart } from "@/components/StandingsChart";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
@@ -58,6 +59,9 @@ async function LeagueOverview({ league }: { league: ReturnType<typeof getLeagueB
           </div>
         </section>
       )}
+
+      {/* Points race chart */}
+      {standings.length > 0 && <StandingsChart standings={standings} />}
 
       {/* Upcoming matches */}
       <section>

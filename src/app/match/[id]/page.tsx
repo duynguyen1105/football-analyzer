@@ -34,6 +34,7 @@ import {
 } from "@/lib/hooks";
 import { Standing } from "@/lib/types";
 import { OptImage } from "@/components/OptImage";
+import { MatchFaqSchema } from "@/components/MatchFaqSchema";
 import Link from "next/link";
 
 function FormBadge({ result }: { result: string }) {
@@ -382,6 +383,7 @@ export default function MatchPage({ params }: { params: Promise<{ id: string }> 
 
   return (
     <>
+      <MatchFaqSchema match={match} prediction={prediction} venue={match.venue} />
       <Navbar />
       <main className="max-w-6xl mx-auto px-4 py-6 xl:px-8">
         <Breadcrumbs items={[

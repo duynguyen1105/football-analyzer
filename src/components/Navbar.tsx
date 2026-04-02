@@ -23,7 +23,7 @@ export function Navbar() {
   }, []);
 
   return (
-    <header className="sticky top-0 z-50 bg-bg-secondary/90 backdrop-blur border-b border-border">
+    <header className="sticky top-0 z-50 bg-bg-secondary/90 backdrop-blur border-b border-border" role="banner">
       <div className="max-w-7xl mx-auto px-3 sm:px-4 xl:px-6 flex items-center justify-between h-12">
         {/* Brand */}
         <Link href="/" className="flex items-center gap-1.5 shrink-0">
@@ -37,7 +37,7 @@ export function Navbar() {
         </Link>
 
         {/* Desktop nav */}
-        <nav className="hidden sm:flex items-center gap-3 md:gap-4 text-xs text-text-secondary">
+        <nav aria-label="Điều hướng chính" className="hidden sm:flex items-center gap-3 md:gap-4 text-xs text-text-secondary">
           <Link href="/truc-tiep" className="hover:text-text-primary transition-colors flex items-center gap-1">
             <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
             Live

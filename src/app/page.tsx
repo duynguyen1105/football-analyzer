@@ -245,7 +245,7 @@ export default function Home() {
     <>
       <Navbar />
 
-      <div className="max-w-7xl mx-auto px-3 py-4 xl:px-6">
+      <div id="main-content" className="max-w-7xl mx-auto px-3 py-4 xl:px-6">
         {/* Title */}
         <h1 className="text-lg font-bold mb-0.5">Lịch thi đấu &amp; Nhận định</h1>
         <p className="text-text-secondary text-xs mb-4">Phân tích trước trận cho các giải đấu hàng đầu</p>

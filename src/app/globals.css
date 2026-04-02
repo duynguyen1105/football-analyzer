@@ -102,6 +102,27 @@ body {
 .badge-d { background: #eab30820; color: var(--accent-yellow); }
 .badge-l { background: #ef444420; color: var(--accent-red); }
 
+/* Accessibility: visible focus rings */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Remove default outline for mouse users */
+:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* Reduced motion preference */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
 /* Image shimmer placeholder */
 .img-shimmer {
   background: linear-gradient(90deg, var(--border) 0%, var(--bg-card-hover) 50%, var(--border) 100%);
