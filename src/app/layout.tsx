@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Suspense } from "react";
 import "./globals.css";
 import { Providers } from "@/components/Providers";
@@ -8,6 +8,12 @@ import { AdSenseScript } from "@/components/AdSenseScript";
 import { buildWebSiteSchema } from "@/lib/json-ld";
 import { MobileNav } from "@/components/MobileNav";
 import { WebVitals } from "@/components/WebVitals";
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+};
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://nhandinhbongdavn.com"),
@@ -46,7 +52,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         <Providers>
           {children}
           <MobileNav />
-          <div className="h-14 md:hidden" /> {/* Spacer for mobile bottom nav */}
+          <div className="h-20 md:hidden" /> {/* Spacer for mobile bottom nav + safe area */}
         </Providers>
         <script
           type="application/ld+json"
