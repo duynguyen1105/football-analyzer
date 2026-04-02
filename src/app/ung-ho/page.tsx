@@ -5,12 +5,22 @@ import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: "Ủng hộ MatchDay Analyst",
-  description: "Ủng hộ MatchDay Analyst để duy trì và phát triển trang nhận định bóng đá miễn phí cho cộng đồng.",
+  description:
+    "Ủng hộ MatchDay Analyst để duy trì và phát triển trang nhận định bóng đá miễn phí cho cộng đồng.",
 };
 
-const KOFI_URL = process.env.NEXT_PUBLIC_KOFI_URL || "https://ko-fi.com/matchdayanalyst";
+const KOFI_URL =
+  process.env.NEXT_PUBLIC_KOFI_URL || "https://ko-fi.com/matchdayanalyst";
 
-function FeatureCard({ icon, title, description }: { icon: string; title: string; description: string }) {
+function FeatureCard({
+  icon,
+  title,
+  description,
+}: {
+  icon: string;
+  title: string;
+  description: string;
+}) {
   return (
     <div className="bg-bg-card rounded-xl border border-border p-4">
       <div className="text-2xl mb-2">{icon}</div>
@@ -32,7 +42,8 @@ export default function SupportPage() {
           <div className="text-4xl mb-3">&#9917;</div>
           <h1 className="text-2xl font-bold mb-2">Ủng hộ MatchDay Analyst</h1>
           <p className="text-sm text-text-muted max-w-md mx-auto">
-            Giúp chúng tôi duy trì và phát triển trang nhận định bóng đá miễn phí cho cộng đồng người hâm mộ Việt Nam.
+            Giúp chúng tôi duy trì và phát triển trang nhận định bóng đá miễn
+            phí cho cộng đồng người hâm mộ Việt Nam.
           </p>
         </div>
 
@@ -50,7 +61,10 @@ export default function SupportPage() {
             Ủng hộ qua Ko-fi
           </a>
           <p className="text-xs text-text-muted mt-3">
-            Hoặc chuyển khoản: <span className="font-medium text-text-secondary">MB Bank — 0123456789 — NGUYEN DUY NGUYEN</span>
+            Hoặc chuyển khoản:{" "}
+            <span className="font-medium text-text-secondary">
+              BIDV — 0343110599 — NGUYEN DUY NGUYEN
+            </span>
           </p>
         </div>
 
@@ -82,7 +96,11 @@ export default function SupportPage() {
         {/* Premium features teaser */}
         <div className="bg-bg-card rounded-2xl border border-accent/20 p-5 mb-8">
           <div className="flex items-center gap-2 mb-3">
-            <svg className="w-5 h-5 text-accent-yellow" fill="currentColor" viewBox="0 0 24 24">
+            <svg
+              className="w-5 h-5 text-accent-yellow"
+              fill="currentColor"
+              viewBox="0 0 24 24"
+            >
               <path d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
             </svg>
             <h2 className="text-base font-bold">Sắp ra mắt: Premium</h2>
@@ -95,16 +113,20 @@ export default function SupportPage() {
               <span className="text-accent">&#10003;</span> Không quảng cáo
             </li>
             <li className="flex items-center gap-2">
-              <span className="text-accent">&#10003;</span> Nhận định AI chi tiết hơn (phân tích dài, nhiều số liệu)
+              <span className="text-accent">&#10003;</span> Nhận định AI chi
+              tiết hơn (phân tích dài, nhiều số liệu)
             </li>
             <li className="flex items-center gap-2">
-              <span className="text-accent">&#10003;</span> Xuất báo cáo PDF trước trận
+              <span className="text-accent">&#10003;</span> Xuất báo cáo PDF
+              trước trận
             </li>
             <li className="flex items-center gap-2">
-              <span className="text-accent">&#10003;</span> Thông báo đẩy khi có trận đấu lớn
+              <span className="text-accent">&#10003;</span> Thông báo đẩy khi có
+              trận đấu lớn
             </li>
             <li className="flex items-center gap-2">
-              <span className="text-accent">&#10003;</span> Truy cập sớm các tính năng mới
+              <span className="text-accent">&#10003;</span> Truy cập sớm các
+              tính năng mới
             </li>
           </ul>
         </div>
@@ -113,8 +135,12 @@ export default function SupportPage() {
         <footer className="mt-8 py-4 border-t border-border text-center text-[10px] text-text-muted">
           <p>MatchDay Analyst — Nhận định bóng đá trước trận</p>
           <div className="mt-1 flex gap-3 justify-center">
-            <Link href="/" className="hover:text-text-primary">Trang chủ</Link>
-            <Link href="/about" className="hover:text-text-primary">Giới thiệu</Link>
+            <Link href="/" className="hover:text-text-primary">
+              Trang chủ
+            </Link>
+            <Link href="/about" className="hover:text-text-primary">
+              Giới thiệu
+            </Link>
           </div>
         </footer>
       </main>

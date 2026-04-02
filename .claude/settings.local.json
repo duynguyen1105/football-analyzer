@@ -12,7 +12,12 @@
       "Bash(git commit -m \"$\\(cat <<''EOF''\nstyle: improve soi-keo page layout\n\n- Increase club logo size from 20px to 40px\n- Make team names more prominent \\(font-semibold\\)\n- Reduce odds badge size for better balance\n- Add 2-column grid layout on large screens\n- Better date/time display in center\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
       "Bash(git commit -m \"$\\(cat <<''EOF''\nfix: use league logo images in soi-keo page\n\nReplace text flags \\(ES, IT, DE, FR\\) with actual league logo images\nin the header, breadcrumb, and filter buttons.\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
       "Bash(git restore:*)",
-      "Bash(git commit -m \"$\\(cat <<''EOF''\nfix: add photos for coaches and top scorers + fix current coach selection\n\n- Add coach photo from API-Football /coachs endpoint\n- Fix coach selection to find current coach \\(career entry with no end date\\)\n- Add player id and photo to top scorers data\n- Update UI to display coach photos and top scorer photos\n- Make top scorers clickable to player profiles\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")"
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nfix: add photos for coaches and top scorers + fix current coach selection\n\n- Add coach photo from API-Football /coachs endpoint\n- Fix coach selection to find current coach \\(career entry with no end date\\)\n- Add player id and photo to top scorers data\n- Update UI to display coach photos and top scorer photos\n- Make top scorers clickable to player profiles\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(git reset:*)",
+      "Bash(file:*)",
+      "Bash(sips -s format png --resampleWidth 192 --resampleHeight 192 public/icons/icon.svg --out public/icons/icon-192.png)",
+      "Bash(sips:*)",
+      "Bash(dig:*)"
     ]
   }
 }
