@@ -86,12 +86,27 @@ export default async function LeagueSchedulePage({ params }: Props) {
 /* ─── Tournament schedule grouped by round ─── */
 
 function TournamentSchedule({ matches, league }: { matches: Match[]; league: NonNullable<ReturnType<typeof getLeagueBySlug>> }) {
-  // Group by round
-  const byRound: Record<string, Match[]> = {};
-  for (const m of matches) {
-    const round = m.round || "Khác";
-    (byRound[round] ??= []).push(m);
+  // Split into upcoming (nearest first) and finished (most recent first)
+  const upcoming = matches
+    .filter((m) => m.status !== "FINISHED")
+    .sort((a, b) => a.date.localeCompare(b.date) || a.time.localeCompare(b.time));
+
+  const finished = matches
+    .filter((m) => m.status === "FINISHED")
+    .sort((a, b) => b.date.localeCompare(a.date) || b.time.localeCompare(a.time));
+
+  // Group each by round
+  function groupByRound(list: Match[]): [string, Match[]][] {
+    const map: Record<string, Match[]> = {};
+    for (const m of list) {
+      const round = m.round || "Khác";
+      (map[round] ??= []).push(m);
+    }
+    return Object.entries(map);
   }
+
+  const upcomingByRound = groupByRound(upcoming);
+  const finishedByRound = groupByRound(finished);
 
   return (
     <section>
@@ -105,23 +120,53 @@ function TournamentSchedule({ matches, league }: { matches: Match[]; league: Non
           Chưa có lịch thi đấu.
         </div>
       ) : (
-        <div className="space-y-6">
-          {Object.entries(byRound).map(([round, roundMatches]) => (
-            <div key={round}>
-              <h3 className="text-xs font-bold text-accent uppercase tracking-wide mb-2 flex items-center gap-2">
-                <span className="w-1.5 h-1.5 rounded-full bg-accent" />
-                {round}
-              </h3>
-              <div className="space-y-2">
-                {roundMatches.map((m) => (
-                  <MatchRow key={m.id} match={m} />
+        <div className="space-y-8">
+          {/* Upcoming matches first */}
+          {upcomingByRound.length > 0 && (
+            <div>
+              <div className="flex items-center gap-2 mb-4">
+                <span className="text-[10px] font-bold text-green-400 bg-green-400/10 px-2 py-0.5 rounded-full uppercase tracking-wider">Sắp diễn ra</span>
+              </div>
+              <div className="space-y-6">
+                {upcomingByRound.map(([round, roundMatches]) => (
+                  <RoundGroup key={`up-${round}`} round={round} matches={roundMatches} />
                 ))}
               </div>
             </div>
-          ))}
+          )}
+
+          {/* Finished matches */}
+          {finishedByRound.length > 0 && (
+            <div>
+              <div className="flex items-center gap-2 mb-4">
+                <span className="text-[10px] font-bold text-text-muted bg-border/30 px-2 py-0.5 rounded-full uppercase tracking-wider">Đã kết thúc</span>
+              </div>
+              <div className="space-y-6">
+                {finishedByRound.map(([round, roundMatches]) => (
+                  <RoundGroup key={`fin-${round}`} round={round} matches={roundMatches} />
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       )}
     </section>
+  );
+}
+
+function RoundGroup({ round, matches }: { round: string; matches: Match[] }) {
+  return (
+    <div>
+      <h3 className="text-xs font-bold text-accent uppercase tracking-wide mb-2 flex items-center gap-2">
+        <span className="w-1.5 h-1.5 rounded-full bg-accent" />
+        {round}
+      </h3>
+      <div className="space-y-2">
+        {matches.map((m) => (
+          <MatchRow key={m.id} match={m} />
+        ))}
+      </div>
+    </div>
   );
 }
 
