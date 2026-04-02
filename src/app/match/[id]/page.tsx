@@ -16,6 +16,9 @@ import { QuickSummary } from "@/components/QuickSummary";
 import { ShareButton } from "@/components/ShareButton";
 import { MatchReminder } from "@/components/MatchReminder";
 import { MatchOdds } from "@/components/MatchOdds";
+import { Newsletter } from "@/components/Newsletter";
+import { MerchandiseSection } from "@/components/MerchandiseSection";
+import { SponsoredSlot } from "@/components/SponsoredSlot";
 import { MatchInjuries } from "@/components/MatchInjuries";
 import { MatchLineups } from "@/components/MatchLineups";
 import { MatchEvents } from "@/components/MatchEvents";
@@ -501,6 +504,8 @@ export default function MatchPage({ params }: { params: Promise<{ id: string }> 
             {/* H2H */}
             <H2HSection h2h={core.h2h} homeTla={match.homeTeam.tla} awayTla={match.awayTeam.tla} />
 
+            <AdSlot size="leaderboard" className="my-4" />
+
             {/* Season Stats */}
             {homeStanding && awayStanding && (
               <section className="bg-bg-card rounded-2xl border border-border p-4 md:p-5">
@@ -636,7 +641,18 @@ export default function MatchPage({ params }: { params: Promise<{ id: string }> 
             {/* Scorers — loads independently */}
             <ScorersSection matchId={id} homeTeamName={match.homeTeam.name} awayTeamName={match.awayTeam.name} />
 
+            {/* Merchandise */}
+            <MerchandiseSection
+              homeTeam={{ name: match.homeTeam.name, shortName: match.homeTeam.shortName, crest: match.homeTeam.crest }}
+              awayTeam={{ name: match.awayTeam.name, shortName: match.awayTeam.shortName, crest: match.awayTeam.crest }}
+            />
+
+            <SponsoredSlot />
+
             <AdSlot size="rectangle" />
+
+            {/* Newsletter */}
+            <Newsletter />
           </div>
         </div>
 

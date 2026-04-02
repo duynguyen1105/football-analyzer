@@ -10,6 +10,8 @@ import { useAppStore } from "@/lib/store";
 import { LEAGUES } from "@/lib/constants";
 import { getSlugByCode } from "@/lib/league-slugs";
 import { Match, Standing } from "@/lib/types";
+import { Newsletter } from "@/components/Newsletter";
+import { SponsoredSlot } from "@/components/SponsoredSlot";
 import Link from "next/link";
 
 /* ───────────────────────── Match Card ───────────────────────── */
@@ -324,6 +326,12 @@ export default function Home() {
 
         <AdSlot size="rectangle" className="mt-6 mx-auto max-w-sm" />
 
+        {/* Newsletter + Sponsored */}
+        <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+          <Newsletter />
+          <SponsoredSlot className="flex items-center" />
+        </div>
+
         {/* Standings */}
         <section className="mt-8">
           <h2 className="text-base font-bold mb-3">Bảng xếp hạng</h2>
@@ -341,6 +349,7 @@ export default function Home() {
           <div className="mt-1 flex gap-3 justify-center">
             <Link href="/about" className="hover:text-text-primary">Giới thiệu</Link>
             <Link href="/privacy" className="hover:text-text-primary">Chính sách bảo mật</Link>
+            <Link href="/ung-ho" className="hover:text-accent-red text-accent-red/70">Ủng hộ</Link>
           </div>
         </footer>
       </div>
