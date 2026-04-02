@@ -1,6 +1,7 @@
 import type { MetadataRoute } from "next";
 import { getMatches } from "@/lib/football-data";
 import { getAllLeagueSlugs, getLeagueBySlug } from "@/lib/league-slugs";
+import { generateMatchSlug } from "@/lib/match-slugs";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = "https://nhandinhbongdavn.com";
@@ -50,12 +51,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     const nextWeek = new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 10);
     const matches = await getMatches(today, nextWeek);
 
-    const matchPages: MetadataRoute.Sitemap = matches.map((match) => ({
-      url: `${baseUrl}/match/${match.id}`,
-      lastModified: new Date(),
-      changeFrequency: "daily" as const,
-      priority: 0.8,
-    }));
+    const matchPages: MetadataRoute.Sitemap = matches.flatMap((match) => {
+      const matchSlug = generateMatchSlug(match.homeTeam.shortName, match.awayTeam.shortName, match.date, match.id);
+      return [
+        { url: `${baseUrl}/match/${match.id}`, lastModified: new Date(), changeFrequency: "daily" as const, priority: 0.8 },
+        { url: `${baseUrl}/nhan-dinh/${matchSlug}`, lastModified: new Date(), changeFrequency: "daily" as const, priority: 0.9 },
+      ];
+    });
 
     return [...staticPages, ...leaguePages, ...matchPages];
   } catch {

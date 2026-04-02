@@ -122,18 +122,54 @@ function ordinal(n: number): string {
   return `${n}th`;
 }
 
+function getStreak(form: string[]): { text: string; color: string } | null {
+  if (!form || form.length < 2) return null;
+  const first = form[form.length - 1]; // most recent
+  let count = 0;
+  for (let i = form.length - 1; i >= 0; i--) {
+    if (form[i] === first) count++;
+    else break;
+  }
+  if (count < 2) {
+    // Check unbeaten streak
+    let unbeaten = 0;
+    for (let i = form.length - 1; i >= 0; i--) {
+      if (form[i] !== "L") unbeaten++;
+      else break;
+    }
+    if (unbeaten >= 3) return { text: `Bất bại ${unbeaten}`, color: "text-blue-400 bg-blue-400/10" };
+    return null;
+  }
+  if (first === "W") return { text: `Thắng ${count}`, color: "text-green-400 bg-green-400/10" };
+  if (first === "L") return { text: `Thua ${count}`, color: "text-red-400 bg-red-400/10" };
+  if (first === "D") return { text: `Hòa ${count}`, color: "text-yellow-400 bg-yellow-400/10" };
+  return null;
+}
+
 // --- Form Section (loads independently) ---
 function FormSection({ matchId }: { matchId: string }) {
   const { data, isLoading } = useMatchForm(matchId);
   if (isLoading || !data) return null;
+
+  const homeStreak = getStreak(data.homeForm || []);
+  const awayStreak = getStreak(data.awayForm || []);
+
   return (
-    <div className="flex gap-3 md:gap-6 justify-center mt-3">
-      <div className="flex gap-1 md:gap-1.5">
-        {(data.homeForm || []).map((r: string, i: number) => <FormBadge key={i} result={r} />)}
+    <div className="mt-3 space-y-2">
+      <div className="flex gap-3 md:gap-6 justify-center">
+        <div className="flex gap-1 md:gap-1.5">
+          {(data.homeForm || []).map((r: string, i: number) => <FormBadge key={i} result={r} />)}
+        </div>
+        <div className="flex gap-1 md:gap-1.5">
+          {(data.awayForm || []).map((r: string, i: number) => <FormBadge key={i} result={r} />)}
+        </div>
       </div>
-      <div className="flex gap-1 md:gap-1.5">
-        {(data.awayForm || []).map((r: string, i: number) => <FormBadge key={i} result={r} />)}
-      </div>
+      {(homeStreak || awayStreak) && (
+        <div className="flex justify-between px-4 md:px-12">
+          <div>{homeStreak && <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${homeStreak.color}`}>{homeStreak.text}</span>}</div>
+          <div>{awayStreak && <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${awayStreak.color}`}>{awayStreak.text}</span>}</div>
+        </div>
+      )}
     </div>
   );
 }
@@ -272,6 +308,7 @@ function ScorersSection({ matchId, homeTeamName, awayTeamName }: { matchId: stri
 export default function MatchPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const { data: core, isLoading: coreLoading } = useMatchCore(id);
+  const isLive = core?.match?.status === "IN_PLAY" || core?.match?.status === "LIVE";
 
   if (coreLoading) {
     return (
@@ -444,11 +481,13 @@ export default function MatchPage({ params }: { params: Promise<{ id: string }> 
                   matchId={id}
                   homeTeamId={match.homeTeam.id}
                   awayTeamId={match.awayTeam.id}
+                  isLive={isLive}
                 />
                 <MatchStatistics
                   matchId={id}
                   homeTeamName={match.homeTeam.shortName}
                   awayTeamName={match.awayTeam.shortName}
+                  isLive={isLive}
                 />
                 <MatchLineups matchId={id} />
               </>

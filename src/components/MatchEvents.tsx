@@ -89,12 +89,14 @@ export function MatchEvents({
   matchId,
   homeTeamId,
   awayTeamId,
+  isLive,
 }: {
   matchId: string;
   homeTeamId: number;
   awayTeamId: number;
+  isLive?: boolean;
 }) {
-  const { data: events, isLoading } = useMatchEvents(matchId);
+  const { data: events, isLoading } = useMatchEvents(matchId, isLive);
 
   if (isLoading) {
     return (

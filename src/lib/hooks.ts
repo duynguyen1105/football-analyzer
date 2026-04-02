@@ -31,12 +31,13 @@ export function useStandings(code: string) {
   });
 }
 
-export function useMatchCore(matchId: string) {
+export function useMatchCore(matchId: string, isLive?: boolean) {
   return useQuery({
     queryKey: ["match", matchId, "core"],
     queryFn: () =>
       fetch(`/api/match?id=${matchId}&section=core`).then((r) => r.json()),
-    staleTime: 30 * 60 * 1000, // 30 min — core data is stable
+    staleTime: isLive ? 30 * 1000 : 30 * 60 * 1000,
+    refetchInterval: isLive ? 30 * 1000 : undefined,
   });
 }
 
@@ -139,21 +140,23 @@ export function useLiveMatches() {
   });
 }
 
-export function useMatchEvents(matchId: string) {
+export function useMatchEvents(matchId: string, isLive?: boolean) {
   return useQuery({
     queryKey: ["match", matchId, "events"],
     queryFn: () =>
       fetch(`/api/match?id=${matchId}&section=events`).then((r) => r.json()),
-    staleTime: 60 * 1000, // 1 min
+    staleTime: isLive ? 15 * 1000 : 60 * 1000,
+    refetchInterval: isLive ? 30 * 1000 : undefined,
   });
 }
 
-export function useMatchStatistics(matchId: string) {
+export function useMatchStatistics(matchId: string, isLive?: boolean) {
   return useQuery({
     queryKey: ["match", matchId, "statistics"],
     queryFn: () =>
       fetch(`/api/match?id=${matchId}&section=statistics`).then((r) => r.json()),
-    staleTime: 5 * 60 * 1000, // 5 min
+    staleTime: isLive ? 30 * 1000 : 5 * 60 * 1000,
+    refetchInterval: isLive ? 60 * 1000 : undefined,
   });
 }
 

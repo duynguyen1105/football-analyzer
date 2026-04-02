@@ -101,3 +101,14 @@ body {
 .badge-w { background: #22c55e20; color: var(--accent); }
 .badge-d { background: #eab30820; color: var(--accent-yellow); }
 .badge-l { background: #ef444420; color: var(--accent-red); }
+
+/* Image shimmer placeholder */
+.img-shimmer {
+  background: linear-gradient(90deg, var(--border) 0%, var(--bg-card-hover) 50%, var(--border) 100%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+}
+@keyframes shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}

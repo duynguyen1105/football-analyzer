@@ -115,12 +115,14 @@ export function MatchStatistics({
   matchId,
   homeTeamName,
   awayTeamName,
+  isLive,
 }: {
   matchId: string;
   homeTeamName: string;
   awayTeamName: string;
+  isLive?: boolean;
 }) {
-  const { data: statistics, isLoading } = useMatchStatistics(matchId);
+  const { data: statistics, isLoading } = useMatchStatistics(matchId, isLive);
 
   if (isLoading) {
     return (
