@@ -1,7 +1,8 @@
 "use client";
 
-import { useMemo, useCallback } from "react";
+import { useMemo, useCallback, useEffect } from "react";
 import { useQueryClient } from "@tanstack/react-query";
+import { useSearchParams, useRouter } from "next/navigation";
 import { Navbar } from "@/components/Navbar";
 import { AdSlot } from "@/components/AdSlot";
 import { FavoriteButton } from "@/components/FavoriteButton";
@@ -194,6 +195,24 @@ function pickFeatured(matches: Match[]): Match[] {
 export default function Home() {
   const { leagueFilter, setLeagueFilter, favoriteTeams, showFavoritesOnly, setShowFavoritesOnly } = useAppStore();
   const { data: matches, isLoading } = useMatches();
+  const searchParams = useSearchParams();
+  const router = useRouter();
+
+  // Sync ?league= query param → store on mount
+  useEffect(() => {
+    const qLeague = searchParams.get("league");
+    if (qLeague && LEAGUES.some((l) => l.code === qLeague) && qLeague !== leagueFilter) {
+      setLeagueFilter(qLeague);
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Sync store → URL when filter changes
+  const setFilter = useCallback((code: string | null) => {
+    setLeagueFilter(code);
+    setShowFavoritesOnly(false);
+    const url = code ? `/?league=${code}` : "/";
+    router.replace(url, { scroll: false });
+  }, [setLeagueFilter, setShowFavoritesOnly, router]);
 
   const hasFavorites = favoriteTeams.length > 0;
 
@@ -233,7 +252,7 @@ export default function Home() {
         {/* League filter — wraps on mobile instead of scrolling */}
         <div className="flex flex-wrap gap-1.5 mb-4">
           <button
-            onClick={() => { setLeagueFilter(null); setShowFavoritesOnly(false); }}
+            onClick={() => setFilter(null)}
             className={`px-2.5 py-1.5 rounded-full text-[11px] font-medium transition-colors ${
               !leagueFilter && !showFavoritesOnly
                 ? "bg-accent/15 text-accent border border-accent/30"
@@ -244,7 +263,7 @@ export default function Home() {
           </button>
           {hasFavorites && (
             <button
-              onClick={() => { setShowFavoritesOnly(!showFavoritesOnly); setLeagueFilter(null); }}
+              onClick={() => { setShowFavoritesOnly(!showFavoritesOnly); setLeagueFilter(null); router.replace("/", { scroll: false }); }}
               className={`flex items-center gap-1 px-2.5 py-1.5 rounded-full text-[11px] font-medium transition-colors ${
                 showFavoritesOnly
                   ? "bg-accent-yellow/15 text-accent-yellow border border-accent-yellow/30"
@@ -260,7 +279,7 @@ export default function Home() {
           {LEAGUES.map((l) => (
             <button
               key={l.code}
-              onClick={() => { setLeagueFilter(l.code); setShowFavoritesOnly(false); }}
+              onClick={() => setFilter(l.code)}
               className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-full text-[11px] font-medium transition-colors ${
                 leagueFilter === l.code
                   ? "bg-accent/15 text-accent border border-accent/30"
