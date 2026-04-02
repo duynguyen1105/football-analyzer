@@ -6,6 +6,7 @@ import { NavigationProgress } from "@/components/NavigationProgress";
 import { GoogleAnalytics } from "@/components/GoogleAnalytics";
 import { AdSenseScript } from "@/components/AdSenseScript";
 import { buildWebSiteSchema } from "@/lib/json-ld";
+import { MobileNav } from "@/components/MobileNav";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://nhandinhbongdavn.com"),
@@ -41,7 +42,11 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         <Suspense fallback={null}>
           <NavigationProgress />
         </Suspense>
-        <Providers>{children}</Providers>
+        <Providers>
+          {children}
+          <MobileNav />
+          <div className="h-14 md:hidden" /> {/* Spacer for mobile bottom nav */}
+        </Providers>
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{

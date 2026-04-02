@@ -5,6 +5,7 @@ import { Navbar } from "@/components/Navbar";
 import { useTeamProfile, useTeamSquad, useTeamStats, useTeamFixtures, useStandings } from "@/lib/hooks";
 import { LEAGUES } from "@/lib/constants";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
+import { FavoriteButton } from "@/components/FavoriteButton";
 import Link from "next/link";
 
 const POSITION_VI: Record<string, string> = {
@@ -385,7 +386,10 @@ export default function TeamPage({ params }: { params: Promise<{ id: string }> }
 
             {/* Info */}
             <div className="flex-1 text-center md:text-left">
-              <h1 className="text-2xl md:text-3xl font-bold mb-2">{team.name}</h1>
+              <h1 className="text-2xl md:text-3xl font-bold mb-2 flex items-center gap-2 justify-center md:justify-start">
+                {team.name}
+                <FavoriteButton teamId={parseInt(id, 10)} size="md" />
+              </h1>
               <div className="flex flex-wrap items-center justify-center md:justify-start gap-3 text-sm text-text-secondary mb-4">
                 {team.code && <span className="px-2 py-0.5 bg-accent/10 text-accent rounded">{team.code}</span>}
                 {team.country && <span>{team.country}</span>}

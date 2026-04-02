@@ -4,6 +4,7 @@ import { useMemo, useCallback } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Navbar } from "@/components/Navbar";
 import { AdSlot } from "@/components/AdSlot";
+import { FavoriteButton } from "@/components/FavoriteButton";
 import { useMatches, useStandings } from "@/lib/hooks";
 import { useAppStore } from "@/lib/store";
 import { LEAGUES } from "@/lib/constants";
@@ -37,7 +38,9 @@ function MatchCard({ match }: { match: Match }) {
       {/* League header */}
       <div className="px-3 py-1.5 border-b border-border/50 text-[10px] md:text-xs text-text-muted flex items-center gap-1.5">
         {league?.logo && <img src={league.logo} alt="" className="w-4 h-4 object-contain" />}
-        <span className="truncate">{match.competition.name}</span>
+        <span className="truncate flex-1">{match.competition.name}</span>
+        <FavoriteButton teamId={match.homeTeam.id} />
+        <FavoriteButton teamId={match.awayTeam.id} />
       </div>
 
       {/* Mobile: row-based layout */}
@@ -170,13 +173,43 @@ function StandingsCard({ league }: { league: (typeof LEAGUES)[number] }) {
 
 /* ───────────────────────── Home Page ───────────────────────── */
 
+/** Pick the top featured matches based on both teams' league positions */
+function pickFeatured(matches: Match[]): Match[] {
+  // Only future/scheduled matches
+  const upcoming = matches.filter((m) => m.status === "SCHEDULED" || m.status === "TIMED");
+  if (upcoming.length === 0) return [];
+
+  // Score: top-league matches between strong teams (based on code priority)
+  const leaguePriority: Record<string, number> = { CL: 5, PL: 4, PD: 3, SA: 3, BL1: 2, FL1: 2, WC: 5, VL: 1 };
+  const scored = upcoming.map((m) => ({
+    match: m,
+    score: (leaguePriority[m.competition.code] || 1),
+  }));
+  scored.sort((a, b) => b.score - a.score);
+  return scored.slice(0, 3).map((s) => s.match);
+}
+
 export default function Home() {
-  const { leagueFilter, setLeagueFilter } = useAppStore();
+  const { leagueFilter, setLeagueFilter, favoriteTeams, showFavoritesOnly, setShowFavoritesOnly } = useAppStore();
   const { data: matches, isLoading } = useMatches();
 
-  const filtered = leagueFilter
-    ? (matches || []).filter((m: Match) => m.competition.code === leagueFilter)
-    : matches || [];
+  const hasFavorites = favoriteTeams.length > 0;
+
+  const filtered = useMemo(() => {
+    let list = matches || [];
+    if (leagueFilter) {
+      list = list.filter((m: Match) => m.competition.code === leagueFilter);
+    }
+    if (showFavoritesOnly && hasFavorites) {
+      list = list.filter(
+        (m: Match) =>
+          favoriteTeams.includes(m.homeTeam.id) || favoriteTeams.includes(m.awayTeam.id)
+      );
+    }
+    return list;
+  }, [matches, leagueFilter, showFavoritesOnly, hasFavorites, favoriteTeams]);
+
+  const featured = useMemo(() => pickFeatured(matches || []), [matches]);
 
   const grouped = useMemo(() => {
     const g: Record<string, Match[]> = {};
@@ -198,19 +231,34 @@ export default function Home() {
         {/* League filter — wraps on mobile instead of scrolling */}
         <div className="flex flex-wrap gap-1.5 mb-4">
           <button
-            onClick={() => setLeagueFilter(null)}
+            onClick={() => { setLeagueFilter(null); setShowFavoritesOnly(false); }}
             className={`px-2.5 py-1.5 rounded-full text-[11px] font-medium transition-colors ${
-              !leagueFilter
+              !leagueFilter && !showFavoritesOnly
                 ? "bg-accent/15 text-accent border border-accent/30"
                 : "text-text-secondary border border-border hover:bg-bg-card-hover"
             }`}
           >
             Tất cả
           </button>
+          {hasFavorites && (
+            <button
+              onClick={() => { setShowFavoritesOnly(!showFavoritesOnly); setLeagueFilter(null); }}
+              className={`flex items-center gap-1 px-2.5 py-1.5 rounded-full text-[11px] font-medium transition-colors ${
+                showFavoritesOnly
+                  ? "bg-accent-yellow/15 text-accent-yellow border border-accent-yellow/30"
+                  : "text-text-secondary border border-border hover:bg-bg-card-hover"
+              }`}
+            >
+              <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill={showFavoritesOnly ? "currentColor" : "none"} stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
+              </svg>
+              Đội của tôi
+            </button>
+          )}
           {LEAGUES.map((l) => (
             <button
               key={l.code}
-              onClick={() => setLeagueFilter(l.code)}
+              onClick={() => { setLeagueFilter(l.code); setShowFavoritesOnly(false); }}
               className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-full text-[11px] font-medium transition-colors ${
                 leagueFilter === l.code
                   ? "bg-accent/15 text-accent border border-accent/30"
@@ -227,6 +275,23 @@ export default function Home() {
         </div>
 
         <AdSlot size="leaderboard" className="mb-4" />
+
+        {/* Featured matches */}
+        {!isLoading && featured.length > 0 && !leagueFilter && !showFavoritesOnly && (
+          <section className="mb-6">
+            <h2 className="text-sm font-bold text-text-secondary mb-2 flex items-center gap-1.5">
+              <svg className="w-4 h-4 text-accent-yellow" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
+              </svg>
+              Trận đấu nổi bật
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              {featured.map((m) => (
+                <MatchCard key={`featured-${m.id}`} match={m} />
+              ))}
+            </div>
+          </section>
+        )}
 
         {/* Match list */}
         {isLoading && (
