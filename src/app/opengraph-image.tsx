@@ -25,9 +25,9 @@ export default async function Image() {
           fontFamily: "Inter",
         }}
       >
-        <div style={{ fontSize: 80, color: "#f1f5f9", display: "flex", alignItems: "center", gap: 16 }}>
-          ⚽ MatchDay
-          <span style={{ color: "#22c55e" }}>Analyst</span>
+        <div style={{ fontSize: 72, color: "#f1f5f9", display: "flex", alignItems: "center", gap: 16 }}>
+          ⚽ Nhận Định Bóng Đá
+          <span style={{ color: "#22c55e" }}>VN</span>
         </div>
         <div style={{ fontSize: 32, color: "#94a3b8", marginTop: 20 }}>
           Nhận định bóng đá trước trận với AI
