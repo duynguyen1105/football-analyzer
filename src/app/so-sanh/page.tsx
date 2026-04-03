@@ -323,6 +323,55 @@ function AiConclusion({ playerA, playerB }: { playerA: number; playerB: number }
   );
 }
 
+type PlayerStats = {
+  team: { id: number; name: string; logo: string };
+  league: { id: number; name: string; country: string; logo: string };
+  games: { appearences: number; minutes: number; rating: string | null };
+  goals: { total: number; assists: number };
+  passes: { total: number; accuracy: number | null };
+  shots: { total: number; on: number };
+  tackles: { total: number; interceptions: number };
+  duels: { total: number; won: number };
+  dribbles: { attempts: number; success: number };
+  fouls: { drawn: number; committed: number };
+  cards: { yellow: number; red: number };
+};
+
+function aggregateStats(stats: PlayerStats[]) {
+  const agg = {
+    appearences: 0, minutes: 0, goals: 0, assists: 0,
+    shotsTotal: 0, shotsOn: 0, passes: 0,
+    tackles: 0, duelsWon: 0, dribblesSuccess: 0,
+    yellow: 0, red: 0,
+    ratingSum: 0, ratingCount: 0,
+    leagues: [] as string[],
+  };
+
+  for (const s of stats) {
+    agg.appearences += s.games.appearences;
+    agg.minutes += s.games.minutes;
+    agg.goals += s.goals.total;
+    agg.assists += s.goals.assists;
+    agg.shotsTotal += s.shots.total;
+    agg.shotsOn += s.shots.on;
+    agg.passes += s.passes.total;
+    agg.tackles += s.tackles.total;
+    agg.duelsWon += s.duels.won;
+    agg.dribblesSuccess += s.dribbles.success;
+    agg.yellow += s.cards.yellow;
+    agg.red += s.cards.red;
+    if (s.games.rating) {
+      agg.ratingSum += parseFloat(s.games.rating) * s.games.appearences;
+      agg.ratingCount += s.games.appearences;
+    }
+    if (s.league.name && !agg.leagues.includes(s.league.name)) {
+      agg.leagues.push(s.league.name);
+    }
+  }
+
+  return agg;
+}
+
 function ComparisonView({
   playerA,
   playerB,
@@ -335,11 +384,7 @@ function ComparisonView({
 
   if (!a || !b) return null;
 
-  // Aggregate stats from primary league
-  const statsA = a.statistics[0];
-  const statsB = b.statistics[0];
-
-  if (!statsA || !statsB) {
+  if (!a.statistics.length || !b.statistics.length) {
     return (
       <p className="text-sm text-text-muted text-center py-8">
         Không đủ dữ liệu thống kê để so sánh
@@ -347,23 +392,27 @@ function ComparisonView({
     );
   }
 
+  // Aggregate stats across all competitions this season
+  const aggA = aggregateStats(a.statistics);
+  const aggB = aggregateStats(b.statistics);
+
   const comparisons = [
-    { label: "Trận đấu", a: statsA.games.appearences, b: statsB.games.appearences },
-    { label: "Bàn thắng", a: statsA.goals.total, b: statsB.goals.total },
-    { label: "Kiến tạo", a: statsA.goals.assists, b: statsB.goals.assists },
-    { label: "Phút thi đấu", a: statsA.games.minutes, b: statsB.games.minutes },
-    { label: "Sút", a: statsA.shots.total, b: statsB.shots.total },
-    { label: "Sút trúng đích", a: statsA.shots.on, b: statsB.shots.on },
-    { label: "Chuyền", a: statsA.passes.total, b: statsB.passes.total },
-    { label: "Tắc bóng", a: statsA.tackles.total, b: statsB.tackles.total },
-    { label: "Tranh chấp thắng", a: statsA.duels.won, b: statsB.duels.won },
-    { label: "Rê bóng thành công", a: statsA.dribbles.success, b: statsB.dribbles.success },
-    { label: "Thẻ vàng", a: statsA.cards.yellow, b: statsB.cards.yellow },
-    { label: "Thẻ đỏ", a: statsA.cards.red, b: statsB.cards.red },
+    { label: "Trận đấu", a: aggA.appearences, b: aggB.appearences },
+    { label: "Bàn thắng", a: aggA.goals, b: aggB.goals },
+    { label: "Kiến tạo", a: aggA.assists, b: aggB.assists },
+    { label: "Phút thi đấu", a: aggA.minutes, b: aggB.minutes },
+    { label: "Sút", a: aggA.shotsTotal, b: aggB.shotsTotal },
+    { label: "Sút trúng đích", a: aggA.shotsOn, b: aggB.shotsOn },
+    { label: "Chuyền", a: aggA.passes, b: aggB.passes },
+    { label: "Tắc bóng", a: aggA.tackles, b: aggB.tackles },
+    { label: "Tranh chấp thắng", a: aggA.duelsWon, b: aggB.duelsWon },
+    { label: "Rê bóng thành công", a: aggA.dribblesSuccess, b: aggB.dribblesSuccess },
+    { label: "Thẻ vàng", a: aggA.yellow, b: aggB.yellow },
+    { label: "Thẻ đỏ", a: aggA.red, b: aggB.red },
   ];
 
-  const ratingA = statsA.games.rating ? parseFloat(statsA.games.rating) : 0;
-  const ratingB = statsB.games.rating ? parseFloat(statsB.games.rating) : 0;
+  const ratingA = aggA.ratingCount > 0 ? aggA.ratingSum / aggA.ratingCount : 0;
+  const ratingB = aggB.ratingCount > 0 ? aggB.ratingSum / aggB.ratingCount : 0;
 
   return (
     <>
@@ -405,20 +454,12 @@ function ComparisonView({
         ))}
       </div>
 
-      {/* League info */}
+      {/* Leagues covered */}
       <div className="px-4 py-3 border-t border-border bg-bg-primary/30">
         <div className="grid grid-cols-3 text-center text-[10px] text-text-muted">
-          <p>
-            {statsA.league.name}
-            <br />
-            {statsA.team.name}
-          </p>
-          <p>Giải đấu</p>
-          <p>
-            {statsB.league.name}
-            <br />
-            {statsB.team.name}
-          </p>
+          <p>{aggA.leagues.join(", ") || "N/A"}<br />{a.currentTeam?.name}</p>
+          <p>Tất cả giải đấu</p>
+          <p>{aggB.leagues.join(", ") || "N/A"}<br />{b.currentTeam?.name}</p>
         </div>
       </div>
     </div>

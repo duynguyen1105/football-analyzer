@@ -6,19 +6,56 @@ const client = new Anthropic();
 const CACHE_TTL = 6 * 60 * 60; // 6 hours
 
 function buildStatsBlock(name: string, p: PlayerProfile): string {
-  const s = p.statistics[0];
-  if (!s) return `${name}: Không có dữ liệu thống kê`;
+  if (!p.statistics.length) return `${name}: Không có dữ liệu thống kê`;
+
+  // Aggregate across all competitions this season
+  let apps = 0, mins = 0, goals = 0, assists = 0;
+  let shots = 0, shotsOn = 0, passes = 0;
+  let tackles = 0, interceptions = 0;
+  let duels = 0, duelsWon = 0;
+  let dribbleAttempts = 0, dribbleSuccess = 0;
+  let yellow = 0, red = 0;
+  let ratingSum = 0, ratingCount = 0;
+  const leagues: string[] = [];
+
+  for (const s of p.statistics) {
+    apps += s.games.appearences;
+    mins += s.games.minutes;
+    goals += s.goals.total;
+    assists += s.goals.assists;
+    shots += s.shots.total;
+    shotsOn += s.shots.on;
+    passes += s.passes.total;
+    tackles += s.tackles.total;
+    interceptions += s.tackles.interceptions;
+    duels += s.duels.total;
+    duelsWon += s.duels.won;
+    dribbleAttempts += s.dribbles.attempts;
+    dribbleSuccess += s.dribbles.success;
+    yellow += s.cards.yellow;
+    red += s.cards.red;
+    if (s.games.rating) {
+      ratingSum += parseFloat(s.games.rating) * s.games.appearences;
+      ratingCount += s.games.appearences;
+    }
+    if (s.league.name && !leagues.includes(s.league.name)) {
+      leagues.push(s.league.name);
+    }
+  }
+
+  const avgRating = ratingCount > 0 ? (ratingSum / ratingCount).toFixed(2) : "N/A";
 
   return `${name} (${p.age} tuổi, ${p.nationality}, ${p.position})
-  CLB: ${s.team.name} | Giải: ${s.league.name}
-  Trận: ${s.games.appearences} | Phút: ${s.games.minutes} | Điểm TB: ${s.games.rating || "N/A"}
-  Bàn thắng: ${s.goals.total} | Kiến tạo: ${s.goals.assists}
-  Sút: ${s.shots.total} (trúng đích: ${s.shots.on})
-  Chuyền: ${s.passes.total} (chính xác: ${s.passes.accuracy ?? "N/A"}%)
-  Tắc bóng: ${s.tackles.total} | Cắt bóng: ${s.tackles.interceptions}
-  Tranh chấp: ${s.duels.total} (thắng: ${s.duels.won})
-  Rê bóng: ${s.dribbles.attempts} (thành công: ${s.dribbles.success})
-  Thẻ vàng: ${s.cards.yellow} | Thẻ đỏ: ${s.cards.red}`;
+  CLB: ${p.currentTeam?.name ?? "N/A"} | Giải: ${leagues.join(", ")}
+  Trận: ${apps} | Phút: ${mins} | Điểm TB: ${avgRating}
+  Bàn thắng: ${goals} | Kiến tạo: ${assists}
+  Sút: ${shots} (trúng đích: ${shotsOn})
+  Chuyền: ${passes}
+  Tắc bóng: ${tackles} | Cắt bóng: ${interceptions}
+  Tranh chấp: ${duels} (thắng: ${duelsWon})
+  Rê bóng: ${dribbleAttempts} (thành công: ${dribbleSuccess})
+  Thẻ vàng: ${yellow} | Thẻ đỏ: ${red}
+  (Tổng hợp từ ${p.statistics.length} giải đấu mùa này)`;
 }
 
 export async function GET(request: Request) {
