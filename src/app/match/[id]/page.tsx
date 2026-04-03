@@ -473,8 +473,8 @@ export default function MatchPage({ params }: { params: Promise<{ id: string }> 
 
         <AdSlot size="leaderboard" className="mb-6" />
 
-        {/* Quick Summary — loads independently */}
-        <QuickSummary matchId={id} />
+        {/* Quick Summary — only for upcoming matches */}
+        {match.status !== "FINISHED" && <QuickSummary matchId={id} />}
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
           <div className="lg:col-span-2 space-y-6">
@@ -641,8 +641,8 @@ export default function MatchPage({ params }: { params: Promise<{ id: string }> 
               awayTeamName={match.awayTeam.shortName}
             />
 
-            {/* AI Analysis */}
-            <AiAnalysis matchId={id} />
+            {/* AI Analysis — only for upcoming matches */}
+            {match.status !== "FINISHED" && <AiAnalysis matchId={id} />}
           </div>
 
           {/* Sidebar — each section loads independently */}
