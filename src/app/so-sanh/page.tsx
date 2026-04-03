@@ -15,12 +15,54 @@ interface SearchResult {
   teamCrest: string;
 }
 
+interface TopPlayer {
+  id: number;
+  name: string;
+  photo: string;
+  team: string;
+  teamLogo: string;
+  goals: number;
+  assists: number | null;
+}
+
+const SUGGESTED_COMPARISONS = [
+  { a: { id: 1100, name: "Haaland" }, b: { id: 278, name: "Mbappé" } },
+  { a: { id: 874, name: "Salah" }, b: { id: 1485, name: "Vinícius Jr" } },
+  { a: { id: 154, name: "Messi" }, b: { id: 874, name: "Salah" } },
+  { a: { id: 1100, name: "Haaland" }, b: { id: 1485, name: "Vinícius Jr" } },
+  { a: { id: 184054, name: "Lamine Yamal" }, b: { id: 286289, name: "Kobbie Mainoo" } },
+  { a: { id: 521, name: "De Bruyne" }, b: { id: 874, name: "Salah" } },
+];
+
+const LEAGUE_TABS = [
+  { code: "PL", label: "PL", flag: "🏴󠁧󠁢󠁥󠁮󠁧󠁿" },
+  { code: "PD", label: "La Liga", flag: "🇪🇸" },
+  { code: "SA", label: "Serie A", flag: "🇮🇹" },
+  { code: "BL1", label: "Bundesliga", flag: "🇩🇪" },
+  { code: "FL1", label: "Ligue 1", flag: "🇫🇷" },
+];
+
+function useTopPlayers(leagueCode: string) {
+  return useQuery<TopPlayer[]>({
+    queryKey: ["top-scorers", leagueCode],
+    queryFn: async () => {
+      const res = await fetch(`/api/standings?type=scorers&league=${leagueCode}`);
+      if (!res.ok) return [];
+      const data = await res.json();
+      return (data || []).slice(0, 10);
+    },
+    staleTime: 60 * 60 * 1000,
+  });
+}
+
 function PlayerSearch({
   label,
+  selectedId,
   onSelect,
 }: {
   label: string;
-  onSelect: (id: number) => void;
+  selectedId: number | null;
+  onSelect: (id: number, name: string) => void;
 }) {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<SearchResult[]>([]);
@@ -54,7 +96,7 @@ function PlayerSearch({
       setIsOpen(false);
       return;
     }
-    debounceRef.current = setTimeout(() => search(query), 400);
+    debounceRef.current = setTimeout(() => search(query), 300);
     return () => clearTimeout(debounceRef.current);
   }, [query, search]);
 
@@ -67,10 +109,16 @@ function PlayerSearch({
     return () => document.removeEventListener("mousedown", handleClick);
   }, []);
 
+  function handleClear() {
+    setQuery("");
+    setResults([]);
+    setIsOpen(false);
+  }
+
   return (
     <div ref={ref} className="relative">
       <label className="text-xs text-text-muted block mb-1">{label}</label>
-      <div className="flex items-center gap-2 bg-bg-card border border-border rounded-lg px-3 py-2 focus-within:border-accent/50 transition-colors">
+      <div className={`flex items-center gap-2 bg-bg-card border rounded-lg px-3 py-2 transition-colors ${selectedId ? "border-accent/40" : "border-border"} focus-within:border-accent/50`}>
         <svg
           className="w-4 h-4 text-text-muted shrink-0"
           fill="none"
@@ -95,6 +143,13 @@ function PlayerSearch({
         {loading && (
           <div className="w-4 h-4 border-2 border-accent/30 border-t-accent rounded-full animate-spin" />
         )}
+        {query && !loading && (
+          <button onClick={handleClear} className="text-text-muted hover:text-text-primary transition-colors">
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        )}
       </div>
       {isOpen && results.length > 0 && (
         <div className="absolute left-0 right-0 top-full mt-1 bg-bg-card border border-border rounded-xl shadow-lg z-50 max-h-60 overflow-y-auto">
@@ -102,7 +157,7 @@ function PlayerSearch({
             <button
               key={p.id}
               onClick={() => {
-                onSelect(p.id);
+                onSelect(p.id, p.name);
                 setQuery(p.name);
                 setIsOpen(false);
               }}
@@ -374,9 +429,103 @@ function ComparisonView({
   );
 }
 
+function SuggestedComparisons({ onPick }: { onPick: (a: number, b: number) => void }) {
+  return (
+    <div className="mb-6">
+      <h3 className="text-xs font-semibold text-text-muted uppercase tracking-wide mb-2">So sánh phổ biến</h3>
+      <div className="flex flex-wrap gap-2">
+        {SUGGESTED_COMPARISONS.map((s, i) => (
+          <button
+            key={i}
+            onClick={() => onPick(s.a.id, s.b.id)}
+            className="text-xs px-3 py-1.5 rounded-full border border-border bg-bg-card hover:border-accent/40 hover:bg-accent/5 transition-colors text-text-secondary"
+          >
+            {s.a.name} vs {s.b.name}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function TopPlayerPicker({ slot, onPick }: { slot: "A" | "B"; onPick: (id: number) => void }) {
+  const [league, setLeague] = useState("PL");
+  const { data: players, isLoading } = useTopPlayers(league);
+
+  return (
+    <div className="bg-bg-card rounded-xl border border-border p-3">
+      <p className="text-xs font-semibold text-text-muted mb-2">
+        Hoặc chọn nhanh Cầu thủ {slot}
+      </p>
+
+      {/* League tabs */}
+      <div className="flex gap-1 mb-3 overflow-x-auto no-scrollbar">
+        {LEAGUE_TABS.map((l) => (
+          <button
+            key={l.code}
+            onClick={() => setLeague(l.code)}
+            className={`text-[10px] px-2 py-1 rounded-full whitespace-nowrap transition-colors ${
+              league === l.code
+                ? "bg-accent text-white"
+                : "bg-bg-primary/50 text-text-muted hover:text-text-primary"
+            }`}
+          >
+            {l.flag} {l.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Player grid */}
+      {isLoading ? (
+        <div className="grid grid-cols-5 gap-2">
+          {[...Array(5)].map((_, i) => (
+            <div key={i} className="flex flex-col items-center gap-1">
+              <div className="w-10 h-10 rounded-full bg-border/20 animate-pulse" />
+              <div className="h-2 w-10 rounded bg-border/20 animate-pulse" />
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="grid grid-cols-5 gap-2">
+          {(players || []).slice(0, 10).map((p) => (
+            <button
+              key={p.id}
+              onClick={() => onPick(p.id)}
+              className="flex flex-col items-center gap-1 p-1.5 rounded-lg hover:bg-accent/10 transition-colors group"
+            >
+              <img
+                src={p.photo}
+                alt={p.name}
+                className="w-10 h-10 rounded-full object-cover border border-border group-hover:border-accent transition-colors"
+              />
+              <span className="text-[9px] text-text-secondary text-center leading-tight line-clamp-2 group-hover:text-accent transition-colors">
+                {p.name.split(" ").slice(-1)[0]}
+              </span>
+              <span className="text-[8px] text-text-muted">{p.goals} ban</span>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function ComparisonPage() {
   const [playerA, setPlayerA] = useState<number | null>(null);
   const [playerB, setPlayerB] = useState<number | null>(null);
+
+  function handleSelectA(id: number) {
+    setPlayerA(id);
+  }
+
+  function handleSelectB(id: number) {
+    setPlayerB(id);
+  }
+
+  function handleSuggested(a: number, b: number) {
+    setPlayerA(a);
+    setPlayerB(b);
+  }
 
   return (
     <>
@@ -390,22 +539,33 @@ export default function ComparisonPage() {
         </p>
 
         {/* Player selectors */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
-          <PlayerSearch label="Cầu thủ 1" onSelect={setPlayerA} />
-          <PlayerSearch label="Cầu thủ 2" onSelect={setPlayerB} />
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+          <PlayerSearch label="Cầu thủ 1" selectedId={playerA} onSelect={(id) => handleSelectA(id)} />
+          <PlayerSearch label="Cầu thủ 2" selectedId={playerB} onSelect={(id) => handleSelectB(id)} />
         </div>
+
+        {/* Suggested comparisons + quick-pick (shown when no comparison active) */}
+        {!(playerA && playerB) && (
+          <>
+            <SuggestedComparisons onPick={handleSuggested} />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+              <TopPlayerPicker slot="A" onPick={handleSelectA} />
+              <TopPlayerPicker slot="B" onPick={handleSelectB} />
+            </div>
+          </>
+        )}
 
         {/* Comparison */}
         {playerA && playerB ? (
           <ComparisonView playerA={playerA} playerB={playerB} />
         ) : (
-          <div className="text-center py-16 bg-bg-card rounded-2xl border border-border">
+          <div className="text-center py-12 bg-bg-card rounded-2xl border border-border">
             <div className="text-4xl mb-4">&#9878;&#65039;</div>
             <p className="text-text-secondary font-medium">
               Chọn 2 cầu thủ để bắt đầu so sánh
             </p>
             <p className="text-xs text-text-muted mt-2">
-              Tìm kiếm theo tên cầu thủ ở trên
+              Tìm kiếm theo tên, chọn nhanh, hoặc bấm một cặp gợi ý
             </p>
           </div>
         )}
