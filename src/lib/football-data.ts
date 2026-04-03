@@ -1730,7 +1730,7 @@ export async function searchTeamsAndPlayers(query: string): Promise<SearchResult
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       apiFetch<any[]>("/teams", { search: trimmed }),
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      apiFetch<any[]>("/players", { search: trimmed, league: "39" }).catch(() => []),
+      apiFetch<any[]>("/players", { search: trimmed, season: String(CURRENT_SEASON) }).catch(() => []),
     ]);
 
     const teams = (teamsRaw || []).slice(0, 8).map((t) => ({

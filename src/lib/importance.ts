@@ -1,5 +1,33 @@
 import { Standing } from "./types";
 
+const KNOCKOUT_ROUND_IMPORTANCE: Record<string, { score: number; reason: string }> = {
+  final: { score: 10, reason: "Trận chung kết" },
+  "semi-finals": { score: 9, reason: "Bán kết" },
+  "quarter-finals": { score: 9, reason: "Tứ kết" },
+  "round of 16": { score: 8, reason: "Vòng 16 đội" },
+  "round of 32": { score: 7, reason: "Vòng 32 đội" },
+};
+
+/**
+ * Compute importance for knockout/playoff matches.
+ * Returns a high fixed score based on the round name.
+ */
+export function computeKnockoutImportance(round?: string): { score: number; reason: string } {
+  if (!round) return { score: 8, reason: "Vòng loại trực tiếp" };
+
+  const lower = round.toLowerCase();
+  for (const [key, value] of Object.entries(KNOCKOUT_ROUND_IMPORTANCE)) {
+    if (lower.includes(key)) return value;
+  }
+
+  // Playoff or other knockout format
+  if (lower.includes("playoff") || lower.includes("play-off")) {
+    return { score: 8, reason: "Vòng play-off" };
+  }
+
+  return { score: 8, reason: "Vòng loại trực tiếp" };
+}
+
 export function computeImportance(
   homeStanding: Standing | null,
   awayStanding: Standing | null,

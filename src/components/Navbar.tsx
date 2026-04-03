@@ -65,7 +65,9 @@ export function Navbar() {
                     onClick={() => setLeagueOpen(false)}
                     className="flex items-center gap-2.5 px-3 py-2 hover:bg-bg-primary/50 transition-colors"
                   >
-                    <img src={l.logo} alt="" className="w-5 h-5 object-contain" />
+                    <span className="w-7 h-7 rounded-full bg-bg-primary/60 flex items-center justify-center shrink-0">
+                      <img src={l.logo} alt="" className="w-4 h-4 object-contain" />
+                    </span>
                     <span className="text-xs text-text-primary">{l.flag} {l.name}</span>
                   </Link>
                 ))}
@@ -127,7 +129,9 @@ export function Navbar() {
                       onClick={() => setMenuOpen(false)}
                       className="flex items-center gap-2.5 px-3 py-2 hover:bg-bg-primary/50 transition-colors"
                     >
-                      <img src={l.logo} alt="" className="w-5 h-5 object-contain" />
+                      <span className="w-7 h-7 rounded-full bg-bg-primary/60 flex items-center justify-center shrink-0">
+                        <img src={l.logo} alt="" className="w-4 h-4 object-contain" />
+                      </span>
                       <span className="text-xs text-text-primary">{l.flag} {l.name}</span>
                     </Link>
                   ))}

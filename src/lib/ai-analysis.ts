@@ -33,21 +33,29 @@ export async function generateMatchAnalysis(
 }
 
 function buildDataBlock(data: MatchDetail): string {
-  const { match, h2h, standings, prediction, homeTeamInfo, awayTeamInfo, topScorers } = data;
-
-  const homeStanding = standings.find((s) => s.team.id === match.homeTeam.id);
-  const awayStanding = standings.find((s) => s.team.id === match.awayTeam.id);
+  const { match, h2h, standings, prediction, homeTeamInfo, awayTeamInfo, topScorers, isKnockout } = data;
 
   let block = `MATCH: ${match.homeTeam.name} (HOME) vs ${match.awayTeam.name} (AWAY)
 LEAGUE: ${match.competition.name}
 VENUE: ${match.venue}`;
 
-  if (homeStanding && awayStanding) {
-    block += `
+  if (match.round) {
+    block += `\nROUND: ${match.round}`;
+  }
+
+  if (isKnockout) {
+    block += `\nFORMAT: Knockout stage — direct elimination. DO NOT reference group stage standings or league positions. Focus on recent form, H2H, and elimination pressure.`;
+  } else {
+    const homeStanding = standings.find((s) => s.team.id === match.homeTeam.id);
+    const awayStanding = standings.find((s) => s.team.id === match.awayTeam.id);
+
+    if (homeStanding && awayStanding) {
+      block += `
 
 STANDINGS:
 - ${match.homeTeam.shortName}: ${homeStanding.position}th, ${homeStanding.points}pts, ${homeStanding.won}W-${homeStanding.draw}D-${homeStanding.lost}L, GF:${homeStanding.goalsFor} GA:${homeStanding.goalsAgainst} GD:${homeStanding.goalDifference > 0 ? "+" : ""}${homeStanding.goalDifference}
 - ${match.awayTeam.shortName}: ${awayStanding.position}th, ${awayStanding.points}pts, ${awayStanding.won}W-${awayStanding.draw}D-${awayStanding.lost}L, GF:${awayStanding.goalsFor} GA:${awayStanding.goalsAgainst} GD:${awayStanding.goalDifference > 0 ? "+" : ""}${awayStanding.goalDifference}`;
+    }
   }
 
   if (match.homeForm.length > 0 || match.awayForm.length > 0) {
@@ -97,11 +105,15 @@ PREDICTION MODEL: Home win ${prediction.homeWin}% | Draw ${prediction.draw}% | A
 }
 
 function buildEnglishPrompt(data: MatchDetail): string {
+  const motivationLine = data.isKnockout
+    ? "3. Elimination pressure — how knockout stakes affect each team's approach and mentality"
+    : "3. Motivation assessment — which team has more at stake (title race, relegation, European spots)";
+
   return `You are a football analyst writing an actionable pre-match preview for informed readers. Write a concise, insightful analysis (5-6 short paragraphs) based on the data below. Your analysis must cover:
 
 1. Key tactical matchups and how each manager is likely to set up
 2. Current form and momentum — which team is on the rise or declining
-3. Motivation assessment — which team has more at stake (title race, relegation, European spots)
+${motivationLine}
 4. Injury impact — how missing or returning players affect the balance
 5. Head-to-head patterns and what they tell us about this fixture
 6. Clear verdict with reasoning
@@ -114,11 +126,15 @@ End with your predicted final score in bold format like **Predicted Score: ${dat
 }
 
 function buildVietnamesePrompt(data: MatchDetail): string {
+  const motivationLine = data.isKnockout
+    ? "3. Áp lực loại trực tiếp — thể thức knockout ảnh hưởng thế nào đến lối chơi và tâm lý mỗi đội"
+    : "3. Đánh giá động lực — đội nào có nhiều lý do để chiến đấu hơn (đua vô địch, trụ hạng, suất châu Âu)";
+
   return `Bạn là một nhà phân tích bóng đá chuyên nghiệp viết bài nhận định trước trận cho người đọc muốn đưa ra quyết định sáng suốt. Viết bài phân tích ngắn gọn, sâu sắc (5-6 đoạn ngắn) dựa trên dữ liệu bên dưới. Bài phân tích phải bao gồm:
 
 1. Đối đầu chiến thuật quan trọng — cách mỗi HLV có thể bố trí đội hình
 2. Phong độ hiện tại — đội nào đang trên đà thăng tiến hay sa sút
-3. Đánh giá động lực — đội nào có nhiều lý do để chiến đấu hơn (đua vô địch, trụ hạng, suất châu Âu)
+${motivationLine}
 4. Ảnh hưởng chấn thương — cầu thủ vắng mặt hoặc trở lại tác động thế nào
 5. Lịch sử đối đầu và bài học rút ra
 6. Nhận định rõ ràng kèm lý do

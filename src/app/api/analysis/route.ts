@@ -10,7 +10,8 @@ import {
   computeH2H,
   computeForm,
 } from "@/lib/football-data";
-import { computePrediction } from "@/lib/prediction";
+import { computePrediction, computeKnockoutPrediction } from "@/lib/prediction";
+import { isKnockoutRound, isTournamentLeague } from "@/lib/constants";
 import { MatchDetail } from "@/lib/types";
 
 export async function GET(request: NextRequest) {
@@ -28,9 +29,11 @@ export async function GET(request: NextRequest) {
       return Response.json({ error: "Match not found" }, { status: 404 });
     }
 
+    const knockout = isTournamentLeague(match.competition.code) && isKnockoutRound(match.round);
+
     const [standings, homeTeamInfo, awayTeamInfo, homeRecent, awayRecent, h2h, topScorers] =
       await Promise.all([
-        getStandings(match.competition.code),
+        knockout ? Promise.resolve([]) : getStandings(match.competition.code),
         getTeamInfo(match.homeTeam.id),
         getTeamInfo(match.awayTeam.id),
         getTeamRecentMatches(match.homeTeam.id, 10),
@@ -44,9 +47,20 @@ export async function GET(request: NextRequest) {
     match.homeForm = homeForm;
     match.awayForm = awayForm;
 
-    const homeStanding = standings.find((s) => s.team.id === match.homeTeam.id) || null;
-    const awayStanding = standings.find((s) => s.team.id === match.awayTeam.id) || null;
-    const prediction = computePrediction(homeStanding, awayStanding, h2h);
+    let prediction;
+    if (knockout) {
+      prediction = computeKnockoutPrediction(
+        match.homeTeam.id,
+        match.awayTeam.id,
+        homeRecent,
+        awayRecent,
+        h2h
+      );
+    } else {
+      const homeStanding = standings.find((s) => s.team.id === match.homeTeam.id) || null;
+      const awayStanding = standings.find((s) => s.team.id === match.awayTeam.id) || null;
+      prediction = computePrediction(homeStanding, awayStanding, h2h);
+    }
 
     const matchDetail: MatchDetail = {
       match,
@@ -56,6 +70,7 @@ export async function GET(request: NextRequest) {
       standings,
       topScorers,
       prediction,
+      isKnockout: knockout,
     };
 
     const analysis = await generateMatchAnalysis(matchDetail, lang);

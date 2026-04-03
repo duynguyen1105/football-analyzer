@@ -33,6 +33,38 @@ export function getCurrentSeason(): number {
 
 export const CURRENT_SEASON = getCurrentSeason();
 
+/** Detect if a match round is a knockout/playoff stage (not group stage or league play) */
+const KNOCKOUT_ROUND_PATTERNS = [
+  "round of 16",
+  "8th finals",
+  "quarter",
+  "semi",
+  "final",
+  "playoff",
+  "knock",
+  "elimination",
+  "last 16",
+  "last 8",
+  "round of 32",
+  "2nd qualifying",
+  "3rd qualifying",
+  "play-off",
+];
+
+export function isKnockoutRound(round?: string): boolean {
+  if (!round) return false;
+  const lower = round.toLowerCase();
+  // Group stage rounds like "Group A - 1" should NOT match
+  if (lower.startsWith("group")) return false;
+  // Regular season rounds like "Regular Season - 10" should NOT match
+  if (lower.includes("regular season")) return false;
+  return KNOCKOUT_ROUND_PATTERNS.some((p) => lower.includes(p));
+}
+
+export function isTournamentLeague(code: string): boolean {
+  return LEAGUES.find((l) => l.code === code)?.isTournament === true;
+}
+
 /** Calendar-year leagues (V-League, World Cup) use the current year as season */
 const CALENDAR_YEAR_LEAGUE_IDS = new Set([340, 1]); // V-League, World Cup
 

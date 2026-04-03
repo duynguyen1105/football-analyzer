@@ -14,9 +14,9 @@ import {
   getMatchStatistics,
   getTeamTopPerformers,
 } from "@/lib/football-data";
-import { getLeagueId } from "@/lib/constants";
-import { computePrediction } from "@/lib/prediction";
-import { computeImportance } from "@/lib/importance";
+import { getLeagueId, isKnockoutRound, isTournamentLeague } from "@/lib/constants";
+import { computePrediction, computeKnockoutPrediction } from "@/lib/prediction";
+import { computeImportance, computeKnockoutImportance } from "@/lib/importance";
 import { storePrediction } from "@/lib/prediction-tracker";
 
 export async function GET(request: Request) {
@@ -36,6 +36,49 @@ export async function GET(request: Request) {
 
   // "core" = match + standings + prediction + importance + h2h (fast, essential)
   if (section === "core") {
+    const knockout = isTournamentLeague(match.competition.code) && isKnockoutRound(match.round);
+
+    if (knockout) {
+      // Knockout: use recent form instead of standings for prediction
+      const [h2h, homeRecent, awayRecent] = await Promise.all([
+        getH2H(matchId),
+        getTeamRecentMatches(match.homeTeam.id, 10),
+        getTeamRecentMatches(match.awayTeam.id, 10),
+      ]);
+      const prediction = computeKnockoutPrediction(
+        match.homeTeam.id,
+        match.awayTeam.id,
+        homeRecent,
+        awayRecent,
+        h2h
+      );
+      const importance = computeKnockoutImportance(match.round);
+
+      if (match.status === "SCHEDULED" || match.status === "TIMED") {
+        storePrediction(matchId, {
+          homeTeam: match.homeTeam.shortName,
+          awayTeam: match.awayTeam.shortName,
+          league: match.competition.code,
+          date: match.date,
+          prediction,
+        }).catch(() => {});
+      }
+
+      return Response.json({
+        match,
+        standings: [],
+        homeStanding: null,
+        awayStanding: null,
+        prediction,
+        importance,
+        h2h,
+        isKnockout: true,
+      }, {
+        headers: { "Cache-Control": "s-maxage=300, stale-while-revalidate=600" },
+      });
+    }
+
+    // League / group stage: use standings as before
     const [standings, h2h] = await Promise.all([
       getStandings(match.competition.code),
       getH2H(matchId),

@@ -4,6 +4,7 @@ import { Navbar } from "@/components/Navbar";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { usePlayerProfile } from "@/lib/hooks";
 import { useState, useCallback, useRef, useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 
 interface SearchResult {
@@ -217,6 +218,56 @@ function PlayerCard({ playerId }: { playerId: number }) {
   );
 }
 
+function AiConclusion({ playerA, playerB }: { playerA: number; playerB: number }) {
+  const { data, isLoading, error } = useQuery<{ analysis: string }>({
+    queryKey: ["compare-analysis", playerA, playerB],
+    queryFn: () =>
+      fetch(`/api/compare?a=${playerA}&b=${playerB}`).then((r) => r.json()),
+    staleTime: 6 * 60 * 60 * 1000,
+  });
+
+  if (isLoading) {
+    return (
+      <div className="bg-bg-card rounded-2xl border border-border p-4 md:p-5 mt-4">
+        <div className="flex items-center gap-2 mb-3">
+          <div className="w-4 h-4 border-2 border-accent/30 border-t-accent rounded-full animate-spin" />
+          <span className="text-xs text-text-muted">AI đang phân tích...</span>
+        </div>
+        <div className="space-y-2">
+          <div className="h-3 bg-border/20 rounded animate-pulse w-full" />
+          <div className="h-3 bg-border/20 rounded animate-pulse w-5/6" />
+          <div className="h-3 bg-border/20 rounded animate-pulse w-4/6" />
+          <div className="h-3 bg-border/20 rounded animate-pulse w-full" />
+          <div className="h-3 bg-border/20 rounded animate-pulse w-3/4" />
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !data?.analysis) return null;
+
+  // Convert **bold** to <strong> tags
+  const html = data.analysis
+    .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
+    .split("\n\n")
+    .filter(Boolean)
+    .map((p) => `<p>${p}</p>`)
+    .join("");
+
+  return (
+    <div className="bg-bg-card rounded-2xl border border-border p-4 md:p-5 mt-4">
+      <h3 className="font-bold text-sm mb-3 flex items-center gap-2">
+        <span className="w-1.5 h-1.5 rounded-full bg-accent" />
+        Nhận xét AI
+      </h3>
+      <div
+        className="text-sm text-text-secondary leading-relaxed space-y-3 [&_strong]:text-text-primary [&_strong]:font-semibold"
+        dangerouslySetInnerHTML={{ __html: html }}
+      />
+    </div>
+  );
+}
+
 function ComparisonView({
   playerA,
   playerB,
@@ -260,6 +311,7 @@ function ComparisonView({
   const ratingB = statsB.games.rating ? parseFloat(statsB.games.rating) : 0;
 
   return (
+    <>
     <div className="bg-bg-card rounded-2xl border border-border overflow-hidden">
       {/* Player headers */}
       <div className="grid grid-cols-3 p-4 border-b border-border">
@@ -315,6 +367,10 @@ function ComparisonView({
         </div>
       </div>
     </div>
+
+    {/* AI Conclusion */}
+    <AiConclusion playerA={playerA} playerB={playerB} />
+    </>
   );
 }
 

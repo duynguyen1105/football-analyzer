@@ -1,4 +1,4 @@
-import { Standing } from "./types";
+import { Match, Standing } from "./types";
 
 /**
  * Poisson probability mass function: P(k) = (lambda^k * e^(-lambda)) / k!
@@ -12,50 +12,57 @@ function poissonPmf(k: number, lambda: number): number {
   return Math.exp(logP);
 }
 
-/**
- * Compute match prediction based on standings data and optional H2H record.
- *
- * Uses a Poisson model with attack/defense strength derived from league standings,
- * then optionally blends in head-to-head history.
- */
-export function computePrediction(
-  homeStanding: Standing | null,
-  awayStanding: Standing | null,
-  h2h?: { homeWins: number; draws: number; awayWins: number } | null
-): {
+type PredictionResult = {
   homeWin: number;
   draw: number;
   awayWin: number;
   btts: number;
   over25: number;
-} {
-  // Default if standings data is missing
-  if (
-    !homeStanding ||
-    !awayStanding ||
-    homeStanding.playedGames === 0 ||
-    awayStanding.playedGames === 0
-  ) {
-    return { homeWin: 40, draw: 25, awayWin: 35, btts: 50, over25: 50 };
+};
+
+/**
+ * Derive attack/defense rates from recent form results.
+ * Used for knockout matches where standings are irrelevant.
+ */
+function ratesFromRecentMatches(
+  teamId: number,
+  recentMatches: Match[]
+): { attack: number; defense: number } | null {
+  const finished = recentMatches.filter(
+    (m) => m.status === "FINISHED" && m.score
+  );
+  if (finished.length === 0) return null;
+
+  let goalsFor = 0;
+  let goalsAgainst = 0;
+  for (const m of finished) {
+    const isHome = m.homeTeam.id === teamId;
+    goalsFor += isHome ? (m.score!.home ?? 0) : (m.score!.away ?? 0);
+    goalsAgainst += isHome ? (m.score!.away ?? 0) : (m.score!.home ?? 0);
   }
 
-  // Compute attack and defense rates
-  const homeAttack = homeStanding.goalsFor / homeStanding.playedGames;
-  const homeDefense = homeStanding.goalsAgainst / homeStanding.playedGames;
-  const awayAttack = awayStanding.goalsFor / awayStanding.playedGames;
-  const awayDefense = awayStanding.goalsAgainst / awayStanding.playedGames;
+  return {
+    attack: goalsFor / finished.length,
+    defense: goalsAgainst / finished.length,
+  };
+}
 
-  // Expected goals with home advantage factor
+/**
+ * Core Poisson calculation from attack/defense rates.
+ */
+function poissonFromRates(
+  homeAttack: number,
+  homeDefense: number,
+  awayAttack: number,
+  awayDefense: number
+): { homeWinPct: number; drawPct: number; awayWinPct: number; bttsPct: number; over25Pct: number } {
   const expectedHomeGoals = homeAttack * awayDefense * 1.1;
   const expectedAwayGoals = awayAttack * homeDefense * 0.9;
 
-  // Clamp to reasonable range
   const lambdaHome = Math.max(0.2, Math.min(expectedHomeGoals, 5));
   const lambdaAway = Math.max(0.2, Math.min(expectedAwayGoals, 5));
 
   const MAX_GOALS = 7;
-
-  // Build probability matrix P(home=i, away=j)
   const homeProbs: number[] = [];
   const awayProbs: number[] = [];
   for (let k = 0; k <= MAX_GOALS; k++) {
@@ -72,53 +79,136 @@ export function computePrediction(
   for (let h = 0; h <= MAX_GOALS; h++) {
     for (let a = 0; a <= MAX_GOALS; a++) {
       const p = homeProbs[h] * awayProbs[a];
-
       if (h > a) pHomeWin += p;
       else if (h === a) pDraw += p;
       else pAwayWin += p;
-
       if (h > 0 && a > 0) pBothScore += p;
       if (h + a <= 2) pUnder25 += p;
     }
   }
 
-  let homeWinPct = pHomeWin * 100;
-  let drawPct = pDraw * 100;
-  let awayWinPct = pAwayWin * 100;
-  let bttsPct = pBothScore * 100;
-  let over25Pct = (1 - pUnder25) * 100;
+  return {
+    homeWinPct: pHomeWin * 100,
+    drawPct: pDraw * 100,
+    awayWinPct: pAwayWin * 100,
+    bttsPct: pBothScore * 100,
+    over25Pct: (1 - pUnder25) * 100,
+  };
+}
 
-  // Blend in H2H data at 10% weight if available
-  if (h2h) {
-    const totalH2H = h2h.homeWins + h2h.draws + h2h.awayWins;
-    if (totalH2H > 0) {
-      const h2hHome = (h2h.homeWins / totalH2H) * 100;
-      const h2hDraw = (h2h.draws / totalH2H) * 100;
-      const h2hAway = (h2h.awayWins / totalH2H) * 100;
+function blendH2H(
+  homeWinPct: number,
+  drawPct: number,
+  awayWinPct: number,
+  h2h: { homeWins: number; draws: number; awayWins: number } | null | undefined,
+  weight: number
+): { homeWinPct: number; drawPct: number; awayWinPct: number } {
+  if (!h2h) return { homeWinPct, drawPct, awayWinPct };
+  const total = h2h.homeWins + h2h.draws + h2h.awayWins;
+  if (total === 0) return { homeWinPct, drawPct, awayWinPct };
 
-      homeWinPct = homeWinPct * 0.9 + h2hHome * 0.1;
-      drawPct = drawPct * 0.9 + h2hDraw * 0.1;
-      awayWinPct = awayWinPct * 0.9 + h2hAway * 0.1;
-    }
-  }
+  const h2hHome = (h2h.homeWins / total) * 100;
+  const h2hDraw = (h2h.draws / total) * 100;
+  const h2hAway = (h2h.awayWins / total) * 100;
+  const base = 1 - weight;
 
-  // Round to integers summing to 100
+  return {
+    homeWinPct: homeWinPct * base + h2hHome * weight,
+    drawPct: drawPct * base + h2hDraw * weight,
+    awayWinPct: awayWinPct * base + h2hAway * weight,
+  };
+}
+
+function roundAndNormalize(
+  homeWinPct: number,
+  drawPct: number,
+  awayWinPct: number,
+  bttsPct: number,
+  over25Pct: number
+): PredictionResult {
   const rawSum = homeWinPct + drawPct + awayWinPct;
   let homeWin = Math.round((homeWinPct / rawSum) * 100);
   let draw = Math.round((drawPct / rawSum) * 100);
   let awayWin = Math.round((awayWinPct / rawSum) * 100);
 
-  // Adjust rounding error
   const diff = 100 - (homeWin + draw + awayWin);
   if (diff !== 0) {
-    // Add the difference to the largest value
     if (homeWin >= draw && homeWin >= awayWin) homeWin += diff;
     else if (draw >= homeWin && draw >= awayWin) draw += diff;
     else awayWin += diff;
   }
 
-  const btts = Math.round(Math.max(0, Math.min(100, bttsPct)));
-  const over25 = Math.round(Math.max(0, Math.min(100, over25Pct)));
+  return {
+    homeWin,
+    draw,
+    awayWin,
+    btts: Math.round(Math.max(0, Math.min(100, bttsPct))),
+    over25: Math.round(Math.max(0, Math.min(100, over25Pct))),
+  };
+}
 
-  return { homeWin, draw, awayWin, btts, over25 };
+/**
+ * Compute match prediction based on standings data and optional H2H record.
+ *
+ * Uses a Poisson model with attack/defense strength derived from league standings,
+ * then optionally blends in head-to-head history.
+ */
+export function computePrediction(
+  homeStanding: Standing | null,
+  awayStanding: Standing | null,
+  h2h?: { homeWins: number; draws: number; awayWins: number } | null
+): PredictionResult {
+  // Default if standings data is missing
+  if (
+    !homeStanding ||
+    !awayStanding ||
+    homeStanding.playedGames === 0 ||
+    awayStanding.playedGames === 0
+  ) {
+    return { homeWin: 40, draw: 25, awayWin: 35, btts: 50, over25: 50 };
+  }
+
+  const homeAttack = homeStanding.goalsFor / homeStanding.playedGames;
+  const homeDefense = homeStanding.goalsAgainst / homeStanding.playedGames;
+  const awayAttack = awayStanding.goalsFor / awayStanding.playedGames;
+  const awayDefense = awayStanding.goalsAgainst / awayStanding.playedGames;
+
+  const poisson = poissonFromRates(homeAttack, homeDefense, awayAttack, awayDefense);
+
+  // Blend in H2H data at 10% weight
+  const blended = blendH2H(poisson.homeWinPct, poisson.drawPct, poisson.awayWinPct, h2h, 0.1);
+
+  return roundAndNormalize(blended.homeWinPct, blended.drawPct, blended.awayWinPct, poisson.bttsPct, poisson.over25Pct);
+}
+
+/**
+ * Compute prediction for knockout/playoff matches using recent form instead of standings.
+ * H2H is weighted higher (20%) since direct elimination amplifies historical patterns.
+ */
+export function computeKnockoutPrediction(
+  homeTeamId: number,
+  awayTeamId: number,
+  homeRecent: Match[],
+  awayRecent: Match[],
+  h2h?: { homeWins: number; draws: number; awayWins: number } | null
+): PredictionResult {
+  const homeRates = ratesFromRecentMatches(homeTeamId, homeRecent);
+  const awayRates = ratesFromRecentMatches(awayTeamId, awayRecent);
+
+  // Fall back to balanced defaults if no recent form
+  if (!homeRates || !awayRates) {
+    return { homeWin: 40, draw: 25, awayWin: 35, btts: 50, over25: 50 };
+  }
+
+  const poisson = poissonFromRates(
+    homeRates.attack,
+    homeRates.defense,
+    awayRates.attack,
+    awayRates.defense
+  );
+
+  // Blend H2H at 20% for knockouts (higher than league's 10%)
+  const blended = blendH2H(poisson.homeWinPct, poisson.drawPct, poisson.awayWinPct, h2h, 0.2);
+
+  return roundAndNormalize(blended.homeWinPct, blended.drawPct, blended.awayWinPct, poisson.bttsPct, poisson.over25Pct);
 }

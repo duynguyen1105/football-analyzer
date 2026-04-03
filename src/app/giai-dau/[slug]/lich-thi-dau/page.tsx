@@ -181,10 +181,12 @@ function MatchRow({ match: m }: { match: Match }) {
         <span className="text-sm font-medium truncate">{m.homeTeam.shortName}</span>
       </div>
       <div className="text-center shrink-0">
-        <span className="text-xs text-text-muted">
-          {m.status === "FINISHED" && m.score ? `${m.score.home} - ${m.score.away}` : m.time}
-        </span>
-        <p className="text-[9px] text-text-muted">{m.date}</p>
+        {m.status === "FINISHED" && m.score ? (
+          <span className="text-base font-bold text-text-primary">{m.score.home} - {m.score.away}</span>
+        ) : (
+          <span className="text-sm font-semibold text-accent">{m.time}</span>
+        )}
+        <p className="text-[10px] text-text-muted">{m.date}</p>
       </div>
       <div className="flex items-center gap-2 flex-1 min-w-0 justify-end">
         <span className="text-sm font-medium truncate text-right">{m.awayTeam.shortName}</span>

@@ -129,9 +129,11 @@ export default async function SchedulePage({ params }: Props) {
                         <img src={m.homeTeam.crest} alt="" className="w-5 h-5 object-contain shrink-0" loading="lazy" />
                         <span className="text-sm font-medium truncate">{m.homeTeam.shortName}</span>
                       </div>
-                      <span className="text-xs text-text-muted shrink-0">
-                        {m.status === "FINISHED" && m.score ? `${m.score.home} - ${m.score.away}` : m.time}
-                      </span>
+                      {m.status === "FINISHED" && m.score ? (
+                        <span className="text-base font-bold text-text-primary shrink-0">{m.score.home} - {m.score.away}</span>
+                      ) : (
+                        <span className="text-sm font-semibold text-accent shrink-0">{m.time}</span>
+                      )}
                       <div className="flex items-center gap-2 flex-1 min-w-0 justify-end">
                         <span className="text-sm font-medium truncate text-right">{m.awayTeam.shortName}</span>
                         <img src={m.awayTeam.crest} alt="" className="w-5 h-5 object-contain shrink-0" loading="lazy" />

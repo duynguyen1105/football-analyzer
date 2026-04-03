@@ -93,6 +93,7 @@ export interface MatchDetail {
     btts: number;
     over25: number;
   };
+  isKnockout?: boolean;
 }
 
 export interface League {
