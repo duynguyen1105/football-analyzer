@@ -56,9 +56,8 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
           <NavigationProgress />
         </Suspense>
         <Providers>
-          {children}
+          <div className="pb-20 md:pb-0">{children}</div>
           <MobileNav />
-          <div className="h-20 md:hidden" /> {/* Spacer for mobile bottom nav + safe area */}
         </Providers>
         <script
           type="application/ld+json"
