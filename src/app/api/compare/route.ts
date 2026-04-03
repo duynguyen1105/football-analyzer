@@ -67,7 +67,7 @@ export async function GET(request: Request) {
     return Response.json({ error: "Missing player IDs" }, { status: 400 });
   }
 
-  const cacheKey = `compare:${idA}:${idB}`;
+  const cacheKey = `compare-v2:${idA}:${idB}`;
   const cached = await getCached(cacheKey);
   if (cached) {
     return Response.json({ analysis: cached });
