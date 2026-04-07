@@ -6,6 +6,10 @@ export default function robots(): MetadataRoute.Robots {
       userAgent: "*",
       allow: "/",
     },
-    sitemap: "https://nhandinhbongdavn.com/sitemap.xml",
+    sitemap: [
+      "https://nhandinhbongdavn.com/sitemap.xml",
+      "https://nhandinhbongdavn.com/news-sitemap.xml",
+      "https://nhandinhbongdavn.com/image-sitemap.xml",
+    ],
   };
 }

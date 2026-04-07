@@ -3,6 +3,7 @@ import {
   getPlayerInfo,
   getPlayerMatches,
 } from "@/lib/football-data";
+import { playersSchema, parseSearchParams } from "@/lib/api-validation";
 
 const POSITION_PRIORITY = ["Offence", "Midfield", "Defence", "Goalkeeper"];
 
@@ -39,21 +40,18 @@ function pickKeyPlayers(
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
-  const homeTeamId = parseInt(searchParams.get("homeTeamId") || "0", 10);
-  const awayTeamId = parseInt(searchParams.get("awayTeamId") || "0", 10);
+  const result = parseSearchParams(playersSchema, searchParams);
+  if (result.error) return result.error;
+  const { homeTeamId, awayTeamId } = result.data;
 
-  if (!homeTeamId || !awayTeamId) {
-    return Response.json(
-      { error: "Missing homeTeamId or awayTeamId" },
-      { status: 400 }
-    );
-  }
+  const homeId = parseInt(homeTeamId, 10);
+  const awayId = parseInt(awayTeamId, 10);
 
   try {
     // 1. Fetch team info for both teams
     const [homeTeam, awayTeam] = await Promise.all([
-      getTeamInfo(homeTeamId),
-      getTeamInfo(awayTeamId),
+      getTeamInfo(homeId),
+      getTeamInfo(awayId),
     ]);
 
     if (!homeTeam || !awayTeam) {
@@ -97,7 +95,7 @@ export async function GET(request: Request) {
       Promise.all(awayKeyPlayers.map(fetchPlayerData)),
     ]);
 
-    const result = {
+    const resultData = {
       home: {
         teamName: homeTeam.shortName || homeTeam.name,
         players: homePlayers,
@@ -108,7 +106,7 @@ export async function GET(request: Request) {
       },
     };
 
-    return Response.json(result, {
+    return Response.json(resultData, {
       headers: {
         "Cache-Control": "s-maxage=3600, stale-while-revalidate=7200",
       },

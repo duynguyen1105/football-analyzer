@@ -1,6 +1,7 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { getPlayerProfile, PlayerProfile } from "@/lib/football-data";
 import { getCached, setCached } from "@/lib/cache";
+import { compareSchema, parseSearchParams } from "@/lib/api-validation";
 
 const client = new Anthropic();
 const CACHE_TTL = 6 * 60 * 60; // 6 hours
@@ -60,12 +61,9 @@ function buildStatsBlock(name: string, p: PlayerProfile): string {
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
-  const idA = searchParams.get("a");
-  const idB = searchParams.get("b");
-
-  if (!idA || !idB) {
-    return Response.json({ error: "Missing player IDs" }, { status: 400 });
-  }
+  const result = parseSearchParams(compareSchema, searchParams);
+  if (result.error) return result.error;
+  const { a: idA, b: idB } = result.data;
 
   const cacheKey = `compare-v2:${idA}:${idB}`;
   const cached = await getCached(cacheKey);

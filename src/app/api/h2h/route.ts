@@ -1,13 +1,11 @@
 import { computeH2H } from "@/lib/football-data";
+import { h2hSchema, parseSearchParams } from "@/lib/api-validation";
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
-  const teamA = searchParams.get("a");
-  const teamB = searchParams.get("b");
-
-  if (!teamA || !teamB) {
-    return Response.json({ error: "Missing team IDs (a, b)" }, { status: 400 });
-  }
+  const result = parseSearchParams(h2hSchema, searchParams);
+  if (result.error) return result.error;
+  const { a: teamA, b: teamB } = result.data;
 
   const h2h = await computeH2H(parseInt(teamA, 10), parseInt(teamB, 10));
 

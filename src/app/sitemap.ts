@@ -1,7 +1,8 @@
 import type { MetadataRoute } from "next";
-import { getMatches } from "@/lib/football-data";
+import { getMatches, getStandings } from "@/lib/football-data";
 import { getAllLeagueSlugs, getLeagueBySlug } from "@/lib/league-slugs";
 import { generateMatchSlug } from "@/lib/match-slugs";
+import { LEAGUES } from "@/lib/constants";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = "https://nhandinhbongdavn.com";
@@ -22,7 +23,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // League pages
   const leagueSlugs = getAllLeagueSlugs();
   const leaguePages: MetadataRoute.Sitemap = [
-    // League detail hub + sub-pages
     ...leagueSlugs.flatMap((slug) => {
       const league = getLeagueBySlug(slug);
       const pages = [
@@ -38,13 +38,36 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       }
       return pages;
     }),
-    // Standalone SEO pages
     ...leagueSlugs.flatMap((slug) => [
       { url: `${baseUrl}/lich-thi-dau/${slug}`, lastModified: new Date(), changeFrequency: "daily" as const, priority: 0.9 },
       { url: `${baseUrl}/bang-xep-hang/${slug}`, lastModified: new Date(), changeFrequency: "daily" as const, priority: 0.9 },
       { url: `${baseUrl}/soi-keo/${slug}`, lastModified: new Date(), changeFrequency: "daily" as const, priority: 0.9 },
     ]),
   ];
+
+  // Team pages — collect unique teams from all league standings
+  const teamPages: MetadataRoute.Sitemap = [];
+  const seenTeamIds = new Set<number>();
+  try {
+    const standingsResults = await Promise.allSettled(
+      LEAGUES.filter((l) => !l.isTournament).map((l) => getStandings(l.code))
+    );
+    for (const result of standingsResults) {
+      if (result.status === "fulfilled") {
+        for (const s of result.value) {
+          if (!seenTeamIds.has(s.team.id)) {
+            seenTeamIds.add(s.team.id);
+            teamPages.push({
+              url: `${baseUrl}/doi-bong/${s.team.id}`,
+              lastModified: new Date(),
+              changeFrequency: "weekly",
+              priority: 0.6,
+            });
+          }
+        }
+      }
+    }
+  } catch { /* skip team pages on error */ }
 
   // Dynamic match pages — get upcoming matches
   try {
@@ -60,8 +83,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       ];
     });
 
-    return [...staticPages, ...leaguePages, ...matchPages];
+    return [...staticPages, ...leaguePages, ...teamPages, ...matchPages];
   } catch {
-    return [...staticPages, ...leaguePages];
+    return [...staticPages, ...leaguePages, ...teamPages];
   }
 }

@@ -6,16 +6,14 @@ import {
   getTeamNextMatches,
   getTeamLeagueId,
 } from "@/lib/football-data";
+import { teamSchema, parseSearchParams } from "@/lib/api-validation";
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
-  const id = searchParams.get("id");
-  const section = searchParams.get("section") || "profile";
-  const leagueId = searchParams.get("leagueId");
-
-  if (!id) {
-    return Response.json({ error: "Missing id" }, { status: 400 });
-  }
+  const result = parseSearchParams(teamSchema, searchParams);
+  if (result.error) return result.error;
+  const { id, section: sectionParam, leagueId: leagueIdParam } = result.data;
+  const section = sectionParam || "profile";
 
   const teamId = parseInt(id, 10);
 
@@ -33,10 +31,10 @@ export async function GET(request: Request) {
   }
 
   if (section === "stats") {
-    if (!leagueId) {
+    if (!leagueIdParam) {
       return Response.json({ error: "Missing leagueId for stats" }, { status: 400 });
     }
-    const stats = await getTeamSeasonStats(teamId, parseInt(leagueId, 10));
+    const stats = await getTeamSeasonStats(teamId, parseInt(leagueIdParam, 10));
     return Response.json(stats, {
       headers: { "Cache-Control": "s-maxage=7200, stale-while-revalidate=14400" },
     });

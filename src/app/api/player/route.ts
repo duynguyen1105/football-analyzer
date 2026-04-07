@@ -3,15 +3,14 @@ import {
   getPlayerTransfers,
   getPlayerTrophies,
 } from "@/lib/football-data";
+import { playerSchema, parseSearchParams } from "@/lib/api-validation";
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
-  const id = searchParams.get("id");
-  const section = searchParams.get("section") || "profile";
-
-  if (!id) {
-    return Response.json({ error: "Missing id" }, { status: 400 });
-  }
+  const result = parseSearchParams(playerSchema, searchParams);
+  if (result.error) return result.error;
+  const { id, section: sectionParam } = result.data;
+  const section = sectionParam || "profile";
 
   const playerId = parseInt(id, 10);
 

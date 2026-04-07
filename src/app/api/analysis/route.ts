@@ -13,15 +13,14 @@ import {
 import { computePrediction, computeKnockoutPrediction } from "@/lib/prediction";
 import { isKnockoutRound, isTournamentLeague } from "@/lib/constants";
 import { MatchDetail } from "@/lib/types";
+import { analysisSchema, parseSearchParams } from "@/lib/api-validation";
 
 export async function GET(request: NextRequest) {
   const { searchParams } = request.nextUrl;
-  const matchId = searchParams.get("matchId");
-  const lang = (searchParams.get("lang") as "en" | "vi") || "en";
-
-  if (!matchId) {
-    return Response.json({ error: "Missing matchId" }, { status: 400 });
-  }
+  const result = parseSearchParams(analysisSchema, searchParams);
+  if (result.error) return result.error;
+  const { matchId, lang: langParam } = result.data;
+  const lang = langParam || "en";
 
   try {
     const match = await getMatch(parseInt(matchId, 10));

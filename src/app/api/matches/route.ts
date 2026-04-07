@@ -1,13 +1,11 @@
 import { getMatches } from "@/lib/football-data";
+import { matchesSchema, parseSearchParams } from "@/lib/api-validation";
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
-  const dateFrom = searchParams.get("dateFrom") || "";
-  const dateTo = searchParams.get("dateTo") || "";
-
-  if (!dateFrom || !dateTo) {
-    return Response.json({ error: "Missing dateFrom or dateTo" }, { status: 400 });
-  }
+  const result = parseSearchParams(matchesSchema, searchParams);
+  if (result.error) return result.error;
+  const { dateFrom, dateTo } = result.data;
 
   const matches = await getMatches(dateFrom, dateTo);
   return Response.json(matches, {

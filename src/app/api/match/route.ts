@@ -18,15 +18,14 @@ import { getLeagueId, isKnockoutRound, isTournamentLeague } from "@/lib/constant
 import { computePrediction, computeKnockoutPrediction } from "@/lib/prediction";
 import { computeImportance, computeKnockoutImportance } from "@/lib/importance";
 import { storePrediction } from "@/lib/prediction-tracker";
+import { matchSchema, parseSearchParams } from "@/lib/api-validation";
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
-  const id = searchParams.get("id");
-  const section = searchParams.get("section") || "core";
-
-  if (!id) {
-    return Response.json({ error: "Missing id" }, { status: 400 });
-  }
+  const result = parseSearchParams(matchSchema, searchParams);
+  if (result.error) return result.error;
+  const { id, section: sectionParam } = result.data;
+  const section = sectionParam || "core";
 
   const matchId = parseInt(id, 10);
   const match = await getMatch(matchId);

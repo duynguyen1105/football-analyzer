@@ -1,12 +1,11 @@
 import { getTopAssists } from "@/lib/football-data";
+import { topAssistsSchema, parseSearchParams } from "@/lib/api-validation";
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
-  const code = searchParams.get("code");
-
-  if (!code) {
-    return Response.json({ error: "Missing code" }, { status: 400 });
-  }
+  const result = parseSearchParams(topAssistsSchema, searchParams);
+  if (result.error) return result.error;
+  const { code } = result.data;
 
   try {
     const assists = await getTopAssists(code);

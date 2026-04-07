@@ -1,14 +1,12 @@
 "use client";
 
 import { use } from "react";
+import dynamic from "next/dynamic";
 import { Navbar } from "@/components/Navbar";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { AdSlot } from "@/components/AdSlot";
-import { AiAnalysis } from "@/components/AiAnalysis";
 import { RecentResults } from "@/components/RecentResults";
 import { KeyPlayers } from "@/components/KeyPlayers";
-import { PlayerAnalysis } from "@/components/PlayerAnalysis";
-import { HomeAwayForm } from "@/components/HomeAwayForm";
 import { MatchCountdown } from "@/components/MatchCountdown";
 import { MatchImportance } from "@/components/MatchImportance";
 import { RefereeInfo } from "@/components/RefereeInfo";
@@ -20,11 +18,6 @@ import { Newsletter } from "@/components/Newsletter";
 import { MerchandiseSection } from "@/components/MerchandiseSection";
 import { SponsoredSlot } from "@/components/SponsoredSlot";
 import { MatchInjuries } from "@/components/MatchInjuries";
-import { MatchLineups } from "@/components/MatchLineups";
-import { FormationPitch } from "@/components/FormationPitch";
-import { MatchEvents } from "@/components/MatchEvents";
-import { MatchTimeline } from "@/components/MatchTimeline";
-import { MatchStatistics } from "@/components/MatchStatistics";
 import {
   useMatchCore,
   useMatchForm,
@@ -35,8 +28,18 @@ import {
 import { Standing } from "@/lib/types";
 import { OptImage } from "@/components/OptImage";
 import { MatchFaqSchema } from "@/components/MatchFaqSchema";
-import { RelatedMatches } from "@/components/RelatedMatches";
 import Link from "next/link";
+
+// Lazy-load heavy sections — only loaded when scrolled into view
+const AiAnalysis = dynamic(() => import("@/components/AiAnalysis").then((m) => m.AiAnalysis));
+const PlayerAnalysis = dynamic(() => import("@/components/PlayerAnalysis").then((m) => m.PlayerAnalysis));
+const HomeAwayForm = dynamic(() => import("@/components/HomeAwayForm").then((m) => m.HomeAwayForm));
+const MatchLineups = dynamic(() => import("@/components/MatchLineups").then((m) => m.MatchLineups));
+const FormationPitch = dynamic(() => import("@/components/FormationPitch").then((m) => m.FormationPitch));
+const MatchEvents = dynamic(() => import("@/components/MatchEvents").then((m) => m.MatchEvents));
+const MatchTimeline = dynamic(() => import("@/components/MatchTimeline").then((m) => m.MatchTimeline));
+const MatchStatistics = dynamic(() => import("@/components/MatchStatistics").then((m) => m.MatchStatistics));
+const RelatedMatches = dynamic(() => import("@/components/RelatedMatches").then((m) => m.RelatedMatches));
 
 function FormBadge({ result }: { result: string }) {
   const cls = result === "W" ? "badge-w" : result === "D" ? "badge-d" : "badge-l";

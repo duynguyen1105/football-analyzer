@@ -1,3 +1,12 @@
+import { OptImage } from "./OptImage";
+
+const SIZE_MAP: Record<string, number> = {
+  sm: 32,
+  md: 48,
+  lg: 64,
+  xl: 80,
+};
+
 export function TeamCrest({
   src,
   alt,
@@ -15,11 +24,11 @@ export function TeamCrest({
   };
 
   return (
-    <img
+    <OptImage
       src={src}
       alt={alt}
+      size={SIZE_MAP[size]}
       className={`${dims[size]} object-contain`}
-      loading="lazy"
     />
   );
 }

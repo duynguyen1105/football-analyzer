@@ -1,8 +1,11 @@
 import { searchTeamsAndPlayers } from "@/lib/football-data";
+import { searchSchema, parseSearchParams } from "@/lib/api-validation";
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
-  const q = searchParams.get("q");
+  const result = parseSearchParams(searchSchema, searchParams);
+  if (result.error) return result.error;
+  const { q } = result.data;
 
   if (!q || q.trim().length < 2) {
     return Response.json({ teams: [], players: [] });

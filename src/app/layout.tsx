@@ -8,6 +8,7 @@ import { AdSenseScript } from "@/components/AdSenseScript";
 import { buildWebSiteSchema } from "@/lib/json-ld";
 import { MobileNav } from "@/components/MobileNav";
 import { WebVitals } from "@/components/WebVitals";
+import { ServiceWorker } from "@/components/ServiceWorker";
 
 export const viewport: Viewport = {
   width: "device-width",
@@ -68,6 +69,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         <GoogleAnalytics />
         <WebVitals />
         <AdSenseScript />
+        <ServiceWorker />
       </body>
     </html>
   );

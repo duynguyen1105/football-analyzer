@@ -11,9 +11,24 @@ const GMT_PLUS_7_OFFSET = 7 * 60 * 60 * 1000;
 // ---------------------------------------------------------------------------
 const memCache = new Map<string, { data: unknown; expiresAt: number }>();
 
+// API-level cache stats (separate from the lower-level Redis/mem cache)
+const apiCacheStats = { memHits: 0, redisHits: 0, misses: 0 };
+
+export function getApiCacheStats() {
+  const total = apiCacheStats.memHits + apiCacheStats.redisHits + apiCacheStats.misses;
+  return {
+    ...apiCacheStats,
+    total,
+    hitRate: total > 0 ? ((apiCacheStats.memHits + apiCacheStats.redisHits) / total * 100).toFixed(1) + "%" : "N/A",
+  };
+}
+
 async function getCached<T>(key: string): Promise<T | null> {
   const mem = memCache.get(key);
-  if (mem && Date.now() < mem.expiresAt) return mem.data as T;
+  if (mem && Date.now() < mem.expiresAt) {
+    apiCacheStats.memHits++;
+    return mem.data as T;
+  }
   if (mem) memCache.delete(key);
 
   const redisVal = await getRedis(`af:${key}`);
@@ -21,9 +36,11 @@ async function getCached<T>(key: string): Promise<T | null> {
     try {
       const parsed = JSON.parse(redisVal) as T;
       memCache.set(key, { data: parsed, expiresAt: Date.now() + 5 * 60 * 1000 });
+      apiCacheStats.redisHits++;
       return parsed;
     } catch { /* ignore */ }
   }
+  apiCacheStats.misses++;
   return null;
 }
 

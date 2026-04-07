@@ -3,6 +3,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import { getMatch, getStandings, getTeamRecentMatches, computeForm } from "@/lib/football-data";
 import { isKnockoutRound, isTournamentLeague } from "@/lib/constants";
 import { getCached, setCached } from "@/lib/cache";
+import { quickSummarySchema, parseSearchParams } from "@/lib/api-validation";
 
 const client = new Anthropic();
 
@@ -10,11 +11,9 @@ const CACHE_TTL_SECONDS = 6 * 60 * 60; // 6 hours
 
 export async function GET(request: NextRequest) {
   const { searchParams } = request.nextUrl;
-  const matchIdParam = searchParams.get("matchId");
-
-  if (!matchIdParam) {
-    return Response.json({ error: "Missing matchId" }, { status: 400 });
-  }
+  const result = parseSearchParams(quickSummarySchema, searchParams);
+  if (result.error) return result.error;
+  const { matchId: matchIdParam } = result.data;
 
   const matchId = parseInt(matchIdParam, 10);
   const cacheKey = `quick-summary:${matchId}`;
