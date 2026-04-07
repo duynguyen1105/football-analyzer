@@ -35,6 +35,7 @@ import {
 import { Standing } from "@/lib/types";
 import { OptImage } from "@/components/OptImage";
 import { MatchFaqSchema } from "@/components/MatchFaqSchema";
+import { RelatedMatches } from "@/components/RelatedMatches";
 import Link from "next/link";
 
 function FormBadge({ result }: { result: string }) {
@@ -642,7 +643,13 @@ export default function MatchPage({ params }: { params: Promise<{ id: string }> 
             />
 
             {/* AI Analysis — only for upcoming matches */}
-            {match.status !== "FINISHED" && <AiAnalysis matchId={id} />}
+            {match.status !== "FINISHED" && (
+              <AiAnalysis
+                matchId={id}
+                homeTeam={{ id: match.homeTeam.id, name: match.homeTeam.name, shortName: match.homeTeam.shortName, tla: match.homeTeam.tla }}
+                awayTeam={{ id: match.awayTeam.id, name: match.awayTeam.name, shortName: match.awayTeam.shortName, tla: match.awayTeam.tla }}
+              />
+            )}
           </div>
 
           {/* Sidebar — each section loads independently */}
@@ -708,6 +715,11 @@ export default function MatchPage({ params }: { params: Promise<{ id: string }> 
             {/* Newsletter */}
             <Newsletter />
           </div>
+        </div>
+
+        {/* Related matches */}
+        <div className="mt-6">
+          <RelatedMatches currentMatchId={match.id} leagueCode={match.competition.code} />
         </div>
 
         <footer className="mt-8 py-6 border-t border-border text-center text-xs text-text-muted">
