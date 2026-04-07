@@ -3,6 +3,7 @@ import { getMatches, getStandings } from "@/lib/football-data";
 import { getAllLeagueSlugs, getLeagueBySlug } from "@/lib/league-slugs";
 import { generateMatchSlug } from "@/lib/match-slugs";
 import { LEAGUES } from "@/lib/constants";
+import { getAllPosts } from "@/lib/blog";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = "https://nhandinhbongdavn.com";
@@ -12,6 +13,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: baseUrl, lastModified: new Date(), changeFrequency: "hourly", priority: 1.0 },
     { url: `${baseUrl}/hom-nay`, lastModified: new Date(), changeFrequency: "hourly", priority: 0.9 },
     { url: `${baseUrl}/truc-tiep`, lastModified: new Date(), changeFrequency: "hourly", priority: 0.8 },
+    { url: `${baseUrl}/soi-keo-hom-nay`, lastModified: new Date(), changeFrequency: "hourly", priority: 0.95 },
     { url: `${baseUrl}/du-doan`, lastModified: new Date(), changeFrequency: "daily", priority: 0.7 },
     { url: `${baseUrl}/so-sanh`, lastModified: new Date(), changeFrequency: "weekly", priority: 0.6 },
     { url: `${baseUrl}/doi-dau`, lastModified: new Date(), changeFrequency: "weekly", priority: 0.6 },
@@ -69,6 +71,18 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     }
   } catch { /* skip team pages on error */ }
 
+  // Blog posts
+  const blogPosts = getAllPosts();
+  const blogPages: MetadataRoute.Sitemap = [
+    { url: `${baseUrl}/bai-viet`, lastModified: new Date(), changeFrequency: "weekly", priority: 0.8 },
+    ...blogPosts.map((post) => ({
+      url: `${baseUrl}/bai-viet/${post.slug}`,
+      lastModified: new Date(post.date),
+      changeFrequency: "weekly" as const,
+      priority: 0.8,
+    })),
+  ];
+
   // Dynamic match pages — get upcoming matches
   try {
     const today = new Date().toISOString().slice(0, 10);
@@ -83,8 +97,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       ];
     });
 
-    return [...staticPages, ...leaguePages, ...teamPages, ...matchPages];
+    return [...staticPages, ...leaguePages, ...teamPages, ...matchPages, ...blogPages];
   } catch {
-    return [...staticPages, ...leaguePages, ...teamPages];
+    return [...staticPages, ...leaguePages, ...teamPages, ...blogPages];
   }
 }

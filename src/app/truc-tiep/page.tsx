@@ -1,7 +1,7 @@
 "use client";
 
 import { Navbar } from "@/components/Navbar";
-import { useLiveMatches } from "@/lib/hooks";
+import { useLiveMatches, useMatches } from "@/lib/hooks";
 import { LEAGUES } from "@/lib/constants";
 import { Match } from "@/lib/types";
 import Link from "next/link";
@@ -186,11 +186,34 @@ function LiveSkeleton() {
   );
 }
 
+function UpcomingMatchRow({ match }: { match: Match }) {
+  const league = LEAGUES.find((l) => l.code === match.competition.code);
+  return (
+    <Link
+      href={`/match/${match.id}`}
+      className="flex items-center gap-3 px-4 py-3 hover:bg-bg-card/60 transition-colors border-b border-border/30 last:border-0"
+    >
+      <span className="text-xs text-text-muted w-12 shrink-0 font-medium">{match.time}</span>
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-2">
+          {league?.logo && <img src={league.logo} alt="" className="w-4 h-4 object-contain" />}
+          <span className="text-xs text-text-muted truncate">{match.competition.name}</span>
+        </div>
+        <p className="text-sm font-medium truncate mt-0.5">
+          {match.homeTeam.shortName} vs {match.awayTeam.shortName}
+        </p>
+      </div>
+      <span className="text-xs text-accent font-medium shrink-0">Phân tích &rarr;</span>
+    </Link>
+  );
+}
+
 const REFRESH_INTERVAL = 30 * 1000;
 
 export default function LivePage() {
   const { data: matches, isLoading, isFetching, dataUpdatedAt, refetch } =
     useLiveMatches();
+  const { data: allMatches } = useMatches();
 
   // Track previous scores to detect goals
   const prevScoresRef = useRef<Map<number, string>>(new Map());
@@ -213,6 +236,17 @@ export default function LivePage() {
 
     if (newChanged.size > 0) {
       setChangedIds(newChanged);
+      // Browser notification for goals
+      if (Notification.permission === "granted") {
+        for (const m of matches) {
+          if (newChanged.has(m.id) && m.score) {
+            new Notification("Bàn thắng!", {
+              body: `${m.homeTeam.shortName} ${m.score.home} - ${m.score.away} ${m.awayTeam.shortName}`,
+              icon: "/icons/icon-192.png",
+            });
+          }
+        }
+      }
       // Clear flash after animation
       const timer = setTimeout(() => setChangedIds(new Set()), 2000);
       return () => clearTimeout(timer);
@@ -369,6 +403,39 @@ export default function LivePage() {
                 />
               ))}
             </div>
+          </div>
+        )}
+
+        {/* Upcoming today */}
+        {allMatches && (() => {
+          const today = new Date(Date.now() + 7 * 60 * 60 * 1000).toISOString().slice(0, 10);
+          const upcoming = allMatches.filter(
+            (m: Match) => m.date === today && m.status === "SCHEDULED"
+          );
+          if (upcoming.length === 0) return null;
+          return (
+            <div className={liveMatches.length > 0 || recentlyFinished.length > 0 ? "mt-8" : ""}>
+              <h2 className="text-sm font-semibold text-text-secondary mb-3">
+                Sắp diễn ra hôm nay ({upcoming.length})
+              </h2>
+              <div className="bg-bg-card rounded-xl border border-border overflow-hidden">
+                {upcoming.slice(0, 10).map((m: Match) => (
+                  <UpcomingMatchRow key={m.id} match={m} />
+                ))}
+              </div>
+            </div>
+          );
+        })()}
+
+        {/* Notification toggle */}
+        {typeof window !== "undefined" && "Notification" in window && Notification.permission !== "granted" && (
+          <div className="mt-6 text-center">
+            <button
+              onClick={() => Notification.requestPermission()}
+              className="text-xs text-accent hover:underline"
+            >
+              Bật thông báo bàn thắng
+            </button>
           </div>
         )}
 

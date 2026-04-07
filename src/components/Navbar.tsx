@@ -75,8 +75,9 @@ export function Navbar() {
             )}
           </div>
 
-          <Link href="/soi-keo/premier-league" className="hover:text-text-primary transition-colors">Soi kèo</Link>
+          <Link href="/soi-keo-hom-nay" className="hover:text-text-primary transition-colors">Soi kèo</Link>
           <Link href="/du-doan" className="hover:text-text-primary transition-colors hidden md:inline">Dự đoán</Link>
+          <Link href="/bai-viet" className="hover:text-text-primary transition-colors hidden md:inline">Bài viết</Link>
           <Link href="/so-sanh" className="hover:text-text-primary transition-colors hidden lg:inline">So sánh</Link>
           <SearchBar />
           <ThemeToggle />
@@ -114,9 +115,10 @@ export function Navbar() {
                 {/* Navigation links */}
                 <div className="border-b border-border py-1.5">
                   <MobileNavLink href="/hom-nay" onClick={() => setMenuOpen(false)}>Hôm nay</MobileNavLink>
-                  <MobileNavLink href="/soi-keo/premier-league" onClick={() => setMenuOpen(false)}>Soi kèo</MobileNavLink>
+                  <MobileNavLink href="/soi-keo-hom-nay" onClick={() => setMenuOpen(false)}>Soi kèo</MobileNavLink>
                   <MobileNavLink href="/du-doan" onClick={() => setMenuOpen(false)}>Dự đoán</MobileNavLink>
                   <MobileNavLink href="/so-sanh" onClick={() => setMenuOpen(false)}>So sánh</MobileNavLink>
+                  <MobileNavLink href="/bai-viet" onClick={() => setMenuOpen(false)}>Bài viết</MobileNavLink>
                 </div>
 
                 {/* Leagues */}

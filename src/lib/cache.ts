@@ -10,6 +10,9 @@ if (process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN) 
   });
 }
 
+/** Direct Redis client — used by prediction game for sorted sets and key scans */
+export { redis };
+
 // In-memory fallback
 const memCache = new Map<string, { data: string; expiresAt: number }>();
 

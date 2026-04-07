@@ -2,7 +2,14 @@
 
 import { Navbar } from "@/components/Navbar";
 import { useQuery } from "@tanstack/react-query";
+import { useState, useSyncExternalStore } from "react";
 import Link from "next/link";
+import {
+  getVisitorId,
+  getNickname,
+  setNickname as saveNickname,
+} from "@/lib/prediction-game";
+import type { LeaderboardEntry } from "@/lib/prediction-game";
 
 interface PredictionEntry {
   matchId: number;
@@ -143,6 +150,162 @@ function PredictionRow({ entry }: { entry: PredictionEntry }) {
         )}
       </div>
     </Link>
+  );
+}
+
+function useLocalValue(getter: () => string): string {
+  const ref = useRef<string | null>(null);
+  if (ref.current === null && typeof window !== "undefined") {
+    ref.current = getter();
+  }
+  return ref.current ?? "";
+}
+
+function PlayerLeaderboard() {
+  const visitorId = useLocalValue(getVisitorId);
+  const [nickname, setNickname] = useState(() =>
+    typeof window !== "undefined" ? getNickname() : "",
+  );
+  const [editingNickname, setEditingNickname] = useState(false);
+  const [nicknameInput, setNicknameInput] = useState("");
+
+  const { data, isLoading } = useQuery<{ leaderboard: LeaderboardEntry[] }>({
+    queryKey: ["prediction-leaderboard"],
+    queryFn: () =>
+      fetch("/api/user-predictions/leaderboard").then((r) => r.json()),
+    staleTime: 60 * 1000, // 1 min
+  });
+
+  const handleSaveNickname = () => {
+    if (nicknameInput.trim()) {
+      saveNickname(nicknameInput.trim());
+      setNickname(nicknameInput.trim());
+    }
+    setEditingNickname(false);
+  };
+
+  const leaderboard = data?.leaderboard || [];
+
+  return (
+    <div className="mt-8">
+      <div className="flex items-center justify-between mb-4">
+        <div>
+          <h2 className="text-lg font-bold">Bảng xếp hạng người chơi</h2>
+          <p className="text-xs text-text-muted mt-0.5">
+            Xếp hạng dựa trên dự đoán tỷ số của người dùng
+          </p>
+        </div>
+        {!editingNickname ? (
+          <button
+            onClick={() => {
+              setNicknameInput(nickname);
+              setEditingNickname(true);
+            }}
+            className="text-xs text-accent hover:text-accent/80 transition-colors px-3 py-1.5 rounded-lg border border-border hover:border-accent/50"
+          >
+            {nickname ? "Đổi biệt danh" : "Đặt biệt danh"}
+          </button>
+        ) : (
+          <div className="flex gap-2 items-center">
+            <input
+              type="text"
+              value={nicknameInput}
+              onChange={(e) => setNicknameInput(e.target.value.slice(0, 30))}
+              placeholder="Biệt danh..."
+              className="px-2 py-1 text-xs rounded-lg bg-bg-primary border border-border focus:border-accent focus:outline-none w-28"
+              autoFocus
+              onKeyDown={(e) => e.key === "Enter" && handleSaveNickname()}
+            />
+            <button
+              onClick={handleSaveNickname}
+              className="text-xs text-green-400 hover:text-green-300"
+            >
+              Lưu
+            </button>
+            <button
+              onClick={() => setEditingNickname(false)}
+              className="text-xs text-text-muted hover:text-text-primary"
+            >
+              Hủy
+            </button>
+          </div>
+        )}
+      </div>
+
+      {isLoading && (
+        <div className="bg-bg-card rounded-xl border border-border overflow-hidden">
+          {[...Array(5)].map((_, i) => (
+            <div
+              key={i}
+              className="h-12 border-b border-border/30 animate-pulse bg-border/10"
+            />
+          ))}
+        </div>
+      )}
+
+      {!isLoading && leaderboard.length === 0 && (
+        <div className="bg-bg-card rounded-xl border border-border p-8 text-center">
+          <p className="text-text-muted text-sm">
+            Chưa có dự đoán nào
+          </p>
+          <p className="text-xs text-text-muted mt-1">
+            Hãy dự đoán tỷ số các trận đấu sắp tới để lên bảng xếp hạng!
+          </p>
+        </div>
+      )}
+
+      {!isLoading && leaderboard.length > 0 && (
+        <div className="bg-bg-card rounded-xl border border-border overflow-hidden">
+          {/* Header */}
+          <div className="grid grid-cols-[2.5rem_1fr_3.5rem_3.5rem_3.5rem] sm:grid-cols-[3rem_1fr_4.5rem_4.5rem_4.5rem] px-4 py-2.5 text-[10px] sm:text-xs text-text-muted border-b border-border font-semibold">
+            <span>#</span>
+            <span>Người chơi</span>
+            <span className="text-center">Dự đoán</span>
+            <span className="text-center">Đúng</span>
+            <span className="text-center">Điểm</span>
+          </div>
+          {/* Rows */}
+          {leaderboard.map((entry, i) => {
+            const isMe = entry.visitorId === visitorId;
+            const rankEmoji =
+              i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : `${i + 1}`;
+            return (
+              <div
+                key={entry.visitorId}
+                className={`grid grid-cols-[2.5rem_1fr_3.5rem_3.5rem_3.5rem] sm:grid-cols-[3rem_1fr_4.5rem_4.5rem_4.5rem] px-4 py-2.5 text-xs sm:text-sm border-b border-border/30 last:border-0 ${
+                  isMe ? "bg-accent/5" : "hover:bg-bg-card/60"
+                } transition-colors`}
+              >
+                <span className="font-bold">{rankEmoji}</span>
+                <span className={`truncate ${isMe ? "text-accent font-semibold" : ""}`}>
+                  {entry.nickname}
+                  {isMe && (
+                    <span className="text-[10px] text-accent ml-1">(bạn)</span>
+                  )}
+                </span>
+                <span className="text-center text-text-muted">
+                  {entry.total}
+                </span>
+                <span className="text-center text-green-400">
+                  {entry.correct}
+                </span>
+                <span className="text-center font-bold">{entry.points}</span>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Scoring rules */}
+      <div className="mt-4 p-3 bg-bg-card/50 rounded-xl border border-border/50">
+        <p className="text-xs font-semibold mb-1.5">Cách tính điểm</p>
+        <div className="flex gap-4 text-[10px] text-text-muted">
+          <span>Đúng tỷ số: <strong className="text-accent">3 điểm</strong></span>
+          <span>Đúng kết quả: <strong className="text-text-primary">1 điểm</strong></span>
+          <span>Sai: <strong className="text-text-muted">0 điểm</strong></span>
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -310,6 +473,9 @@ export default function PredictionPage() {
             </div>
           </>
         )}
+
+        {/* Player Leaderboard */}
+        <PlayerLeaderboard />
 
         {/* Footer */}
         <footer className="mt-8 py-4 border-t border-border text-center text-[10px] text-text-muted">

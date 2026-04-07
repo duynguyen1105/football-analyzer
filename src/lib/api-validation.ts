@@ -87,6 +87,24 @@ export const topAssistsSchema = z.object({
   code: z.string().min(1),
 });
 
+// --- User prediction game ---
+
+export const userPredictionSchema = z.object({
+  matchId: z.number().int().positive(),
+  visitorId: z.string().min(8).max(40),
+  homeScore: z.number().int().min(0).max(99),
+  awayScore: z.number().int().min(0).max(99),
+  homeTeam: z.string().min(1).max(100),
+  awayTeam: z.string().min(1).max(100),
+  league: z.string().min(1).max(100),
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Must be YYYY-MM-DD"),
+  nickname: z.string().max(30).optional(),
+});
+
+export const userPredictionGetSchema = z.object({
+  visitorId: z.string().min(8).max(40),
+});
+
 // --- Helper ---
 
 type ParseResult<T> = { data: T; error: null } | { data: null; error: Response };

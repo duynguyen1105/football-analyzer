@@ -40,6 +40,8 @@ const MatchEvents = dynamic(() => import("@/components/MatchEvents").then((m) =>
 const MatchTimeline = dynamic(() => import("@/components/MatchTimeline").then((m) => m.MatchTimeline));
 const MatchStatistics = dynamic(() => import("@/components/MatchStatistics").then((m) => m.MatchStatistics));
 const RelatedMatches = dynamic(() => import("@/components/RelatedMatches").then((m) => m.RelatedMatches));
+const SharePrediction = dynamic(() => import("@/components/SharePrediction").then((m) => m.SharePrediction));
+const PredictionWidget = dynamic(() => import("@/components/PredictionWidget").then((m) => m.PredictionWidget));
 
 function FormBadge({ result }: { result: string }) {
   const cls = result === "W" ? "badge-w" : result === "D" ? "badge-d" : "badge-l";
@@ -480,6 +482,17 @@ export default function MatchPage({ params }: { params: Promise<{ id: string }> 
         {/* Quick Summary — only for upcoming matches */}
         {match.status !== "FINISHED" && <QuickSummary matchId={id} />}
 
+        {/* User Prediction Widget — only for non-finished matches */}
+        {match.status !== "FINISHED" && match.status !== "IN_PLAY" && match.status !== "LIVE" && (
+          <PredictionWidget
+            matchId={match.id}
+            homeTeam={{ name: match.homeTeam.name, shortName: match.homeTeam.shortName, crest: match.homeTeam.crest }}
+            awayTeam={{ name: match.awayTeam.name, shortName: match.awayTeam.shortName, crest: match.awayTeam.crest }}
+            league={match.competition.name}
+            date={match.date}
+          />
+        )}
+
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
           <div className="lg:col-span-2 space-y-6">
 
@@ -704,6 +717,17 @@ export default function MatchPage({ params }: { params: Promise<{ id: string }> 
 
             {/* Scorers — loads independently */}
             <ScorersSection matchId={id} homeTeamName={match.homeTeam.name} awayTeamName={match.awayTeam.name} />
+
+            {/* Share prediction — only for upcoming matches */}
+            {match.status !== "FINISHED" && match.status !== "IN_PLAY" && match.status !== "LIVE" && (
+              <SharePrediction
+                matchId={match.id}
+                homeTeam={{ shortName: match.homeTeam.shortName, crest: match.homeTeam.crest }}
+                awayTeam={{ shortName: match.awayTeam.shortName, crest: match.awayTeam.crest }}
+                league={match.competition.name}
+                date={match.date}
+              />
+            )}
 
             {/* Merchandise */}
             <MerchandiseSection
