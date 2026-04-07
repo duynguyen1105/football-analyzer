@@ -153,19 +153,12 @@ function PredictionRow({ entry }: { entry: PredictionEntry }) {
   );
 }
 
-function useLocalValue(getter: () => string): string {
-  const ref = useRef<string | null>(null);
-  if (ref.current === null && typeof window !== "undefined") {
-    ref.current = getter();
-  }
-  return ref.current ?? "";
-}
+const emptySubscribe = () => () => {};
 
 function PlayerLeaderboard() {
-  const visitorId = useLocalValue(getVisitorId);
-  const [nickname, setNickname] = useState(() =>
-    typeof window !== "undefined" ? getNickname() : "",
-  );
+  const visitorId = useSyncExternalStore(emptySubscribe, getVisitorId, () => "");
+  const storedNickname = useSyncExternalStore(emptySubscribe, getNickname, () => "");
+  const [nickname, setNickname] = useState(storedNickname);
   const [editingNickname, setEditingNickname] = useState(false);
   const [nicknameInput, setNicknameInput] = useState("");
 
