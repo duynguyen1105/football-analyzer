@@ -60,58 +60,92 @@ function formToString(form: string[]): string {
 }
 
 // ---------------------------------------------------------------------------
-// Build match paragraph — natural Vietnamese analysis style
+// Narrative hooks — TrenDuongPitch style openers
+// ---------------------------------------------------------------------------
+const NARRATIVE_OPENERS = [
+  (home: string, away: string) => `Khi **${home}** tiếp đón **${away}**, đây không đơn thuần là một trận đấu — đây là câu chuyện về tham vọng và bản lĩnh.`,
+  (home: string, away: string) => `Có những trận đấu bạn xem vì kết quả, có những trận bạn xem vì cảm xúc. **${home}** vs **${away}** thuộc loại thứ hai.`,
+  (home: string, away: string) => `Nếu bóng đá là một vở kịch, thì ${home} và ${away} đang viết nên chương hấp dẫn nhất mùa giải.`,
+  (home: string, away: string) => `**${home}** bước vào trận đấu với **${away}** mang theo áp lực của cả mùa giải trên vai.`,
+  (home: string, away: string) => `Giữa những con số và thống kê, trận **${home}** gặp **${away}** ẩn chứa nhiều câu chuyện hơn bạn nghĩ.`,
+  (home: string, away: string) => `Đôi khi, một trận đấu có thể thay đổi cả mùa giải. **${home}** vs **${away}** có tiềm năng trở thành khoảnh khắc đó.`,
+];
+
+// ---------------------------------------------------------------------------
+// Build match paragraph — narrative storytelling style (TrenDuongPitch-inspired)
 // ---------------------------------------------------------------------------
 function buildMatchParagraph(
   match: Match,
   homeStanding: Standing | null,
   awayStanding: Standing | null,
-  prediction: { homeWin: number; draw: number; awayWin: number; btts: number; over25: number }
+  prediction: { homeWin: number; draw: number; awayWin: number; btts: number; over25: number },
+  index: number
 ): string {
   const lines: string[] = [];
+  const home = match.homeTeam.shortName;
+  const away = match.awayTeam.shortName;
 
-  // Opening line with team names and time
-  lines.push(
-    `### ${match.homeTeam.shortName} vs ${match.awayTeam.shortName} (${match.time})`
-  );
+  // Match heading with team crests as images
+  lines.push(`### ${home} vs ${away}`);
+  lines.push(`*${match.time} · ${match.venue || ""}*`);
   lines.push("");
 
-  // Standings context
+  // Team crest images side by side
+  lines.push(`![${home}](${match.homeTeam.crest})  ![${away}](${match.awayTeam.crest})`);
+  lines.push("");
+
+  // Narrative opening — rotate through styles
+  const opener = NARRATIVE_OPENERS[index % NARRATIVE_OPENERS.length];
+  lines.push(opener(home, away));
+  lines.push("");
+
+  // Standings context woven into narrative
   if (homeStanding && awayStanding) {
-    lines.push(
-      `Dựa trên thống kê mùa giải, **${match.homeTeam.shortName}** đang xếp thứ ${homeStanding.position} với ${homeStanding.points} điểm (${homeStanding.won}T-${homeStanding.draw}H-${homeStanding.lost}B), ` +
-        `trong khi **${match.awayTeam.shortName}** đứng vị trí ${awayStanding.position} với ${awayStanding.points} điểm (${awayStanding.won}T-${awayStanding.draw}H-${awayStanding.lost}B).`
-    );
+    const posDiff = Math.abs(homeStanding.position - awayStanding.position);
+    if (posDiff <= 3) {
+      lines.push(
+        `Hai đội đang đứng sát nhau trên bảng xếp hạng — **${home}** ở vị trí ${homeStanding.position} (${homeStanding.points} điểm) và **${away}** ở vị trí ${awayStanding.position} (${awayStanding.points} điểm). Mỗi điểm số đều quý giá.`
+      );
+    } else if (homeStanding.position < awayStanding.position) {
+      lines.push(
+        `**${home}** đang ở vị trí ${homeStanding.position} với ${homeStanding.points} điểm, nhìn xuống **${away}** ở hạng ${awayStanding.position}. Nhưng trong bóng đá, khoảng cách trên bảng xếp hạng không đảm bảo điều gì trên sân cỏ.`
+      );
+    } else {
+      lines.push(
+        `Dù **${away}** đang xếp trên ở vị trí ${awayStanding.position} (${awayStanding.points} điểm), chuyến làm khách đến sân **${home}** (hạng ${homeStanding.position}, ${homeStanding.points} điểm) chưa bao giờ dễ dàng.`
+      );
+    }
+    lines.push("");
   }
 
-  // Form analysis
-  if (match.homeForm.length > 0) {
-    lines.push(
-      `Với phong độ hiện tại, đội chủ nhà có ${describeForm(match.homeForm)} (${formToString(match.homeForm)}).`
-    );
-  }
-  if (match.awayForm.length > 0) {
-    lines.push(
-      `Đội khách đang có ${describeForm(match.awayForm)} (${formToString(match.awayForm)}).`
-    );
-  }
-
-  // Prediction
+  // Prediction woven naturally
   const favorite =
-    prediction.homeWin > prediction.awayWin
-      ? match.homeTeam.shortName
-      : prediction.awayWin > prediction.homeWin
-        ? match.awayTeam.shortName
-        : null;
+    prediction.homeWin > prediction.awayWin ? home
+    : prediction.awayWin > prediction.homeWin ? away
+    : null;
 
   if (favorite) {
     const pct = Math.max(prediction.homeWin, prediction.awayWin);
-    lines.push(
-      `Đội chủ nhà đang có chuỗi lợi thế sân nhà, mô hình dự đoán nghiêng về **${favorite}** với ${pct}% cơ hội chiến thắng. Tỷ lệ hòa: ${prediction.draw}%. Khả năng cả hai đội ghi bàn (BTTS): ${prediction.btts}%.`
-    );
+    const underdog = favorite === home ? away : home;
+    if (pct >= 50) {
+      lines.push(
+        `Mô hình dự đoán cho **${favorite}** lợi thế rõ rệt với **${pct}%** cơ hội chiến thắng. Tuy nhiên, ${underdog} có thể tạo bất ngờ — bóng đá luôn là vậy.`
+      );
+    } else {
+      lines.push(
+        `Đây là trận đấu khó đoán. **${favorite}** nhỉnh hơn chút với ${pct}% theo mô hình, nhưng tỷ lệ hòa ${prediction.draw}% cho thấy mọi kết quả đều có thể xảy ra.`
+      );
+    }
   } else {
     lines.push(
-      `Đây là trận đấu cân bằng với tỷ lệ: Thắng nhà ${prediction.homeWin}% — Hòa ${prediction.draw}% — Thắng khách ${prediction.awayWin}%.`
+      `Trận đấu cân bằng tuyệt đối: Thắng nhà ${prediction.homeWin}% — Hòa ${prediction.draw}% — Thắng khách ${prediction.awayWin}%. Khó ai dám đặt cược vào một kết quả cụ thể.`
+    );
+  }
+
+  // BTTS + Over 2.5 as a color detail
+  if (prediction.btts >= 55) {
+    lines.push(
+      `Với khả năng cả hai đội ghi bàn lên đến **${prediction.btts}%**, đây hứa hẹn là một trận đấu mãn nhãn cho người hâm mộ trung lập.`
     );
   }
 
@@ -201,11 +235,11 @@ async function generateBlogPosts() {
       const title = `Nhận định ${league.name}${roundLabel} — ${dateLabel}`;
       const description = `Phân tích và dự đoán ${leagueMatches.length} trận đấu ${league.name}${roundLabel}. Tỷ lệ kèo, phong độ, và thống kê chi tiết.`;
 
-      const matchSections = leagueMatches.map((match) => {
+      const matchSections = leagueMatches.map((match, i) => {
         const homeSt = standings.find((s) => s.team.id === match.homeTeam.id) ?? null;
         const awaySt = standings.find((s) => s.team.id === match.awayTeam.id) ?? null;
         const prediction = computePrediction(homeSt, awaySt);
-        return buildMatchParagraph(match, homeSt, awaySt, prediction);
+        return buildMatchParagraph(match, homeSt, awaySt, prediction, i);
       });
 
       const tags = [

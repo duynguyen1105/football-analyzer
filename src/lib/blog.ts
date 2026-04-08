@@ -169,9 +169,11 @@ export function renderMarkdown(md: string): string {
   return htmlParts.join("\n");
 }
 
-/** Inline formatting: bold, italic, code */
+/** Inline formatting: bold, italic, code, images, links */
 function inlineFormat(text: string): string {
   return text
+    .replace(/!\[([^\]]*)\]\(([^)]+)\)/g, '<img src="$2" alt="$1" class="inline-block w-10 h-10 object-contain mx-1" loading="lazy" />')
+    .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" class="text-accent hover:underline">$1</a>')
     .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
     .replace(/\*(.+?)\*/g, "<em>$1</em>")
     .replace(/`(.+?)`/g, '<code class="bg-bg-primary/60 px-1 py-0.5 rounded text-xs">$1</code>');
