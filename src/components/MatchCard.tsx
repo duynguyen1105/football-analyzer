@@ -6,11 +6,13 @@ import { LEAGUES } from "@/lib/constants";
 import { Match } from "@/lib/types";
 import { FavoriteButton } from "@/components/FavoriteButton";
 import { OptImage } from "@/components/OptImage";
+import { getRelativeTime } from "@/lib/relative-time";
 import Link from "next/link";
 
 export function MatchCard({ match }: { match: Match }) {
   const league = LEAGUES.find((l) => l.code === match.competition.code);
   const fin = match.status === "FINISHED";
+  const relTime = !fin ? getRelativeTime(match.date, match.time) : null;
   const queryClient = useQueryClient();
 
   // Prefetch match data on hover so detail page loads instantly
@@ -50,7 +52,10 @@ export function MatchCard({ match }: { match: Match }) {
           {fin && match.score ? <span className="text-sm font-bold w-6 text-right">{match.score.away}</span> : null}
         </div>
         <div className="flex items-center justify-between px-3 py-2">
-          <span className="text-xs text-text-muted">{fin ? "KT" : match.time} · {match.date}</span>
+          <span className="text-xs text-text-muted">
+            {fin ? "KT" : match.time} · {match.date}
+            {relTime && <span className="text-accent ml-1.5">· {relTime}</span>}
+          </span>
           <span className="text-[10px] font-medium text-accent bg-accent/10 px-2 py-0.5 rounded-full">{fin ? "Xem lại" : "Phân tích"}</span>
         </div>
       </div>

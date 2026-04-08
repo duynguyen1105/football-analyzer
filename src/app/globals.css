@@ -52,6 +52,13 @@
 html {
   overflow-x: hidden;
   -webkit-text-size-adjust: 100%;
+  scroll-behavior: smooth;
+}
+
+/* Text selection */
+::selection {
+  background: var(--accent);
+  color: white;
 }
 
 body {
@@ -133,6 +140,21 @@ body {
   0% { background-position: 200% 0; }
   100% { background-position: -200% 0; }
 }
+
+/* Subtle page entrance */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.animate-fade-in {
+  animation: fadeInUp 0.3s ease-out;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
 
 /* Print styles */
 @media print {

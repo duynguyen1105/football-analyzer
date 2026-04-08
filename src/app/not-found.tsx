@@ -5,7 +5,7 @@ import { getSlugByCode } from "@/lib/league-slugs";
 export default function NotFound() {
   return (
     <div className="min-h-screen flex items-center justify-center px-4">
-      <div className="text-center max-w-lg">
+      <div className="text-center max-w-lg animate-fade-in">
         <div className="text-7xl mb-4">⚽</div>
         <div className="text-5xl font-bold text-text-muted mb-2">404</div>
         <h1 className="text-xl font-bold mb-2">Không tìm thấy trang</h1>

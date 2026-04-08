@@ -12,6 +12,7 @@ import { LEAGUES } from "@/lib/constants";
 import { Match } from "@/lib/types";
 import { Newsletter } from "@/components/Newsletter";
 import { SponsoredSlot } from "@/components/SponsoredSlot";
+import { Footer } from "@/components/Footer";
 import Link from "next/link";
 
 /* ───────────────────────── Home Page ───────────────────────── */
@@ -201,16 +202,7 @@ export default function Home() {
           </div>
         </section>
 
-        {/* Footer */}
-        <footer className="mt-8 py-4 border-t border-border text-center text-[10px] text-text-muted">
-          <p>MatchDay Analyst — Nhận định bóng đá trước trận</p>
-          <p className="mt-0.5">Dữ liệu từ API-Football</p>
-          <div className="mt-1 flex gap-3 justify-center">
-            <Link href="/about" className="hover:text-text-primary">Giới thiệu</Link>
-            <Link href="/privacy" className="hover:text-text-primary">Chính sách bảo mật</Link>
-            <Link href="/ung-ho" className="hover:text-accent-red text-accent-red/70">Ủng hộ</Link>
-          </div>
-        </footer>
+        <Footer />
       </div>
     </>
   );
