@@ -140,9 +140,9 @@ export function renderMarkdown(md: string): string {
     const blockImg = line.match(/^!\[([^\]]*)\]\(([^)]+)\)$/);
     if (blockImg) {
       if (inList) { htmlParts.push("</ul>"); inList = false; }
-      const isSmallCrest = blockImg[2].includes("media.api-sports.io");
-      if (isSmallCrest) {
-        htmlParts.push(`<div class="flex justify-center gap-4 my-6"><img src="${blockImg[2]}" alt="${blockImg[1]}" class="w-20 h-20 object-contain" loading="lazy" /></div>`);
+      const isCrest = blockImg[2].includes("media.api-sports.io");
+      if (isCrest) {
+        htmlParts.push(`<div class="flex justify-center gap-4 my-6"><img src="${blockImg[2]}" alt="${blockImg[1]}" class="w-24 h-24 sm:w-28 sm:h-28 object-contain" loading="lazy" /></div>`);
       } else {
         htmlParts.push(`<div class="my-6 rounded-xl overflow-hidden border border-border"><img src="${blockImg[2]}" alt="${blockImg[1]}" class="w-full h-auto" loading="lazy" /></div>`);
       }
@@ -200,7 +200,7 @@ export function renderMarkdown(md: string): string {
 /** Inline formatting: bold, italic, code, images, links */
 function inlineFormat(text: string): string {
   return text
-    .replace(/!\[([^\]]*)\]\(([^)]+)\)/g, '<img src="$2" alt="$1" class="inline-block w-16 h-16 object-contain mx-2" loading="lazy" />')
+    .replace(/!\[([^\]]*)\]\(([^)]+)\)/g, '<img src="$2" alt="$1" class="inline-block w-20 h-20 sm:w-24 sm:h-24 object-contain mx-3" loading="lazy" />')
     .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" class="text-accent hover:underline">$1</a>')
     .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
     .replace(/\*(.+?)\*/g, "<em>$1</em>")
