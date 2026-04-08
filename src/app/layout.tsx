@@ -60,7 +60,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
           <NavigationProgress />
         </Suspense>
         <Providers>
-          <div className="pb-20 md:pb-0">{children}</div>
+          <div className="pb-24 md:pb-0">{children}</div>
           <MobileNav />
           <BackToTop />
           <KeyboardShortcuts />
