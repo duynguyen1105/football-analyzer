@@ -235,13 +235,6 @@ async function generateBlogPosts() {
       const title = `Nhận định ${league.name}${roundLabel} — ${dateLabel}`;
       const description = `Phân tích và dự đoán ${leagueMatches.length} trận đấu ${league.name}${roundLabel}. Tỷ lệ kèo, phong độ, và thống kê chi tiết.`;
 
-      const matchSections = leagueMatches.map((match, i) => {
-        const homeSt = standings.find((s) => s.team.id === match.homeTeam.id) ?? null;
-        const awaySt = standings.find((s) => s.team.id === match.awayTeam.id) ?? null;
-        const prediction = computePrediction(homeSt, awaySt);
-        return buildMatchParagraph(match, homeSt, awaySt, prediction, i);
-      });
-
       const tags = [
         slugify(league.name),
         "nhan-dinh",
@@ -250,10 +243,35 @@ async function generateBlogPosts() {
 
       const slug = slugify(`nhan-dinh-${league.name}${roundLabel}-${tomorrow}`);
 
-      const body = `## Tổng quan ${league.name}${roundLabel}\n\n${league.name}${roundLabel} có tổng cộng ${leagueMatches.length} trận đấu đáng chú ý. Dưới đây là nhận định chi tiết từng cặp đấu dựa trên thống kê mùa giải, phong độ gần đây và mô hình dự đoán Poisson.\n\n${matchSections.join("\n---\n\n")}\n## Kết luận\n\nHãy theo dõi nhận định chi tiết từng trận đấu trên [trang chủ](https://nhandinhbongdavn.com) để cập nhật thông tin mới nhất trước giờ bóng lăn.`;
+      // Generate league header image URL
+      const baseUrl = "https://nhandinhbongdavn.com";
+      const leagueImageParams = new URLSearchParams({
+        type: "league", league: league.name, leagueLogo: league.logo,
+        matchCount: String(leagueMatches.length), round: round || "",
+      });
+      const leagueImageUrl = `${baseUrl}/api/blog-image?${leagueImageParams}`;
+
+      // Generate match preview images in the article body
+      const matchImagesAndSections = leagueMatches.map((match, i) => {
+        const homeSt = standings.find((s) => s.team.id === match.homeTeam.id) ?? null;
+        const awaySt = standings.find((s) => s.team.id === match.awayTeam.id) ?? null;
+        const prediction = computePrediction(homeSt, awaySt);
+        const imgParams = new URLSearchParams({
+          type: "match", home: match.homeTeam.shortName, away: match.awayTeam.shortName,
+          homeCrest: match.homeTeam.crest, awayCrest: match.awayTeam.crest,
+          league: league.name, time: match.time, date: match.date,
+          homeWin: String(prediction.homeWin), draw: String(prediction.draw), awayWin: String(prediction.awayWin),
+          venue: match.venue || "",
+        });
+        const matchImgUrl = `${baseUrl}/api/blog-image?${imgParams}`;
+        const paragraph = buildMatchParagraph(match, homeSt, awaySt, prediction, i);
+        return `![${match.homeTeam.shortName} vs ${match.awayTeam.shortName}](${matchImgUrl})\n\n${paragraph}`;
+      });
+
+      const body = `![${league.name}${roundLabel}](${leagueImageUrl})\n\n## Tổng quan ${league.name}${roundLabel}\n\n${league.name}${roundLabel} có tổng cộng ${leagueMatches.length} trận đấu đáng chú ý. Dưới đây là nhận định chi tiết từng cặp đấu dựa trên thống kê mùa giải, phong độ gần đây và mô hình dự đoán Poisson.\n\n${matchImagesAndSections.join("\n---\n\n")}\n## Kết luận\n\nHãy theo dõi nhận định chi tiết từng trận đấu trên [trang chủ](https://nhandinhbongdavn.com) để cập nhật thông tin mới nhất trước giờ bóng lăn.`;
 
       // Store post as JSON in Redis (works on serverless)
-      const post = { slug, title, description, date: tomorrow, author: "MatchDay Analyst", tags, image: "/icons/icon-512.png", body };
+      const post = { slug, title, description, date: tomorrow, author: "MatchDay Analyst", tags, image: leagueImageUrl, body };
       await setCached(`blog:post:${slug}`, JSON.stringify(post), TTL_30_DAYS);
       generatedSlugs.push(slug);
     }

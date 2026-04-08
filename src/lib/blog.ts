@@ -136,6 +136,34 @@ export function renderMarkdown(md: string): string {
       continue;
     }
 
+    // Block-level image (line is only an image)
+    const blockImg = line.match(/^!\[([^\]]*)\]\(([^)]+)\)$/);
+    if (blockImg) {
+      if (inList) { htmlParts.push("</ul>"); inList = false; }
+      const isSmallCrest = blockImg[2].includes("media.api-sports.io");
+      if (isSmallCrest) {
+        htmlParts.push(`<div class="flex justify-center gap-4 my-4"><img src="${blockImg[2]}" alt="${blockImg[1]}" class="w-12 h-12 object-contain" loading="lazy" /></div>`);
+      } else {
+        htmlParts.push(`<div class="my-6 rounded-xl overflow-hidden border border-border"><img src="${blockImg[2]}" alt="${blockImg[1]}" class="w-full h-auto" loading="lazy" /></div>`);
+      }
+      continue;
+    }
+
+    // Multiple inline images on one line (e.g., two team crests)
+    const multiImg = line.match(/^!\[.*\]\(.*\)\s+!\[.*\]\(.*\)$/);
+    if (multiImg) {
+      if (inList) { htmlParts.push("</ul>"); inList = false; }
+      htmlParts.push(`<div class="flex justify-center gap-6 my-4">${inlineFormat(line)}</div>`);
+      continue;
+    }
+
+    // Horizontal rule
+    if (line.trim() === "---") {
+      if (inList) { htmlParts.push("</ul>"); inList = false; }
+      htmlParts.push('<hr class="border-border/50 my-6" />');
+      continue;
+    }
+
     // Headings
     const h3 = line.match(/^### (.+)$/);
     if (h3) {
