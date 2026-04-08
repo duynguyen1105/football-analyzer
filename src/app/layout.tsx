@@ -45,7 +45,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         <link rel="apple-touch-icon" href="/icons/icon-192.png" />
         <script
           dangerouslySetInnerHTML={{
-            __html: `(function(){try{var t=localStorage.getItem('theme');if(t)document.documentElement.setAttribute('data-theme',t)}catch(e){}})()`,
+            __html: `(function(){try{var t=localStorage.getItem('theme');if(t){document.documentElement.setAttribute('data-theme',t);var m=document.querySelector('meta[name=theme-color]');if(m)m.setAttribute('content',t==='light'?'#ffffff':'#0f172a')}}catch(e){}})()`,
           }}
         />
       </head>
@@ -60,7 +60,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
           <NavigationProgress />
         </Suspense>
         <Providers>
-          <div className="pb-24 md:pb-0">{children}</div>
+          <div className="pb-20 md:pb-0">{children}</div>
           <MobileNav />
           <BackToTop />
           <KeyboardShortcuts />

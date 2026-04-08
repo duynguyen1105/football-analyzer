@@ -19,6 +19,9 @@ export function ThemeToggle() {
     setTheme(next);
     localStorage.setItem("theme", next);
     document.documentElement.setAttribute("data-theme", next);
+    // Update Chrome toolbar color to match theme
+    const metaTheme = document.querySelector('meta[name="theme-color"]:not([media])') || document.querySelector('meta[name="theme-color"]');
+    if (metaTheme) metaTheme.setAttribute("content", next === "dark" ? "#0f172a" : "#ffffff");
   };
 
   if (!mounted) return null;
