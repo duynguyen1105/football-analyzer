@@ -13,6 +13,7 @@ import { Match } from "@/lib/types";
 import { Newsletter } from "@/components/Newsletter";
 import { SponsoredSlot } from "@/components/SponsoredSlot";
 import { Footer } from "@/components/Footer";
+import { MatchDayBanner } from "@/components/MatchDayBanner";
 import Link from "next/link";
 
 /* ───────────────────────── Home Page ───────────────────────── */
@@ -135,6 +136,9 @@ export default function Home() {
             </button>
           ))}
         </div>
+
+        {/* Match day countdown banner */}
+        {!isLoading && matches && <MatchDayBanner matches={matches} />}
 
         <AdSlot size="leaderboard" className="mb-4" />
 

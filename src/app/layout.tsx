@@ -9,6 +9,9 @@ import { buildWebSiteSchema } from "@/lib/json-ld";
 import { MobileNav } from "@/components/MobileNav";
 import { WebVitals } from "@/components/WebVitals";
 import { ServiceWorker } from "@/components/ServiceWorker";
+import { BackToTop } from "@/components/BackToTop";
+import { KeyboardShortcuts } from "@/components/KeyboardShortcuts";
+import { FavoriteNotifier } from "@/components/FavoriteNotifier";
 
 export const viewport: Viewport = {
   width: "device-width",
@@ -59,6 +62,9 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         <Providers>
           <div className="pb-20 md:pb-0">{children}</div>
           <MobileNav />
+          <BackToTop />
+          <KeyboardShortcuts />
+          <FavoriteNotifier />
         </Providers>
         <script
           type="application/ld+json"

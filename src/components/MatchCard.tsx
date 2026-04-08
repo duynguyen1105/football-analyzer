@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback } from "react";
+import { useCallback, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { LEAGUES } from "@/lib/constants";
 import { Match } from "@/lib/types";
@@ -12,8 +12,11 @@ import Link from "next/link";
 export function MatchCard({ match }: { match: Match }) {
   const league = LEAGUES.find((l) => l.code === match.competition.code);
   const fin = match.status === "FINISHED";
-  const relTime = !fin ? getRelativeTime(match.date, match.time) : null;
+  const live = match.status === "IN_PLAY" || match.status === "LIVE";
+  const relTime = !fin && !live ? getRelativeTime(match.date, match.time) : null;
+  const isHot = !fin && (match.competition.code === "CL" || match.competition.code === "WC");
   const queryClient = useQueryClient();
+  const [h2hHint, setH2hHint] = useState<string | null>(null);
 
   // Prefetch match data on hover so detail page loads instantly
   const prefetch = useCallback(() => {
@@ -21,6 +24,10 @@ export function MatchCard({ match }: { match: Match }) {
       queryKey: ["match", String(match.id), "core"],
       queryFn: () => fetch(`/api/match?id=${match.id}&section=core`).then((r) => r.json()),
       staleTime: 5 * 60 * 1000,
+    }).then(() => {
+      const cached = queryClient.getQueryData<{ h2h?: { lastMatches?: { scoreHome: number; scoreAway: number }[] } }>(["match", String(match.id), "core"]);
+      const last = cached?.h2h?.lastMatches?.[0];
+      if (last) setH2hHint(`Gần nhất: ${last.scoreHome}-${last.scoreAway}`);
     });
   }, [match.id, queryClient]);
 
@@ -35,6 +42,8 @@ export function MatchCard({ match }: { match: Match }) {
       <div className="px-3 py-1.5 border-b border-border/50 text-[10px] md:text-xs text-text-muted flex items-center gap-1.5">
         {league?.logo && <img src={league.logo} alt="" className="w-4 h-4 object-contain" />}
         <span className="truncate flex-1">{match.competition.name}</span>
+        {live && <span className="text-[9px] font-semibold text-red-400 bg-red-400/10 px-1.5 py-0.5 rounded-full animate-pulse">LIVE</span>}
+        {isHot && <span className="text-[9px]">🔥</span>}
         <FavoriteButton teamId={match.homeTeam.id} />
         <FavoriteButton teamId={match.awayTeam.id} />
       </div>
@@ -77,6 +86,7 @@ export function MatchCard({ match }: { match: Match }) {
             <span className="inline-block mt-2 text-xs font-medium text-accent bg-accent/10 px-3 py-1 rounded-full">
               {fin ? "Xem lại" : "Phân tích"}
             </span>
+            {h2hHint && <p className="text-[10px] text-text-muted mt-1">{h2hHint}</p>}
           </div>
           <div className="text-center">
             <OptImage src={match.awayTeam.crest} alt={match.awayTeam.shortName} size={48} className="w-12 h-12 object-contain mx-auto mb-1" />
