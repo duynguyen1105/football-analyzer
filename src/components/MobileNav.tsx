@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -54,9 +55,37 @@ const NAV_ITEMS = [
 
 export function MobileNav() {
   const pathname = usePathname();
+  const [bottomPad, setBottomPad] = useState(0);
+
+  const updatePadding = useCallback(() => {
+    // Compare visualViewport height with window inner height
+    // When Chrome toolbar is visible: visualViewport.height < innerHeight
+    // When Chrome toolbar hides: visualViewport.height ≈ innerHeight
+    if (window.visualViewport) {
+      const viewportBottom = window.innerHeight - window.visualViewport.height - window.visualViewport.offsetTop;
+      // If browser chrome takes significant space at bottom, no extra padding needed
+      // If browser chrome is hidden (viewportBottom ≈ 0), add small padding
+      setBottomPad(viewportBottom < 10 ? 8 : 0);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!window.visualViewport) return;
+    updatePadding();
+    window.visualViewport.addEventListener("resize", updatePadding);
+    window.visualViewport.addEventListener("scroll", updatePadding);
+    return () => {
+      window.visualViewport?.removeEventListener("resize", updatePadding);
+      window.visualViewport?.removeEventListener("scroll", updatePadding);
+    };
+  }, [updatePadding]);
 
   return (
-    <nav aria-label="Điều hướng di động" className="fixed bottom-0 left-0 right-0 z-50 bg-bg-secondary border-t border-border md:hidden pb-[env(safe-area-inset-bottom)]">
+    <nav
+      aria-label="Điều hướng di động"
+      className="fixed bottom-0 left-0 right-0 z-50 bg-bg-secondary border-t border-border md:hidden"
+      style={{ paddingBottom: bottomPad }}
+    >
       <div className="flex items-center justify-around h-14 px-2">
         {NAV_ITEMS.map((item) => {
           const isActive =
