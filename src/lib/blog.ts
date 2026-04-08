@@ -49,7 +49,7 @@ function fileToPost(slug: string, raw: string): BlogPost {
   };
 }
 
-/** Get all blog posts sorted by date descending */
+/** Get all blog posts from filesystem sorted by date descending */
 export function getAllPosts(): BlogPost[] {
   if (!fs.existsSync(BLOG_DIR)) return [];
   const files = fs.readdirSync(BLOG_DIR).filter((f) => f.endsWith(".md"));
@@ -62,12 +62,52 @@ export function getAllPosts(): BlogPost[] {
     .sort((a, b) => (b.date > a.date ? 1 : -1));
 }
 
-/** Get a single post by slug */
+/** Get all posts including Redis-stored auto-generated ones */
+export async function getAllPostsWithRedis(): Promise<BlogPost[]> {
+  const filePosts = getAllPosts();
+
+  // Try loading auto-generated posts from Redis
+  try {
+    const { getCached } = await import("./cache");
+    const indexRaw = await getCached("blog:index");
+    if (indexRaw) {
+      const slugs: string[] = JSON.parse(indexRaw);
+      const redisPosts: BlogPost[] = [];
+      for (const slug of slugs) {
+        // Skip if we already have this from filesystem
+        if (filePosts.some((p) => p.slug === slug)) continue;
+        const raw = await getCached(`blog:post:${slug}`);
+        if (raw) redisPosts.push(JSON.parse(raw));
+      }
+      return [...filePosts, ...redisPosts].sort((a, b) => (b.date > a.date ? 1 : -1));
+    }
+  } catch { /* Redis not available, return file posts only */ }
+
+  return filePosts;
+}
+
+/** Get a single post by slug (filesystem first, then Redis) */
 export function getPostBySlug(slug: string): BlogPost | null {
   const filePath = path.join(BLOG_DIR, `${slug}.md`);
   if (!fs.existsSync(filePath)) return null;
   const raw = fs.readFileSync(filePath, "utf-8");
   return fileToPost(slug, raw);
+}
+
+/** Get a single post, checking Redis too for auto-generated posts */
+export async function getPostBySlugWithRedis(slug: string): Promise<BlogPost | null> {
+  // Try filesystem first
+  const filePost = getPostBySlug(slug);
+  if (filePost) return filePost;
+
+  // Try Redis
+  try {
+    const { getCached } = await import("./cache");
+    const raw = await getCached(`blog:post:${slug}`);
+    if (raw) return JSON.parse(raw);
+  } catch { /* ignore */ }
+
+  return null;
 }
 
 /** Get posts that share at least one tag with the given post */

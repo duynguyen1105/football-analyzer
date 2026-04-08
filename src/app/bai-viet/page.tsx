@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Navbar } from "@/components/Navbar";
-import { getAllPosts } from "@/lib/blog";
+import { getAllPostsWithRedis } from "@/lib/blog";
 
 export const revalidate = 3600;
 
@@ -36,8 +36,8 @@ function formatDate(dateStr: string): string {
   });
 }
 
-export default function BlogListPage() {
-  const posts = getAllPosts();
+export default async function BlogListPage() {
+  const posts = await getAllPostsWithRedis();
 
   return (
     <>

@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Navbar } from "@/components/Navbar";
-import { getAllPosts, getPostBySlug, getRelatedPosts, renderMarkdown } from "@/lib/blog";
+import { getAllPosts, getPostBySlugWithRedis, getRelatedPosts, renderMarkdown } from "@/lib/blog";
 
 export const revalidate = 3600;
 
@@ -16,7 +16,7 @@ export async function generateStaticParams() {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
-  const post = getPostBySlug(slug);
+  const post = await getPostBySlugWithRedis(slug);
   if (!post) return { title: "Không tìm thấy bài viết" };
 
   return {
@@ -51,7 +51,7 @@ function formatDate(dateStr: string): string {
 
 export default async function BlogPostPage({ params }: Props) {
   const { slug } = await params;
-  const post = getPostBySlug(slug);
+  const post = await getPostBySlugWithRedis(slug);
   if (!post) notFound();
 
   const related = getRelatedPosts(slug, post.tags);

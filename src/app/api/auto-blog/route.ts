@@ -1,8 +1,7 @@
 import { NextRequest } from "next/server";
-import fs from "fs";
-import path from "path";
 import { getMatches, getStandings } from "@/lib/football-data";
 import { computePrediction } from "@/lib/prediction";
+import { setCached, getCached } from "@/lib/cache";
 import { LEAGUES } from "@/lib/constants";
 import { Match, Standing } from "@/lib/types";
 
@@ -134,15 +133,30 @@ function extractRound(matches: Match[]): string {
 }
 
 // ---------------------------------------------------------------------------
-// POST handler
+// GET handler — for Vercel Cron (uses CRON_SECRET header)
+// ---------------------------------------------------------------------------
+export async function GET(request: NextRequest) {
+  const cronSecret = request.headers.get("Authorization");
+  const expected = `Bearer ${process.env.CRON_SECRET}`;
+  if (process.env.CRON_SECRET && cronSecret !== expected) {
+    return Response.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  return generateBlogPosts();
+}
+
+// ---------------------------------------------------------------------------
+// POST handler — for manual triggers
 // ---------------------------------------------------------------------------
 export async function POST(request: NextRequest) {
-  // Auth check
   const authHeader = request.headers.get("Authorization");
   const token = process.env.AUTO_BLOG_TOKEN;
   if (!token || authHeader !== `Bearer ${token}`) {
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
+  return generateBlogPosts();
+}
+
+async function generateBlogPosts() {
 
   try {
     const tomorrow = getVietnamDate(1);
@@ -170,15 +184,10 @@ export async function POST(request: NextRequest) {
       })
     );
 
-    const blogDir = path.join(process.cwd(), "content/blog");
-    if (!fs.existsSync(blogDir)) {
-      fs.mkdirSync(blogDir, { recursive: true });
-    }
-
-    const generatedFiles: string[] = [];
+    const generatedSlugs: string[] = [];
+    const TTL_30_DAYS = 30 * 24 * 60 * 60;
 
     for (const [code, leagueMatches] of byLeague) {
-      // Only generate for leagues with 3+ matches
       if (leagueMatches.length < 3) continue;
 
       const league = LEAGUES.find((l) => l.code === code);
@@ -192,7 +201,6 @@ export async function POST(request: NextRequest) {
       const title = `Nhận định ${league.name}${roundLabel} — ${dateLabel}`;
       const description = `Phân tích và dự đoán ${leagueMatches.length} trận đấu ${league.name}${roundLabel}. Tỷ lệ kèo, phong độ, và thống kê chi tiết.`;
 
-      // Build match paragraphs
       const matchSections = leagueMatches.map((match) => {
         const homeSt = standings.find((s) => s.team.id === match.homeTeam.id) ?? null;
         const awaySt = standings.find((s) => s.team.id === match.awayTeam.id) ?? null;
@@ -200,43 +208,31 @@ export async function POST(request: NextRequest) {
         return buildMatchParagraph(match, homeSt, awaySt, prediction);
       });
 
-      // Assemble markdown
       const tags = [
         slugify(league.name),
         "nhan-dinh",
         round ? `vong-${round}` : "",
       ].filter(Boolean);
 
-      const md = `---
-title: "${title}"
-description: "${description}"
-date: "${tomorrow}"
-author: "MatchDay Analyst"
-tags: [${tags.map((t) => `"${t}"`).join(", ")}]
-image: "/icons/icon-512.png"
----
-
-## Tổng quan ${league.name}${roundLabel}
-
-${league.name}${roundLabel} có tổng cộng ${leagueMatches.length} trận đấu đáng chú ý. Dưới đây là nhận định chi tiết từng cặp đấu dựa trên thống kê mùa giải, phong độ gần đây và mô hình dự đoán Poisson.
-
-${matchSections.join("\n---\n\n")}
-## Kết luận
-
-Hãy theo dõi nhận định chi tiết từng trận đấu trên [trang chủ](https://nhandinhbongdavn.com) để cập nhật thông tin mới nhất trước giờ bóng lăn.
-`;
-
       const slug = slugify(`nhan-dinh-${league.name}${roundLabel}-${tomorrow}`);
-      const fileName = `${slug}.md`;
-      const filePath = path.join(blogDir, fileName);
 
-      fs.writeFileSync(filePath, md, "utf-8");
-      generatedFiles.push(fileName);
+      const body = `## Tổng quan ${league.name}${roundLabel}\n\n${league.name}${roundLabel} có tổng cộng ${leagueMatches.length} trận đấu đáng chú ý. Dưới đây là nhận định chi tiết từng cặp đấu dựa trên thống kê mùa giải, phong độ gần đây và mô hình dự đoán Poisson.\n\n${matchSections.join("\n---\n\n")}\n## Kết luận\n\nHãy theo dõi nhận định chi tiết từng trận đấu trên [trang chủ](https://nhandinhbongdavn.com) để cập nhật thông tin mới nhất trước giờ bóng lăn.`;
+
+      // Store post as JSON in Redis (works on serverless)
+      const post = { slug, title, description, date: tomorrow, author: "MatchDay Analyst", tags, image: "/icons/icon-512.png", body };
+      await setCached(`blog:post:${slug}`, JSON.stringify(post), TTL_30_DAYS);
+      generatedSlugs.push(slug);
     }
+
+    // Update the blog index in Redis
+    const existingIndex = await getCached("blog:index");
+    const existingSlugs: string[] = existingIndex ? JSON.parse(existingIndex) : [];
+    const mergedSlugs = [...new Set([...existingSlugs, ...generatedSlugs])];
+    await setCached("blog:index", JSON.stringify(mergedSlugs), TTL_30_DAYS);
 
     return Response.json({
       success: true,
-      generated: generatedFiles,
+      generated: generatedSlugs,
       dateRange: `${tomorrow} — ${dayAfter}`,
       totalMatches: scheduled.length,
       leaguesProcessed: byLeague.size,
