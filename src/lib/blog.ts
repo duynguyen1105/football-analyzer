@@ -142,7 +142,7 @@ export function renderMarkdown(md: string): string {
       if (inList) { htmlParts.push("</ul>"); inList = false; }
       const isSmallCrest = blockImg[2].includes("media.api-sports.io");
       if (isSmallCrest) {
-        htmlParts.push(`<div class="flex justify-center gap-4 my-4"><img src="${blockImg[2]}" alt="${blockImg[1]}" class="w-12 h-12 object-contain" loading="lazy" /></div>`);
+        htmlParts.push(`<div class="flex justify-center gap-4 my-6"><img src="${blockImg[2]}" alt="${blockImg[1]}" class="w-20 h-20 object-contain" loading="lazy" /></div>`);
       } else {
         htmlParts.push(`<div class="my-6 rounded-xl overflow-hidden border border-border"><img src="${blockImg[2]}" alt="${blockImg[1]}" class="w-full h-auto" loading="lazy" /></div>`);
       }
@@ -153,7 +153,7 @@ export function renderMarkdown(md: string): string {
     const multiImg = line.match(/^!\[.*\]\(.*\)\s+!\[.*\]\(.*\)$/);
     if (multiImg) {
       if (inList) { htmlParts.push("</ul>"); inList = false; }
-      htmlParts.push(`<div class="flex justify-center gap-6 my-4">${inlineFormat(line)}</div>`);
+      htmlParts.push(`<div class="flex justify-center items-center gap-8 my-6">${inlineFormat(line)}</div>`);
       continue;
     }
 
@@ -200,7 +200,7 @@ export function renderMarkdown(md: string): string {
 /** Inline formatting: bold, italic, code, images, links */
 function inlineFormat(text: string): string {
   return text
-    .replace(/!\[([^\]]*)\]\(([^)]+)\)/g, '<img src="$2" alt="$1" class="inline-block w-10 h-10 object-contain mx-1" loading="lazy" />')
+    .replace(/!\[([^\]]*)\]\(([^)]+)\)/g, '<img src="$2" alt="$1" class="inline-block w-16 h-16 object-contain mx-2" loading="lazy" />')
     .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" class="text-accent hover:underline">$1</a>')
     .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
     .replace(/\*(.+?)\*/g, "<em>$1</em>")
