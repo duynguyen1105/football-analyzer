@@ -125,7 +125,7 @@ export function renderMarkdown(md: string): string {
   let inList = false;
 
   for (let i = 0; i < lines.length; i++) {
-    let line = lines[i];
+    const line = lines[i];
 
     // Blank line: close list if open, add paragraph break
     if (line.trim() === "") {
