@@ -10,9 +10,9 @@ function getVietnamDate(offsetDays = 0): string {
   return vnTime.toISOString().slice(0, 10);
 }
 
-export function useMatches() {
-  const dateFrom = getVietnamDate();
-  const dateTo = getVietnamDate(7);
+export function useMatches(customDate?: string) {
+  const dateFrom = customDate || getVietnamDate();
+  const dateTo = customDate || getVietnamDate(7);
 
   return useQuery<Match[]>({
     queryKey: ["matches", dateFrom, dateTo],

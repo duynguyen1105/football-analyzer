@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useCallback, useEffect } from "react";
+import { useMemo, useCallback, useEffect, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { Navbar } from "@/components/Navbar";
 import { AdSlot } from "@/components/AdSlot";
@@ -14,6 +14,7 @@ import { Newsletter } from "@/components/Newsletter";
 import { SponsoredSlot } from "@/components/SponsoredSlot";
 import { Footer } from "@/components/Footer";
 import { MatchDayBanner } from "@/components/MatchDayBanner";
+import { DatePicker } from "@/components/DatePicker";
 import Link from "next/link";
 
 /* ───────────────────────── Helpers ───────────────────────── */
@@ -58,6 +59,7 @@ function pickFeatured(matches: Match[]): Match[] {
 
 export default function Home() {
   const { leagueFilter, setLeagueFilter, favoriteTeams, showFavoritesOnly, setShowFavoritesOnly } = useAppStore();
+  const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const { data: matches, isLoading } = useMatches();
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -82,6 +84,9 @@ export default function Home() {
 
   const filtered = useMemo(() => {
     let list = matches || [];
+    if (selectedDate) {
+      list = list.filter((m: Match) => m.date === selectedDate);
+    }
     if (leagueFilter) {
       list = list.filter((m: Match) => m.competition.code === leagueFilter);
     }
@@ -92,7 +97,7 @@ export default function Home() {
       );
     }
     return list;
-  }, [matches, leagueFilter, showFavoritesOnly, hasFavorites, favoriteTeams]);
+  }, [matches, selectedDate, leagueFilter, showFavoritesOnly, hasFavorites, favoriteTeams]);
 
   const featured = useMemo(() => pickFeatured(matches || []), [matches]);
 
@@ -128,6 +133,11 @@ export default function Home() {
               </span>
             </div>
           )}
+        </div>
+
+        {/* Date picker */}
+        <div className="mb-3">
+          <DatePicker selected={selectedDate} onSelect={setSelectedDate} />
         </div>
 
         {/* League filter — wraps on mobile instead of scrolling */}
