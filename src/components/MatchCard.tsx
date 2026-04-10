@@ -34,7 +34,7 @@ export function MatchCard({ match }: { match: Match }) {
   return (
     <Link
       href={`/match/${match.id}`}
-      className="block bg-bg-card rounded-lg border border-border hover:border-accent/30 transition-colors"
+      className="block bg-bg-card rounded-lg border border-border hover:border-accent/30 card-hover"
       onMouseEnter={prefetch}
       onTouchStart={prefetch}
     >
@@ -53,19 +53,19 @@ export function MatchCard({ match }: { match: Match }) {
         <div className="flex items-center gap-3 px-3 py-2 border-b border-border/20">
           <img src={match.homeTeam.crest} alt="" className="w-7 h-7 object-contain shrink-0" loading="lazy" />
           <span className="text-sm font-medium flex-1 truncate">{match.homeTeam.shortName}</span>
-          {fin && match.score ? <span className="text-sm font-bold w-6 text-right">{match.score.home}</span> : null}
+          {(fin || live) && match.score ? <span className={`text-sm font-bold w-6 text-right ${live ? "text-accent" : ""}`}>{match.score.home}</span> : null}
         </div>
         <div className="flex items-center gap-3 px-3 py-2 border-b border-border/20">
           <img src={match.awayTeam.crest} alt="" className="w-7 h-7 object-contain shrink-0" loading="lazy" />
           <span className="text-sm font-medium flex-1 truncate">{match.awayTeam.shortName}</span>
-          {fin && match.score ? <span className="text-sm font-bold w-6 text-right">{match.score.away}</span> : null}
+          {(fin || live) && match.score ? <span className={`text-sm font-bold w-6 text-right ${live ? "text-accent" : ""}`}>{match.score.away}</span> : null}
         </div>
         <div className="flex items-center justify-between px-3 py-2">
           <span className="text-xs text-text-muted">
             {fin ? "KT" : match.time} · {match.date}
             {relTime && <span className="text-accent ml-1.5">· {relTime}</span>}
           </span>
-          <span className="text-[10px] font-medium text-accent bg-accent/10 px-2 py-0.5 rounded-full">{fin ? "Xem lại" : "Phân tích"}</span>
+          <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full ${live ? "text-red-400 bg-red-400/10" : "text-accent bg-accent/10"}`}>{live ? "Trực tiếp" : fin ? "Xem lại" : "Phân tích"}</span>
         </div>
       </div>
 
@@ -77,8 +77,8 @@ export function MatchCard({ match }: { match: Match }) {
             <p className="font-semibold text-sm">{match.homeTeam.shortName}</p>
           </div>
           <div className="text-center">
-            {fin && match.score ? (
-              <p className="text-xl font-bold">{match.score.home} - {match.score.away}</p>
+            {(fin || live) && match.score ? (
+              <p className={`text-xl font-bold ${live ? "text-accent" : ""}`}>{match.score.home} - {match.score.away}</p>
             ) : (
               <p className="text-xl font-bold">{match.time}</p>
             )}

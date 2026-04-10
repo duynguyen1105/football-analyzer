@@ -16,6 +16,21 @@ import { Footer } from "@/components/Footer";
 import { MatchDayBanner } from "@/components/MatchDayBanner";
 import Link from "next/link";
 
+/* ───────────────────────── Helpers ───────────────────────── */
+
+function formatDateLabel(dateStr: string): string {
+  const now = new Date();
+  const vnNow = new Date(now.getTime() + 7 * 60 * 60 * 1000);
+  const today = vnNow.toISOString().slice(0, 10);
+  const tomorrow = new Date(vnNow.getTime() + 86400000).toISOString().slice(0, 10);
+
+  if (dateStr === today) return "Hôm nay";
+  if (dateStr === tomorrow) return "Ngày mai";
+
+  const d = new Date(dateStr + "T00:00:00");
+  return d.toLocaleDateString("vi-VN", { weekday: "long", day: "numeric", month: "numeric" });
+}
+
 /* ───────────────────────── Home Page ───────────────────────── */
 
 /** Pick the top featured matches based on both teams' league positions */
@@ -87,9 +102,25 @@ export default function Home() {
       <Navbar />
 
       <div id="main-content" className="max-w-7xl mx-auto px-3 py-4 xl:px-6">
-        {/* Title */}
-        <h1 className="text-lg font-bold mb-0.5">Lịch thi đấu &amp; Nhận định</h1>
-        <p className="text-text-secondary text-xs mb-4">Phân tích trước trận cho các giải đấu hàng đầu</p>
+        {/* Title + Quick Stats */}
+        <div className="flex items-end justify-between mb-4">
+          <div>
+            <h1 className="text-lg font-bold mb-0.5">Lịch thi đấu &amp; Nhận định</h1>
+            <p className="text-text-secondary text-xs">Phân tích trước trận cho các giải đấu hàng đầu</p>
+          </div>
+          {!isLoading && matches && matches.length > 0 && (
+            <div className="hidden sm:flex items-center gap-3 text-[10px] text-text-muted">
+              <span className="flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-accent" />
+                {matches.length} trận
+              </span>
+              <span className="flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-accent-2" />
+                {new Set(matches.map((m: Match) => m.competition.code)).size} giải
+              </span>
+            </div>
+          )}
+        </div>
 
         {/* League filter — wraps on mobile instead of scrolling */}
         <div className="flex flex-wrap gap-1.5 mb-4">
@@ -118,23 +149,29 @@ export default function Home() {
               Đội của tôi
             </button>
           )}
-          {LEAGUES.map((l) => (
-            <button
-              key={l.code}
-              onClick={() => setFilter(l.code)}
-              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-full text-[11px] font-medium transition-colors ${
-                leagueFilter === l.code
-                  ? "bg-accent/15 text-accent border border-accent/30"
-                  : "text-text-secondary border border-border hover:bg-bg-card-hover"
-              }`}
-            >
-              <span className="w-5 h-5 rounded-full bg-white/90 flex items-center justify-center shrink-0">
-                <img src={l.logo} alt="" className="w-3.5 h-3.5 object-contain" />
-              </span>
-              <span className="hidden sm:inline">{l.name}</span>
-              <span className="sm:hidden">{l.code === "BL1" ? "BL" : l.code}</span>
-            </button>
-          ))}
+          {LEAGUES.map((l) => {
+            const count = (matches || []).filter((m: Match) => m.competition.code === l.code).length;
+            return (
+              <button
+                key={l.code}
+                onClick={() => setFilter(l.code)}
+                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-full text-[11px] font-medium transition-colors ${
+                  leagueFilter === l.code
+                    ? "bg-accent/15 text-accent border border-accent/30"
+                    : "text-text-secondary border border-border hover:bg-bg-card-hover"
+                }`}
+              >
+                <span className="w-5 h-5 rounded-full bg-white/90 flex items-center justify-center shrink-0">
+                  <img src={l.logo} alt="" className="w-3.5 h-3.5 object-contain" />
+                </span>
+                <span className="hidden sm:inline">{l.name}</span>
+                <span className="sm:hidden">{l.code === "BL1" ? "BL" : l.code}</span>
+                {count > 0 && (
+                  <span className="w-4 h-4 rounded-full bg-border/50 text-[9px] flex items-center justify-center">{count}</span>
+                )}
+              </button>
+            );
+          })}
         </div>
 
         {/* Match day countdown banner */}
@@ -161,15 +198,21 @@ export default function Home() {
 
         {/* Match list */}
         {isLoading && (
-          <div className="space-y-3">
-            {[...Array(4)].map((_, i) => <MatchSkeleton key={i} />)}
+          <div className="space-y-3 md:grid md:grid-cols-2 xl:grid-cols-3 md:gap-3 md:space-y-0">
+            {[...Array(6)].map((_, i) => <MatchSkeleton key={i} />)}
           </div>
         )}
 
         {!isLoading && filtered.length === 0 && (
-          <div className="text-center py-12 text-text-muted">
-            <p>Không có trận đấu nào.</p>
-            <p className="text-xs mt-1">Xem bảng xếp hạng bên dưới.</p>
+          <div className="text-center py-16 animate-fade-in">
+            <div className="text-5xl mb-4 opacity-30">&#9917;</div>
+            <p className="text-text-muted font-medium">Không có trận đấu nào</p>
+            <p className="text-xs text-text-muted mt-1 mb-4">Thử chọn giải đấu khác hoặc xem bảng xếp hạng bên dưới</p>
+            <div className="flex gap-2 justify-center">
+              <Link href="/ket-qua" className="text-xs text-accent hover:underline">Kết quả hôm qua</Link>
+              <span className="text-text-muted">·</span>
+              <Link href="/bai-viet" className="text-xs text-accent hover:underline">Đọc bài viết</Link>
+            </div>
           </div>
         )}
 
@@ -177,7 +220,7 @@ export default function Home() {
           <div className="space-y-5">
             {Object.entries(grouped).map(([date, dateMatches]) => (
               <section key={date}>
-                <h2 className="text-xs font-semibold text-text-secondary uppercase tracking-wide mb-2">{date}</h2>
+                <h2 className="text-xs font-semibold text-text-secondary uppercase tracking-wide mb-2">{formatDateLabel(date)}</h2>
                 <div className="space-y-2 md:grid md:grid-cols-2 xl:grid-cols-3 md:gap-3 md:space-y-0">
                   {dateMatches.map((m: Match) => (
                     <MatchCard key={m.id} match={m} />
