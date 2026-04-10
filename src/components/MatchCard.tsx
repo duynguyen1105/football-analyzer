@@ -3,11 +3,23 @@
 import { useCallback, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { LEAGUES } from "@/lib/constants";
-import { Match } from "@/lib/types";
+import { Match, Standing } from "@/lib/types";
 import { FavoriteButton } from "@/components/FavoriteButton";
 import { OptImage } from "@/components/OptImage";
 import { getRelativeTime } from "@/lib/relative-time";
 import Link from "next/link";
+
+/** Lightweight Poisson-free prediction from standings (just win rate comparison) */
+function quickPredict(homeStanding: Standing | null, awayStanding: Standing | null) {
+  if (!homeStanding || !awayStanding || homeStanding.playedGames === 0 || awayStanding.playedGames === 0) return null;
+  const homeStrength = (homeStanding.won * 3 + homeStanding.draw) / (homeStanding.playedGames * 3);
+  const awayStrength = (awayStanding.won * 3 + awayStanding.draw) / (awayStanding.playedGames * 3);
+  const total = homeStrength + awayStrength || 1;
+  const homeWin = Math.round((homeStrength / total) * 80 + 10); // 10-90 range with home bias
+  const awayWin = Math.round((awayStrength / total) * 70 + 5);
+  const draw = Math.max(5, 100 - homeWin - awayWin);
+  return { homeWin, draw, awayWin };
+}
 
 export function MatchCard({ match }: { match: Match }) {
   const league = LEAGUES.find((l) => l.code === match.competition.code);
@@ -17,6 +29,13 @@ export function MatchCard({ match }: { match: Match }) {
   const isHot = !fin && (match.competition.code === "CL" || match.competition.code === "WC");
   const queryClient = useQueryClient();
   const [h2hHint, setH2hHint] = useState<string | null>(null);
+
+  // Quick prediction from cached standings (no API call)
+  const standings = queryClient.getQueryData<Standing[]>(["standings", match.competition.code]);
+  const prediction = !fin && !live ? quickPredict(
+    standings?.find((s) => s.team.id === match.homeTeam.id) ?? null,
+    standings?.find((s) => s.team.id === match.awayTeam.id) ?? null,
+  ) : null;
 
   // Prefetch match data on hover so detail page loads instantly
   const prefetch = useCallback(() => {
@@ -60,6 +79,21 @@ export function MatchCard({ match }: { match: Match }) {
           <span className="text-sm font-medium flex-1 truncate">{match.awayTeam.shortName}</span>
           {(fin || live) && match.score ? <span className={`text-sm font-bold w-6 text-right ${live ? "text-accent" : ""}`}>{match.score.away}</span> : null}
         </div>
+        {/* Mini prediction bar */}
+        {prediction && (
+          <div className="px-3 py-1.5 border-b border-border/20">
+            <div className="flex h-1.5 rounded-full overflow-hidden bg-border/30">
+              <div className="bg-accent transition-all" style={{ width: `${prediction.homeWin}%` }} />
+              <div className="bg-accent-yellow transition-all" style={{ width: `${prediction.draw}%` }} />
+              <div className="bg-accent-2 transition-all" style={{ width: `${prediction.awayWin}%` }} />
+            </div>
+            <div className="flex justify-between text-[9px] text-text-muted mt-0.5">
+              <span>{prediction.homeWin}%</span>
+              <span>{prediction.draw}%</span>
+              <span>{prediction.awayWin}%</span>
+            </div>
+          </div>
+        )}
         <div className="flex items-center justify-between px-3 py-2">
           <span className="text-xs text-text-muted">
             {fin ? "KT" : match.time} · {match.date}
@@ -83,9 +117,24 @@ export function MatchCard({ match }: { match: Match }) {
               <p className="text-xl font-bold">{match.time}</p>
             )}
             <p className="text-xs text-text-muted mt-0.5">{match.date}</p>
-            <span className="inline-block mt-2 text-xs font-medium text-accent bg-accent/10 px-3 py-1 rounded-full">
-              {fin ? "Xem lại" : "Phân tích"}
-            </span>
+            {prediction ? (
+              <div className="mt-2">
+                <div className="flex h-1.5 rounded-full overflow-hidden bg-border/30 mx-2">
+                  <div className="bg-accent" style={{ width: `${prediction.homeWin}%` }} />
+                  <div className="bg-accent-yellow" style={{ width: `${prediction.draw}%` }} />
+                  <div className="bg-accent-2" style={{ width: `${prediction.awayWin}%` }} />
+                </div>
+                <div className="flex justify-between text-[9px] text-text-muted mt-0.5 px-2">
+                  <span>{prediction.homeWin}%</span>
+                  <span>{prediction.draw}%</span>
+                  <span>{prediction.awayWin}%</span>
+                </div>
+              </div>
+            ) : (
+              <span className="inline-block mt-2 text-xs font-medium text-accent bg-accent/10 px-3 py-1 rounded-full">
+                {live ? "Trực tiếp" : fin ? "Xem lại" : "Phân tích"}
+              </span>
+            )}
             {h2hHint && <p className="text-[10px] text-text-muted mt-1">{h2hHint}</p>}
           </div>
           <div className="text-center">

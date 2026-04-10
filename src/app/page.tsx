@@ -18,6 +18,13 @@ import Link from "next/link";
 
 /* ───────────────────────── Helpers ───────────────────────── */
 
+function getGreeting(): string {
+  const hour = new Date().getHours();
+  if (hour < 12) return "Chào buổi sáng";
+  if (hour < 18) return "Chào buổi chiều";
+  return "Chào buổi tối";
+}
+
 function formatDateLabel(dateStr: string): string {
   const now = new Date();
   const vnNow = new Date(now.getTime() + 7 * 60 * 60 * 1000);
@@ -105,6 +112,7 @@ export default function Home() {
         {/* Title + Quick Stats */}
         <div className="flex items-end justify-between mb-4">
           <div>
+            <p className="text-[10px] text-text-muted mb-0.5">{getGreeting()} &#128075;</p>
             <h1 className="text-lg font-bold mb-0.5">Lịch thi đấu &amp; Nhận định</h1>
             <p className="text-text-secondary text-xs">Phân tích trước trận cho các giải đấu hàng đầu</p>
           </div>
@@ -173,6 +181,17 @@ export default function Home() {
             );
           })}
         </div>
+
+        {/* Live matches alert */}
+        {!isLoading && matches && matches.some((m: Match) => m.status === "IN_PLAY" || m.status === "LIVE") && (
+          <Link href="/truc-tiep" className="flex items-center gap-2 px-3 py-2.5 mb-3 rounded-xl bg-red-500/10 border border-red-500/20 hover:bg-red-500/15 transition-colors animate-fade-in">
+            <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+            <span className="text-xs font-medium text-red-400">
+              {matches.filter((m: Match) => m.status === "IN_PLAY" || m.status === "LIVE").length} trận đang diễn ra
+            </span>
+            <span className="text-[10px] text-text-muted ml-auto">Xem trực tiếp &rarr;</span>
+          </Link>
+        )}
 
         {/* Match day countdown banner */}
         {!isLoading && matches && <MatchDayBanner matches={matches} />}
