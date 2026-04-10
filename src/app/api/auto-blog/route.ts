@@ -5,6 +5,9 @@ import { setCached, getCached } from "@/lib/cache";
 import { LEAGUES } from "@/lib/constants";
 import { Match, Standing } from "@/lib/types";
 
+// Allow up to 60s for this endpoint (fetches multiple leagues)
+export const maxDuration = 60;
+
 // ---------------------------------------------------------------------------
 // Date helpers (GMT+7)
 // ---------------------------------------------------------------------------
@@ -291,8 +294,9 @@ async function generateBlogPosts() {
     });
   } catch (error) {
     console.error("Auto-blog generation error:", error);
+    const message = error instanceof Error ? error.message : String(error);
     return Response.json(
-      { error: "Không thể tạo bài viết tự động" },
+      { error: "Không thể tạo bài viết tự động", detail: message },
       { status: 500 }
     );
   }
