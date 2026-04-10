@@ -140,11 +140,12 @@ export function renderMarkdown(md: string): string {
     const blockImg = line.match(/^!\[([^\]]*)\]\(([^)]+)\)$/);
     if (blockImg) {
       if (inList) { htmlParts.push("</ul>"); inList = false; }
-      const isCrest = blockImg[2].includes("media.api-sports.io");
+      const url = blockImg[2];
+      const isCrest = url.includes("media.api-sports.io") && !url.includes("/api/blog-image");
       if (isCrest) {
-        htmlParts.push(`<div class="flex justify-center gap-4 my-6"><img src="${blockImg[2]}" alt="${blockImg[1]}" class="w-24 h-24 sm:w-28 sm:h-28 object-contain" loading="lazy" /></div>`);
+        htmlParts.push(`<div class="flex justify-center gap-4 my-6"><img src="${url}" alt="${blockImg[1]}" class="w-24 h-24 sm:w-28 sm:h-28 object-contain" loading="lazy" /></div>`);
       } else {
-        htmlParts.push(`<div class="my-6 rounded-xl overflow-hidden border border-border"><img src="${blockImg[2]}" alt="${blockImg[1]}" class="w-full h-auto" loading="lazy" /></div>`);
+        htmlParts.push(`<div class="my-6 rounded-xl overflow-hidden border border-border"><img src="${url}" alt="${blockImg[1]}" class="w-full h-auto" loading="lazy" /></div>`);
       }
       continue;
     }
