@@ -54,11 +54,24 @@ const KNOCKOUT_ROUND_PATTERNS = [
 export function isKnockoutRound(round?: string): boolean {
   if (!round) return false;
   const lower = round.toLowerCase();
-  // Group stage rounds like "Group A - 1" should NOT match
   if (lower.startsWith("group")) return false;
-  // Regular season rounds like "Regular Season - 10" should NOT match
   if (lower.includes("regular season")) return false;
   return KNOCKOUT_ROUND_PATTERNS.some((p) => lower.includes(p));
+}
+
+/** Detect if this is a 2nd leg of a two-legged tie */
+export function isSecondLeg(round?: string): boolean {
+  if (!round) return false;
+  const lower = round.toLowerCase();
+  return lower.includes("2nd leg") || lower.includes("second leg") || lower.includes("leg 2");
+}
+
+/** Get the corresponding round name for the 1st leg */
+export function getFirstLegRound(round: string): string {
+  return round
+    .replace(/2nd Leg/i, "1st Leg")
+    .replace(/Second Leg/i, "First Leg")
+    .replace(/Leg 2/i, "Leg 1");
 }
 
 export function isTournamentLeague(code: string): boolean {

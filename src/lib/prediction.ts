@@ -184,30 +184,63 @@ export function computePrediction(
 /**
  * Compute prediction for knockout/playoff matches using recent form instead of standings.
  * H2H is weighted higher (20%) since direct elimination amplifies historical patterns.
+ *
+ * For 2nd legs, adjusts predictions based on the first leg result:
+ * - Team trailing on aggregate needs to attack more → higher goal expectancy
+ * - Team leading can sit back → lower risk, more draw probability
  */
 export function computeKnockoutPrediction(
   homeTeamId: number,
   awayTeamId: number,
   homeRecent: Match[],
   awayRecent: Match[],
-  h2h?: { homeWins: number; draws: number; awayWins: number } | null
+  h2h?: { homeWins: number; draws: number; awayWins: number } | null,
+  firstLeg?: { homeTeamId: number; homeGoals: number; awayGoals: number } | null
 ): PredictionResult {
   const homeRates = ratesFromRecentMatches(homeTeamId, homeRecent);
   const awayRates = ratesFromRecentMatches(awayTeamId, awayRecent);
 
-  // Fall back to balanced defaults if no recent form
   if (!homeRates || !awayRates) {
     return { homeWin: 40, draw: 25, awayWin: 35, btts: 50, over25: 50 };
   }
 
-  const poisson = poissonFromRates(
-    homeRates.attack,
-    homeRates.defense,
-    awayRates.attack,
-    awayRates.defense
-  );
+  let homeAttack = homeRates.attack;
+  let homeDefense = homeRates.defense;
+  let awayAttack = awayRates.attack;
+  let awayDefense = awayRates.defense;
 
-  // Blend H2H at 20% for knockouts (higher than league's 10%)
+  // 2nd leg adjustment: team trailing on aggregate attacks more aggressively
+  if (firstLeg) {
+    // Figure out which team is "home" in the 2nd leg relative to the 1st leg
+    const firstLegHomeIsNowAway = firstLeg.homeTeamId === awayTeamId;
+    const homeAggGoals = firstLegHomeIsNowAway ? firstLeg.awayGoals : firstLeg.homeGoals;
+    const awayAggGoals = firstLegHomeIsNowAway ? firstLeg.homeGoals : firstLeg.awayGoals;
+    const aggDiff = homeAggGoals - awayAggGoals; // positive = home leads on aggregate
+
+    if (aggDiff < 0) {
+      // Home team trails → must attack, boost attack rate, slightly weaker defense
+      homeAttack *= 1.15;
+      homeDefense *= 1.1;
+    } else if (aggDiff > 0) {
+      // Home team leads → can be cautious, slightly lower attack but tighter defense
+      homeAttack *= 0.95;
+      homeDefense *= 0.9;
+    } else {
+      // Level → both teams push, slightly more open match
+      homeAttack *= 1.05;
+      awayAttack *= 1.05;
+    }
+
+    if (awayAggGoals < homeAggGoals) {
+      // Away team trails → must attack away from home (harder)
+      awayAttack *= 1.1;
+      awayDefense *= 1.1;
+    }
+  }
+
+  const poisson = poissonFromRates(homeAttack, homeDefense, awayAttack, awayDefense);
+
+  // Blend H2H at 20% for knockouts
   const blended = blendH2H(poisson.homeWinPct, poisson.drawPct, poisson.awayWinPct, h2h, 0.2);
 
   return roundAndNormalize(blended.homeWinPct, blended.drawPct, blended.awayWinPct, poisson.bttsPct, poisson.over25Pct);

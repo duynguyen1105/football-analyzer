@@ -462,6 +462,42 @@ export async function getTournamentFixtures(competitionCode: string): Promise<Ma
   }
 }
 
+/**
+ * Find the first leg match of a two-legged tie.
+ * Looks for a match in the same tournament where the teams are swapped
+ * (home becomes away and vice versa) in the corresponding 1st leg round.
+ */
+export async function getFirstLegMatch(
+  competitionCode: string,
+  homeTeamId: number,
+  awayTeamId: number,
+  round: string
+): Promise<Match | null> {
+  const { getFirstLegRound } = await import("./constants");
+  const firstLegRound = getFirstLegRound(round);
+  const cacheKey = `first-leg:${competitionCode}:${homeTeamId}:${awayTeamId}`;
+  const cached = await getCached<Match>(cacheKey);
+  if (cached) return cached;
+
+  try {
+    const fixtures = await getTournamentFixtures(competitionCode);
+    // In 2-legged ties, the team that's home in the 2nd leg was away in the 1st leg
+    const firstLeg = fixtures.find(
+      (m) =>
+        m.round === firstLegRound &&
+        m.status === "FINISHED" &&
+        ((m.homeTeam.id === awayTeamId && m.awayTeam.id === homeTeamId) ||
+         (m.homeTeam.id === homeTeamId && m.awayTeam.id === awayTeamId))
+    );
+    if (firstLeg) {
+      await setCache(cacheKey, firstLeg, CACHE_24_HR);
+    }
+    return firstLeg || null;
+  } catch {
+    return null;
+  }
+}
+
 export async function getTeamInfo(teamId: number): Promise<TeamInfo | null> {
   const cacheKey = `team:${teamId}`;
   const cached = await getCached<TeamInfo>(cacheKey);

@@ -13,8 +13,9 @@ import {
   getMatchEvents,
   getMatchStatistics,
   getTeamTopPerformers,
+  getFirstLegMatch,
 } from "@/lib/football-data";
-import { getLeagueId, isKnockoutRound, isTournamentLeague } from "@/lib/constants";
+import { getLeagueId, isKnockoutRound, isTournamentLeague, isSecondLeg } from "@/lib/constants";
 import { computePrediction, computeKnockoutPrediction } from "@/lib/prediction";
 import { computeImportance, computeKnockoutImportance } from "@/lib/importance";
 import { storePrediction } from "@/lib/prediction-tracker";
@@ -39,17 +40,28 @@ export async function GET(request: Request) {
 
     if (knockout) {
       // Knockout: use recent form instead of standings for prediction
-      const [h2h, homeRecent, awayRecent] = await Promise.all([
+      const is2ndLeg = isSecondLeg(match.round);
+      const [h2h, homeRecent, awayRecent, firstLeg] = await Promise.all([
         getH2H(matchId),
         getTeamRecentMatches(match.homeTeam.id, 10),
         getTeamRecentMatches(match.awayTeam.id, 10),
+        is2ndLeg && match.round
+          ? getFirstLegMatch(match.competition.code, match.homeTeam.id, match.awayTeam.id, match.round)
+          : Promise.resolve(null),
       ]);
+
+      // Build first leg context for prediction adjustment
+      const firstLegData = firstLeg?.score
+        ? { homeTeamId: firstLeg.homeTeam.id, homeGoals: firstLeg.score.home ?? 0, awayGoals: firstLeg.score.away ?? 0 }
+        : null;
+
       const prediction = computeKnockoutPrediction(
         match.homeTeam.id,
         match.awayTeam.id,
         homeRecent,
         awayRecent,
-        h2h
+        h2h,
+        firstLegData
       );
       const importance = computeKnockoutImportance(match.round);
 
@@ -72,6 +84,12 @@ export async function GET(request: Request) {
         importance,
         h2h,
         isKnockout: true,
+        firstLeg: firstLeg ? {
+          homeTeam: firstLeg.homeTeam.shortName,
+          awayTeam: firstLeg.awayTeam.shortName,
+          score: firstLeg.score,
+          date: firstLeg.date,
+        } : null,
       }, {
         headers: { "Cache-Control": "s-maxage=300, stale-while-revalidate=600" },
       });

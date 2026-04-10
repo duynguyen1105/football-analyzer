@@ -448,6 +448,33 @@ export default function MatchPage({ params }: { params: Promise<{ id: string }> 
               )}
             </Link>
           </div>
+          {/* First leg result (for 2nd legs of two-legged ties) */}
+          {core.firstLeg && core.firstLeg.score && (
+            <div className="mt-3 p-3 rounded-xl bg-accent-2/10 border border-accent-2/20 text-center">
+              <p className="text-[10px] text-text-muted mb-1">Lượt đi</p>
+              <p className="text-sm font-bold">
+                {core.firstLeg.homeTeam} <span className="text-accent-2">{core.firstLeg.score.home}</span>
+                {" - "}
+                <span className="text-accent-2">{core.firstLeg.score.away}</span> {core.firstLeg.awayTeam}
+              </p>
+              {(() => {
+                const h = core.firstLeg.score.home ?? 0;
+                const a = core.firstLeg.score.away ?? 0;
+                // In 2nd leg, home team was away in 1st leg and vice versa
+                const aggHome = a; // 2nd leg home team's goals from 1st leg (they were away)
+                const aggAway = h; // 2nd leg away team's goals from 1st leg (they were home)
+                return (
+                  <p className="text-[10px] text-text-muted mt-1">
+                    Tổng: {match.homeTeam.tla} {aggHome} - {aggAway} {match.awayTeam.tla}
+                    {aggHome > aggAway && ` · ${match.homeTeam.shortName} đang dẫn`}
+                    {aggAway > aggHome && ` · ${match.awayTeam.shortName} đang dẫn`}
+                    {aggHome === aggAway && " · Hòa trên tổng"}
+                  </p>
+                );
+              })()}
+            </div>
+          )}
+
           {/* Form loads independently */}
           <FormSection matchId={id} />
 

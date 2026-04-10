@@ -45,6 +45,18 @@ VENUE: ${match.venue}`;
 
   if (isKnockout) {
     block += `\nFORMAT: Knockout stage — direct elimination. DO NOT reference group stage standings or league positions. Focus on recent form, H2H, and elimination pressure.`;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const firstLeg = (data as any).firstLeg;
+    if (firstLeg?.score) {
+      block += `\nFIRST LEG RESULT: ${firstLeg.homeTeam} ${firstLeg.score.home} - ${firstLeg.score.away} ${firstLeg.awayTeam}`;
+      const aggHome = firstLeg.score.away; // 2nd leg home was away in 1st
+      const aggAway = firstLeg.score.home; // 2nd leg away was home in 1st
+      block += `\nAGGREGATE before 2nd leg: ${match.homeTeam.name} ${aggHome} - ${aggAway} ${match.awayTeam.name}`;
+      if (aggHome > aggAway) block += ` (${match.homeTeam.name} leads)`;
+      else if (aggAway > aggHome) block += ` (${match.awayTeam.name} leads)`;
+      else block += ` (level on aggregate)`;
+      block += `\nIMPORTANT: Analyze how the first leg result affects each team's approach. The trailing team MUST attack. The leading team can play conservatively or on the counter.`;
+    }
   } else {
     const homeStanding = standings.find((s) => s.team.id === match.homeTeam.id);
     const awayStanding = standings.find((s) => s.team.id === match.awayTeam.id);
