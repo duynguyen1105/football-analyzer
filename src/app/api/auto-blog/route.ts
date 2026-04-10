@@ -193,111 +193,196 @@ export async function POST(request: NextRequest) {
   return generateBlogPosts();
 }
 
+const LEAGUE_PRIORITY: Record<string, number> = { CL: 5, WC: 5, PL: 4, PD: 3, SA: 3, BL1: 2, FL1: 2, VL: 1 };
+const TTL_30_DAYS = 30 * 24 * 60 * 60;
+const baseUrl = "https://nhandinhbongdavn.com";
+
 async function generateBlogPosts() {
+  const tomorrow = getVietnamDate(1);
+  const dayAfter = getVietnamDate(2);
+  const generatedSlugs: string[] = [];
+  const errors: string[] = [];
 
+  let matches: Match[];
   try {
-    const tomorrow = getVietnamDate(1);
-    const dayAfter = getVietnamDate(2);
-    const matches = await getMatches(tomorrow, dayAfter);
+    matches = await getMatches(tomorrow, dayAfter);
+  } catch (e) {
+    return Response.json({ error: "Failed to fetch matches", detail: String(e) }, { status: 500 });
+  }
 
-    // Filter to scheduled matches only
-    const scheduled = matches.filter(
-      (m) => m.status === "SCHEDULED" || m.status === "TIMED" || m.status === "NS"
-    );
+  const scheduled = matches.filter((m) => m.status === "SCHEDULED" || m.status === "TIMED");
+  if (scheduled.length === 0) {
+    return Response.json({ success: true, generated: [], message: "No scheduled matches found" });
+  }
 
-    // Group by league
-    const byLeague = new Map<string, Match[]>();
-    for (const m of scheduled) {
-      const code = m.competition.code;
-      if (!byLeague.has(code)) byLeague.set(code, []);
-      byLeague.get(code)!.push(m);
-    }
+  // Group by league
+  const byLeague = new Map<string, Match[]>();
+  for (const m of scheduled) {
+    const code = m.competition.code;
+    if (!byLeague.has(code)) byLeague.set(code, []);
+    byLeague.get(code)!.push(m);
+  }
 
-    // Load standings for relevant leagues
-    const standingsMap = new Map<string, Standing[]>();
-    await Promise.all(
-      [...byLeague.keys()].map(async (code) => {
-        standingsMap.set(code, await getStandings(code));
-      })
-    );
+  // --- POST TYPE 1: League matchday previews (top 2 leagues by priority) ---
+  const sortedLeagues = [...byLeague.entries()]
+    .filter(([, ms]) => ms.length >= 2)
+    .sort(([a], [b]) => (LEAGUE_PRIORITY[b] || 0) - (LEAGUE_PRIORITY[a] || 0))
+    .slice(0, 2);
 
-    const generatedSlugs: string[] = [];
-    const TTL_30_DAYS = 30 * 24 * 60 * 60;
-
-    for (const [code, leagueMatches] of byLeague) {
-      if (leagueMatches.length < 3) continue;
-
+  for (const [code, leagueMatches] of sortedLeagues) {
+    try {
       const league = LEAGUES.find((l) => l.code === code);
       if (!league) continue;
 
-      const standings = standingsMap.get(code) ?? [];
+      const standings = await getStandings(code);
       const round = extractRound(leagueMatches);
       const dateLabel = formatVietnameseDate(tomorrow);
       const roundLabel = round ? ` vòng ${round}` : "";
 
-      const title = `Nhận định ${league.name}${roundLabel} — ${dateLabel}`;
-      const description = `Phân tích và dự đoán ${leagueMatches.length} trận đấu ${league.name}${roundLabel}. Tỷ lệ kèo, phong độ, và thống kê chi tiết.`;
-
-      const tags = [
-        slugify(league.name),
-        "nhan-dinh",
-        round ? `vong-${round}` : "",
-      ].filter(Boolean);
-
-      const slug = slugify(`nhan-dinh-${league.name}${roundLabel}-${tomorrow}`);
-
-      // Generate league header image URL
-      const baseUrl = "https://nhandinhbongdavn.com";
-      const leagueImageParams = new URLSearchParams({
+      const leagueImgUrl = `${baseUrl}/api/blog-image?${new URLSearchParams({
         type: "league", league: league.name, leagueLogo: league.logo,
         matchCount: String(leagueMatches.length), round: round || "",
-      });
-      const leagueImageUrl = `${baseUrl}/api/blog-image?${leagueImageParams}`;
+      })}`;
 
-      // Generate match preview images in the article body
-      const matchImagesAndSections = leagueMatches.map((match, i) => {
+      const sections = leagueMatches.map((match, i) => {
         const homeSt = standings.find((s) => s.team.id === match.homeTeam.id) ?? null;
         const awaySt = standings.find((s) => s.team.id === match.awayTeam.id) ?? null;
         const prediction = computePrediction(homeSt, awaySt);
-        const imgParams = new URLSearchParams({
+        const matchImgUrl = `${baseUrl}/api/blog-image?${new URLSearchParams({
           type: "match", home: match.homeTeam.shortName, away: match.awayTeam.shortName,
           homeCrest: match.homeTeam.crest, awayCrest: match.awayTeam.crest,
           league: league.name, time: match.time, date: match.date,
           homeWin: String(prediction.homeWin), draw: String(prediction.draw), awayWin: String(prediction.awayWin),
-          venue: match.venue || "",
-        });
-        const matchImgUrl = `${baseUrl}/api/blog-image?${imgParams}`;
-        const paragraph = buildMatchParagraph(match, homeSt, awaySt, prediction, i);
-        return `![${match.homeTeam.shortName} vs ${match.awayTeam.shortName}](${matchImgUrl})\n\n${paragraph}`;
+        })}`;
+        return `![${match.homeTeam.shortName} vs ${match.awayTeam.shortName}](${matchImgUrl})\n\n${buildMatchParagraph(match, homeSt, awaySt, prediction, i)}`;
       });
 
-      const body = `![${league.name}${roundLabel}](${leagueImageUrl})\n\n## Tổng quan ${league.name}${roundLabel}\n\n${league.name}${roundLabel} có tổng cộng ${leagueMatches.length} trận đấu đáng chú ý. Dưới đây là nhận định chi tiết từng cặp đấu dựa trên thống kê mùa giải, phong độ gần đây và mô hình dự đoán Poisson.\n\n${matchImagesAndSections.join("\n---\n\n")}\n## Kết luận\n\nHãy theo dõi nhận định chi tiết từng trận đấu trên [trang chủ](https://nhandinhbongdavn.com) để cập nhật thông tin mới nhất trước giờ bóng lăn.`;
+      const slug = slugify(`nhan-dinh-${league.name}${roundLabel}-${tomorrow}`);
+      const post = {
+        slug,
+        title: `Nhận định ${league.name}${roundLabel} — ${dateLabel}`,
+        description: `Phân tích ${leagueMatches.length} trận đấu ${league.name}${roundLabel}. Dự đoán tỷ số chi tiết.`,
+        date: tomorrow, author: "MatchDay Analyst",
+        tags: [slugify(league.name), "nhan-dinh", round ? `vong-${round}` : ""].filter(Boolean),
+        image: leagueImgUrl,
+        body: `![${league.name}](${leagueImgUrl})\n\n## Tổng quan ${league.name}${roundLabel}\n\n${leagueMatches.length} trận đấu đáng chú ý. Dưới đây là nhận định chi tiết dựa trên mô hình Poisson.\n\n${sections.join("\n---\n\n")}\n\n## Kết luận\n\nTheo dõi nhận định chi tiết tại [nhandinhbongdavn.com](${baseUrl}).`,
+      };
+      await setCached(`blog:post:${slug}`, JSON.stringify(post), TTL_30_DAYS);
+      generatedSlugs.push(slug);
+    } catch (e) {
+      errors.push(`League ${code}: ${e instanceof Error ? e.message : String(e)}`);
+    }
+  }
 
-      // Store post as JSON in Redis (works on serverless)
-      const post = { slug, title, description, date: tomorrow, author: "MatchDay Analyst", tags, image: leagueImageUrl, body };
+  // --- POST TYPE 2: "Trận cầu tâm điểm" — deep dive on the biggest match ---
+  try {
+    const biggestMatch = scheduled
+      .map((m) => ({ match: m, priority: LEAGUE_PRIORITY[m.competition.code] || 0 }))
+      .sort((a, b) => b.priority - a.priority)[0];
+
+    if (biggestMatch) {
+      const m = biggestMatch.match;
+      const league = LEAGUES.find((l) => l.code === m.competition.code);
+      const standings = await getStandings(m.competition.code);
+      const homeSt = standings.find((s) => s.team.id === m.homeTeam.id) ?? null;
+      const awaySt = standings.find((s) => s.team.id === m.awayTeam.id) ?? null;
+      const prediction = computePrediction(homeSt, awaySt);
+
+      const matchImgUrl = `${baseUrl}/api/blog-image?${new URLSearchParams({
+        type: "match", home: m.homeTeam.shortName, away: m.awayTeam.shortName,
+        homeCrest: m.homeTeam.crest, awayCrest: m.awayTeam.crest,
+        league: league?.name || "", time: m.time, date: m.date,
+        homeWin: String(prediction.homeWin), draw: String(prediction.draw), awayWin: String(prediction.awayWin),
+      })}`;
+
+      const slug = slugify(`tran-cau-tam-diem-${m.homeTeam.shortName}-vs-${m.awayTeam.shortName}-${tomorrow}`);
+      const homePos = homeSt ? `hạng ${homeSt.position} (${homeSt.points} điểm)` : "";
+      const awayPos = awaySt ? `hạng ${awaySt.position} (${awaySt.points} điểm)` : "";
+
+      const body = `![${m.homeTeam.shortName} vs ${m.awayTeam.shortName}](${matchImgUrl})
+
+## Trận cầu tâm điểm: ${m.homeTeam.shortName} vs ${m.awayTeam.shortName}
+
+*${league?.name || ""} · ${m.time} · ${m.venue || ""}*
+
+Đây là trận đấu được chờ đợi nhất trong ngày. **${m.homeTeam.shortName}**${homePos ? ` (${homePos})` : ""} tiếp đón **${m.awayTeam.shortName}**${awayPos ? ` (${awayPos})` : ""} trong cuộc đối đầu hứa hẹn nhiều cảm xúc.
+
+${buildMatchParagraph(m, homeSt, awaySt, prediction, 0)}
+
+## Đội hình dự kiến
+
+Cả hai đội đều được kỳ vọng tung ra đội hình mạnh nhất. Xem đội hình dự kiến và phân tích chi tiết tại [trang trận đấu](${baseUrl}/match/${m.id}).
+
+## Dự đoán của chúng tôi
+
+Mô hình Poisson cho kết quả: **${m.homeTeam.shortName} ${prediction.homeWin}%** — Hòa ${prediction.draw}% — **${m.awayTeam.shortName} ${prediction.awayWin}%**
+
+Khả năng cả hai ghi bàn: **${prediction.btts}%** · Trên 2.5 bàn: **${prediction.over25}%**
+
+${prediction.homeWin > prediction.awayWin
+  ? `Chúng tôi nghiêng về **${m.homeTeam.shortName}** với lợi thế sân nhà.`
+  : prediction.awayWin > prediction.homeWin
+    ? `**${m.awayTeam.shortName}** được đánh giá cao hơn trong trận này.`
+    : `Trận đấu cực kỳ cân bằng — khó đoán kết quả.`}
+
+---
+
+*Xem nhận định đầy đủ tại [nhandinhbongdavn.com/match/${m.id}](${baseUrl}/match/${m.id})*`;
+
+      const post = {
+        slug,
+        title: `Trận cầu tâm điểm: ${m.homeTeam.shortName} vs ${m.awayTeam.shortName}`,
+        description: `Phân tích chuyên sâu trận ${m.homeTeam.shortName} vs ${m.awayTeam.shortName}. Dự đoán tỷ số, thống kê, đội hình.`,
+        date: tomorrow, author: "MatchDay Analyst",
+        tags: [slugify(league?.name || ""), slugify(m.homeTeam.shortName), slugify(m.awayTeam.shortName), "tam-diem"],
+        image: matchImgUrl, body,
+      };
       await setCached(`blog:post:${slug}`, JSON.stringify(post), TTL_30_DAYS);
       generatedSlugs.push(slug);
     }
+  } catch (e) {
+    errors.push(`Big match: ${e instanceof Error ? e.message : String(e)}`);
+  }
 
-    // Update the blog index in Redis
+  // --- POST TYPE 3: "Soi kèo tổng hợp" — all today's odds in one article ---
+  try {
+    const todayDate = formatVietnameseDate(tomorrow);
+    const slug = slugify(`soi-keo-tong-hop-${tomorrow}`);
+    const allSections = scheduled.slice(0, 12).map((m, i) => {
+      const league = LEAGUES.find((l) => l.code === m.competition.code);
+      return `### ${m.homeTeam.shortName} vs ${m.awayTeam.shortName}\n*${league?.name || ""} · ${m.time}*\n\n![${m.homeTeam.shortName}](${m.homeTeam.crest})  ![${m.awayTeam.shortName}](${m.awayTeam.crest})\n\n[Xem nhận định chi tiết →](${baseUrl}/match/${m.id})`;
+    });
+
+    const post = {
+      slug,
+      title: `Soi kèo tổng hợp ngày ${todayDate}`,
+      description: `Tổng hợp soi kèo ${scheduled.length} trận đấu ngày ${todayDate}. Tỷ lệ kèo, dự đoán từ tất cả các giải.`,
+      date: tomorrow, author: "MatchDay Analyst",
+      tags: ["soi-keo", "tong-hop"],
+      image: "/icons/icon-512.png",
+      body: `## Soi kèo tổng hợp — ${todayDate}\n\nHôm nay có tổng cộng **${scheduled.length} trận đấu** từ các giải hàng đầu. Dưới đây là danh sách các trận đấu và link phân tích chi tiết.\n\n${allSections.join("\n\n---\n\n")}\n\n---\n\n*Xem tất cả tại [nhandinhbongdavn.com/soi-keo-hom-nay](${baseUrl}/soi-keo-hom-nay)*`,
+    };
+    await setCached(`blog:post:${slug}`, JSON.stringify(post), TTL_30_DAYS);
+    generatedSlugs.push(slug);
+  } catch (e) {
+    errors.push(`Roundup: ${e instanceof Error ? e.message : String(e)}`);
+  }
+
+  // Update blog index
+  try {
     const existingIndex = await getCached("blog:index");
     const existingSlugs: string[] = existingIndex ? JSON.parse(existingIndex) : [];
     const mergedSlugs = [...new Set([...existingSlugs, ...generatedSlugs])];
     await setCached("blog:index", JSON.stringify(mergedSlugs), TTL_30_DAYS);
-
-    return Response.json({
-      success: true,
-      generated: generatedSlugs,
-      dateRange: `${tomorrow} — ${dayAfter}`,
-      totalMatches: scheduled.length,
-      leaguesProcessed: byLeague.size,
-    });
-  } catch (error) {
-    console.error("Auto-blog generation error:", error);
-    const message = error instanceof Error ? error.message : String(error);
-    return Response.json(
-      { error: "Không thể tạo bài viết tự động", detail: message },
-      { status: 500 }
-    );
+  } catch (e) {
+    errors.push(`Index: ${e instanceof Error ? e.message : String(e)}`);
   }
+
+  return Response.json({
+    success: true,
+    generated: generatedSlugs,
+    errors: errors.length > 0 ? errors : undefined,
+    dateRange: `${tomorrow} — ${dayAfter}`,
+    totalMatches: scheduled.length,
+  });
 }
