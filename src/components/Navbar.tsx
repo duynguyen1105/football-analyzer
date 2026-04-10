@@ -120,6 +120,8 @@ export function Navbar() {
                   <MobileNavLink href="/hom-nay" onClick={() => setMenuOpen(false)}>Hôm nay</MobileNavLink>
                   <MobileNavLink href="/ket-qua" onClick={() => setMenuOpen(false)}>Kết quả</MobileNavLink>
                   <MobileNavLink href="/soi-keo-hom-nay" onClick={() => setMenuOpen(false)}>Soi kèo</MobileNavLink>
+                  <MobileNavLink href="/lich-phat-song" onClick={() => setMenuOpen(false)}>Lịch phát sóng</MobileNavLink>
+                  <MobileNavLink href="/chuyen-nhuong" onClick={() => setMenuOpen(false)}>Chuyển nhượng</MobileNavLink>
                   <MobileNavLink href="/du-doan" onClick={() => setMenuOpen(false)}>Dự đoán</MobileNavLink>
                   <MobileNavLink href="/so-sanh" onClick={() => setMenuOpen(false)}>So sánh</MobileNavLink>
                   <MobileNavLink href="/bai-viet" onClick={() => setMenuOpen(false)}>Bài viết</MobileNavLink>

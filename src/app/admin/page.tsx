@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useCallback } from "react";
+import { useState, useCallback } from "react";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -71,47 +71,47 @@ function StatRow({ label, value }: { label: string; value: string | number }) {
 }
 
 // ---------------------------------------------------------------------------
-// Main page
+// Dashboard content (only rendered when authenticated)
 // ---------------------------------------------------------------------------
-export default function AdminPage() {
-  const savedPw = getSavedPassword();
-  const [password, setPassword] = useState(savedPw);
-  const [authenticated, setAuthenticated] = useState(!!savedPw);
+function Dashboard({
+  password,
+  onLogout,
+}: {
+  password: string;
+  onLogout: () => void;
+}) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [data, setData] = useState<AdminData | null>(null);
   const [sitemapCount, setSitemapCount] = useState<number | null>(null);
-  const hasFetched = useRef(false);
+  const [initialFetchDone, setInitialFetchDone] = useState(false);
 
-  // Fetch data from API
-  const fetchData = useCallback(async (pw: string) => {
+  const fetchData = useCallback(async () => {
     setLoading(true);
     setError("");
     try {
       const res = await fetch("/api/admin", {
-        headers: { Authorization: `Bearer ${pw}` },
+        headers: { Authorization: `Bearer ${password}` },
       });
       if (res.status === 401) {
         setError("Sai mat khau");
-        setAuthenticated(false);
         sessionStorage.removeItem("admin-password");
-        setLoading(false);
+        onLogout();
         return;
       }
       if (!res.ok) {
         setError("Loi server");
-        setLoading(false);
         return;
       }
       const json = await res.json();
       setData(json);
     } catch {
       setError("Khong the ket noi");
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
-  }, []);
+  }, [password, onLogout]);
 
-  // Fetch sitemap count
   const fetchSitemap = useCallback(async () => {
     try {
       const res = await fetch("/sitemap.xml");
@@ -125,79 +125,18 @@ export default function AdminPage() {
     }
   }, []);
 
-  const refreshAll = useCallback(
-    (pw: string) => {
-      fetchData(pw);
-      fetchSitemap();
-    },
-    [fetchData, fetchSitemap],
-  );
+  const refreshAll = useCallback(() => {
+    fetchData();
+    fetchSitemap();
+  }, [fetchData, fetchSitemap]);
 
-  // Auto-fetch on first render when we have a saved password
-  if (authenticated && password && !hasFetched.current) {
-    hasFetched.current = true;
-    // Schedule fetch after render (non-blocking)
-    setTimeout(() => refreshAll(password), 0);
+  // Initial fetch on first render of Dashboard
+  if (!initialFetchDone) {
+    setInitialFetchDone(true);
+    // Use queueMicrotask to avoid calling fetch during render
+    queueMicrotask(refreshAll);
   }
 
-  const handleLogin = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!password.trim()) return;
-    sessionStorage.setItem("admin-password", password);
-    setAuthenticated(true);
-    hasFetched.current = true;
-    refreshAll(password);
-  };
-
-  const handleLogout = () => {
-    sessionStorage.removeItem("admin-password");
-    setAuthenticated(false);
-    setPassword("");
-    setData(null);
-    hasFetched.current = false;
-  };
-
-  // -------------------------------------------------------------------------
-  // Login screen
-  // -------------------------------------------------------------------------
-  if (!authenticated) {
-    return (
-      <div className="min-h-screen bg-bg-primary flex items-center justify-center px-4">
-        <form
-          onSubmit={handleLogin}
-          className="bg-bg-card rounded-xl border border-border p-8 w-full max-w-sm"
-        >
-          <h1 className="text-lg font-bold text-text-primary mb-1">
-            Admin Dashboard
-          </h1>
-          <p className="text-xs text-text-muted mb-6">
-            Nhap mat khau de truy cap
-          </p>
-          {error && (
-            <p className="text-xs text-accent-red mb-3">{error}</p>
-          )}
-          <input
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            placeholder="Mat khau"
-            className="w-full px-3 py-2 rounded-lg bg-bg-primary border border-border text-text-primary text-sm placeholder:text-text-muted focus:outline-none focus:border-accent mb-4"
-            autoFocus
-          />
-          <button
-            type="submit"
-            className="w-full py-2 rounded-lg bg-accent text-white text-sm font-bold hover:bg-accent/90 transition-colors"
-          >
-            Dang nhap
-          </button>
-        </form>
-      </div>
-    );
-  }
-
-  // -------------------------------------------------------------------------
-  // Dashboard
-  // -------------------------------------------------------------------------
   return (
     <div className="min-h-screen bg-bg-primary">
       {/* Header */}
@@ -213,14 +152,14 @@ export default function AdminPage() {
           </div>
           <div className="flex items-center gap-3">
             <button
-              onClick={() => refreshAll(password)}
+              onClick={refreshAll}
               disabled={loading}
               className="px-3 py-1.5 rounded-lg bg-bg-primary border border-border text-xs text-text-secondary hover:text-text-primary transition-colors disabled:opacity-50"
             >
               {loading ? "Dang tai..." : "Lam moi"}
             </button>
             <button
-              onClick={handleLogout}
+              onClick={onLogout}
               className="px-3 py-1.5 rounded-lg border border-border text-xs text-text-muted hover:text-accent-red transition-colors"
             >
               Dang xuat
@@ -330,7 +269,6 @@ export default function AdminPage() {
                     .slice()
                     .reverse()
                     .map((slug) => {
-                      // Extract date from slug if present (YYYY-MM-DD pattern)
                       const dateMatch = slug.match(/(\d{4}-\d{2}-\d{2})/);
                       return (
                         <div
@@ -427,11 +365,7 @@ export default function AdminPage() {
                 />
                 <StatRow
                   label="Lan chay cron cuoi"
-                  value={
-                    data.lastCronRun
-                      ? data.lastCronRun
-                      : "Chua chay"
-                  }
+                  value={data.lastCronRun ?? "Chua chay"}
                 />
               </div>
               <div className="mt-4 space-y-2">
@@ -466,7 +400,9 @@ export default function AdminPage() {
                 <div className="flex items-center gap-2">
                   <span
                     className={`w-2 h-2 rounded-full ${
-                      data.cacheStats.total > 0 ? "bg-accent" : "bg-accent-yellow"
+                      data.cacheStats.total > 0
+                        ? "bg-accent"
+                        : "bg-accent-yellow"
                     }`}
                   />
                   <span className="text-xs text-text-secondary">
@@ -481,6 +417,72 @@ export default function AdminPage() {
           </div>
         )}
       </main>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Main page (login gate)
+// ---------------------------------------------------------------------------
+export default function AdminPage() {
+  const savedPw = getSavedPassword();
+  const [password, setPassword] = useState(savedPw);
+  const [authenticated, setAuthenticated] = useState(!!savedPw);
+  const [loginError, setLoginError] = useState("");
+
+  const handleLogin = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!password.trim()) {
+      setLoginError("Vui long nhap mat khau");
+      return;
+    }
+    sessionStorage.setItem("admin-password", password);
+    setAuthenticated(true);
+  };
+
+  const handleLogout = useCallback(() => {
+    sessionStorage.removeItem("admin-password");
+    setAuthenticated(false);
+    setPassword("");
+  }, []);
+
+  if (authenticated) {
+    return <Dashboard password={password} onLogout={handleLogout} />;
+  }
+
+  return (
+    <div className="min-h-screen bg-bg-primary flex items-center justify-center px-4">
+      <form
+        onSubmit={handleLogin}
+        className="bg-bg-card rounded-xl border border-border p-8 w-full max-w-sm"
+      >
+        <h1 className="text-lg font-bold text-text-primary mb-1">
+          Admin Dashboard
+        </h1>
+        <p className="text-xs text-text-muted mb-6">
+          Nhap mat khau de truy cap
+        </p>
+        {loginError && (
+          <p className="text-xs text-accent-red mb-3">{loginError}</p>
+        )}
+        <input
+          type="password"
+          value={password}
+          onChange={(e) => {
+            setPassword(e.target.value);
+            setLoginError("");
+          }}
+          placeholder="Mat khau"
+          className="w-full px-3 py-2 rounded-lg bg-bg-primary border border-border text-text-primary text-sm placeholder:text-text-muted focus:outline-none focus:border-accent mb-4"
+          autoFocus
+        />
+        <button
+          type="submit"
+          className="w-full py-2 rounded-lg bg-accent text-white text-sm font-bold hover:bg-accent/90 transition-colors"
+        >
+          Dang nhap
+        </button>
+      </form>
     </div>
   );
 }

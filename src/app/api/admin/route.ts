@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server";
-import { getCacheStats, getCached, redis } from "@/lib/cache";
+import { getCacheStats, getCached } from "@/lib/cache";
 import { getApiCacheStats } from "@/lib/football-data";
 
 export async function GET(request: NextRequest) {
@@ -28,7 +28,7 @@ export async function GET(request: NextRequest) {
     }
 
     // 3. Prediction game stats
-    let predictionStats = {
+    const predictionStats = {
       totalPredictions: 0,
       uniqueVisitors: 0,
       leaderboard: [] as Array<{
