@@ -77,8 +77,10 @@ export function Navbar() {
           </div>
 
           <Link href="/soi-keo-hom-nay" className="hover:text-text-primary transition-colors">Soi kèo</Link>
-          <Link href="/du-doan" className="hover:text-text-primary transition-colors hidden md:inline">Dự đoán</Link>
-          <Link href="/bai-viet" className="hover:text-text-primary transition-colors hidden md:inline">Bài viết</Link>
+          <Link href="/lich-phat-song" className="hover:text-text-primary transition-colors hidden md:inline">Phát sóng</Link>
+          <Link href="/chuyen-nhuong" className="hover:text-text-primary transition-colors hidden md:inline">Chuyển nhượng</Link>
+          <Link href="/du-doan" className="hover:text-text-primary transition-colors hidden lg:inline">Dự đoán</Link>
+          <Link href="/bai-viet" className="hover:text-text-primary transition-colors hidden lg:inline">Bài viết</Link>
           <Link href="/so-sanh" className="hover:text-text-primary transition-colors hidden lg:inline">So sánh</Link>
           <SearchBar />
           <ThemeToggle />

@@ -10,6 +10,11 @@ const nextConfig: NextConfig = {
         pathname: "/football/**",
       },
     ],
+    formats: ["image/avif", "image/webp"],
+    minimumCacheTTL: 86400, // 24hr cache for optimized images
+  },
+  experimental: {
+    optimizeCss: true,
   },
   async redirects() {
     return [

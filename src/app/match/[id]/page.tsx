@@ -42,6 +42,7 @@ const MatchStatistics = dynamic(() => import("@/components/MatchStatistics").the
 const RelatedMatches = dynamic(() => import("@/components/RelatedMatches").then((m) => m.RelatedMatches));
 const SharePrediction = dynamic(() => import("@/components/SharePrediction").then((m) => m.SharePrediction));
 const PredictionWidget = dynamic(() => import("@/components/PredictionWidget").then((m) => m.PredictionWidget));
+const MatchComments = dynamic(() => import("@/components/MatchComments").then((m) => m.MatchComments));
 
 function FormBadge({ result }: { result: string }) {
   const cls = result === "W" ? "badge-w" : result === "D" ? "badge-d" : "badge-l";
@@ -774,6 +775,11 @@ export default function MatchPage({ params }: { params: Promise<{ id: string }> 
         {/* Related matches */}
         <div className="mt-6">
           <RelatedMatches currentMatchId={match.id} leagueCode={match.competition.code} />
+        </div>
+
+        {/* Comments */}
+        <div className="mt-6">
+          <MatchComments matchId={match.id} />
         </div>
 
         <footer className="mt-8 py-6 border-t border-border text-center text-xs text-text-muted">

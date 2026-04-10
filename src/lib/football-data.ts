@@ -1407,6 +1407,73 @@ export async function getPlayerTransfers(playerId: number): Promise<PlayerTransf
 }
 
 // ---------------------------------------------------------------------------
+// Recent League Transfers — latest transfers for a league/season
+// ---------------------------------------------------------------------------
+
+export interface LeagueTransfer {
+  player: { id: number; name: string; photo: string };
+  date: string;
+  type: string; // "Free", "Loan", "N/A", or fee
+  teamIn: { id: number; name: string; logo: string };
+  teamOut: { id: number; name: string; logo: string };
+}
+
+export async function getRecentTransfers(leagueId: number): Promise<LeagueTransfer[]> {
+  const season = getSeasonForLeague(leagueId);
+  const cacheKey = `league-transfers:${leagueId}:${season}`;
+  const cached = await getCached<LeagueTransfer[]>(cacheKey);
+  if (cached) return cached;
+
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const data = await apiFetch<any[]>("/transfers", {
+      league: String(leagueId),
+      season: String(season),
+    });
+
+    if (!data || data.length === 0) return [];
+
+    const transfers: LeagueTransfer[] = [];
+    for (const entry of data) {
+      const player = entry.player ?? {};
+      const playerTransfers = entry.transfers ?? [];
+      for (const t of playerTransfers) {
+        transfers.push({
+          player: {
+            id: player.id ?? 0,
+            name: player.name ?? "",
+            photo: `https://media.api-sports.io/football/players/${player.id ?? 0}.png`,
+          },
+          date: t.date ?? "",
+          type: t.type ?? "N/A",
+          teamIn: {
+            id: t.teams?.in?.id ?? 0,
+            name: t.teams?.in?.name ?? "",
+            logo: t.teams?.in?.logo ?? "",
+          },
+          teamOut: {
+            id: t.teams?.out?.id ?? 0,
+            name: t.teams?.out?.name ?? "",
+            logo: t.teams?.out?.logo ?? "",
+          },
+        });
+      }
+    }
+
+    // Sort by date descending
+    transfers.sort((a, b) => b.date.localeCompare(a.date));
+
+    // Keep latest 30
+    const result = transfers.slice(0, 30);
+    await setCache(cacheKey, result, CACHE_2_HR);
+    return result;
+  } catch (error) {
+    console.error(`Failed to fetch transfers for league ${leagueId}:`, error);
+    return [];
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Player Trophies
 // ---------------------------------------------------------------------------
 

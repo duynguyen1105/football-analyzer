@@ -387,6 +387,25 @@ ${prediction.homeWin > prediction.awayWin
     errors.push(`Index: ${e instanceof Error ? e.message : String(e)}`);
   }
 
+  // Store notification for clients to pick up
+  if (generatedSlugs.length > 0) {
+    try {
+      await setCached("blog:latest-notification", JSON.stringify({
+        title: `${generatedSlugs.length} bài viết mới`,
+        body: `Nhận định mới nhất đã sẵn sàng!`,
+        url: "/bai-viet",
+        timestamp: Date.now(),
+      }), 86400);
+    } catch { /* non-critical */ }
+  }
+
+  // Record last cron run time for admin dashboard
+  try {
+    const now = new Date();
+    const vnTime = new Date(now.getTime() + 7 * 60 * 60 * 1000);
+    await setCached("auto-blog:last-run", vnTime.toISOString().replace("T", " ").slice(0, 19) + " (GMT+7)", TTL_30_DAYS);
+  } catch { /* non-critical */ }
+
   return Response.json({
     success: true,
     generated: generatedSlugs,

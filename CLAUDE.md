@@ -79,6 +79,7 @@ NEXT_PUBLIC_SPONSOR_URL           # Sponsored content: sponsor link URL
 NEXT_PUBLIC_SPONSOR_TAGLINE       # Sponsored content: short tagline text
 NEXT_PUBLIC_CONTACT_EMAIL         # Contact email for sponsor inquiries (default: contact@nhandinhbongdavn.com)
 TELEGRAM_BOT_TOKEN                # Telegram Bot API token (for /api/telegram webhook)
+ADMIN_PASSWORD                    # Password for /admin dashboard (checked via /api/admin)
 ```
 
 ## Domain & Deployment

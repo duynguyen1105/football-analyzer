@@ -17,7 +17,12 @@
       "Bash(file:*)",
       "Bash(sips -s format png --resampleWidth 192 --resampleHeight 192 public/icons/icon.svg --out public/icons/icon-192.png)",
       "Bash(sips:*)",
-      "Bash(dig:*)"
+      "Bash(dig:*)",
+      "Bash(git:*)",
+      "Bash(npx vitest:*)",
+      "WebFetch(domain:bongda24h.vn)",
+      "Bash(openssl rand:*)",
+      "WebFetch(domain:nhandinhbongdavn.com)"
     ]
   }
 }

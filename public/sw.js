@@ -24,6 +24,34 @@ self.addEventListener("activate", (event) => {
   self.clients.claim();
 });
 
+// Push — show notification when server sends a push
+self.addEventListener("push", (event) => {
+  const data = event.data ? event.data.json() : {};
+  const title = data.title || "Nhận Định Bóng Đá VN";
+  const options = {
+    body: data.body || "Có bài viết mới!",
+    icon: "/icons/icon-192.png",
+    badge: "/icons/icon-192.png",
+    tag: data.tag || "blog-update",
+    data: { url: data.url || "/bai-viet" },
+  };
+  event.waitUntil(self.registration.showNotification(title, options));
+});
+
+// Notification click — open the URL
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  const url = event.notification.data?.url || "/";
+  event.waitUntil(
+    clients.matchAll({ type: "window" }).then((windowClients) => {
+      for (const client of windowClients) {
+        if (client.url.includes(url) && "focus" in client) return client.focus();
+      }
+      return clients.openWindow(url);
+    })
+  );
+});
+
 // Fetch — network-first for API/pages, cache-first for static assets
 self.addEventListener("fetch", (event) => {
   const url = new URL(event.request.url);

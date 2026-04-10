@@ -53,6 +53,26 @@ export function MatchFaqSchema({
     });
   }
 
+  if (prediction && !isFinished) {
+    faqs.push({
+      question: `Tỷ số dự đoán trận ${matchTitle}?`,
+      answer: prediction.homeWin > prediction.awayWin
+        ? `Dự đoán ${match.homeTeam.shortName} thắng với tỷ số 2-1 hoặc 1-0. Xác suất thắng: ${prediction.homeWin}%.`
+        : prediction.awayWin > prediction.homeWin
+          ? `Dự đoán ${match.awayTeam.shortName} thắng với tỷ số 0-1 hoặc 1-2. Xác suất thắng: ${prediction.awayWin}%.`
+          : `Trận đấu được dự đoán hòa với tỷ số 1-1. Xác suất hòa: ${prediction.draw}%.`,
+    });
+    faqs.push({
+      question: `Trận ${matchTitle} có nhiều bàn thắng không?`,
+      answer: `Xác suất trên 2.5 bàn thắng là cao. Cả hai đội đều có khả năng ghi bàn (BTTS).`,
+    });
+  }
+
+  faqs.push({
+    question: `Xem trận ${matchTitle} ở đâu?`,
+    answer: `Xem nhận định và phân tích chi tiết trận ${matchTitle} tại nhandinhbongdavn.com. Cập nhật đội hình, phong độ, lịch sử đối đầu.`,
+  });
+
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "FAQPage",

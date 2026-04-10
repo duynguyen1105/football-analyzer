@@ -61,5 +61,25 @@ export function FavoriteNotifier() {
     }
   }, [matches, favoriteTeams]);
 
+  // Check for new blog posts
+  useEffect(() => {
+    if (typeof Notification === "undefined" || Notification.permission !== "granted") return;
+
+    const lastSeen = localStorage.getItem("matchday-blog-notif-ts") || "0";
+    fetch("/api/blog-notification")
+      .then((r) => r.json())
+      .then((data) => {
+        if (data?.timestamp && String(data.timestamp) !== lastSeen) {
+          new Notification(data.title || "Bài viết mới", {
+            body: data.body || "Nhận định mới đã sẵn sàng!",
+            icon: "/icons/icon-192.png",
+            tag: "blog-update",
+          });
+          localStorage.setItem("matchday-blog-notif-ts", String(data.timestamp));
+        }
+      })
+      .catch(() => {});
+  }, []);
+
   return null;
 }
