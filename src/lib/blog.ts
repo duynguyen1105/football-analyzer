@@ -71,7 +71,8 @@ export async function getAllPostsWithRedis(): Promise<BlogPost[]> {
     const { getCached } = await import("./cache");
     const indexRaw = await getCached("blog:index");
     if (indexRaw) {
-      const slugs: string[] = JSON.parse(indexRaw);
+      let slugs: string[] = [];
+      try { const parsed = JSON.parse(indexRaw); slugs = Array.isArray(parsed) ? parsed : []; } catch { /* corrupted index */ }
       const redisPosts: BlogPost[] = [];
       for (const slug of slugs) {
         // Skip if we already have this from filesystem

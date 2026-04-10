@@ -371,7 +371,16 @@ ${prediction.homeWin > prediction.awayWin
   // Update blog index
   try {
     const existingIndex = await getCached("blog:index");
-    const existingSlugs: string[] = existingIndex ? JSON.parse(existingIndex) : [];
+    let existingSlugs: string[] = [];
+    if (existingIndex) {
+      try {
+        const parsed = JSON.parse(existingIndex);
+        existingSlugs = Array.isArray(parsed) ? parsed : [];
+      } catch {
+        // Index corrupted — reset it
+        existingSlugs = [];
+      }
+    }
     const mergedSlugs = [...new Set([...existingSlugs, ...generatedSlugs])];
     await setCached("blog:index", JSON.stringify(mergedSlugs), TTL_30_DAYS);
   } catch (e) {
