@@ -4,6 +4,7 @@ import { use, useState, useMemo } from "react";
 import { Navbar } from "@/components/Navbar";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { usePlayerProfile, usePlayerTransfers, usePlayerTrophies } from "@/lib/hooks";
+import { Footer } from "@/components/Footer";
 import Link from "next/link";
 
 const POSITION_VI: Record<string, string> = {
@@ -388,14 +389,7 @@ export default function PlayerPage({ params }: { params: Promise<{ id: string }>
           </div>
         </div>
 
-        {/* Footer */}
-        <footer className="mt-8 py-4 border-t border-border text-center text-[10px] text-text-muted">
-          <p>MatchDay Analyst — Nhận định bóng đá trước trận</p>
-          <div className="mt-1 flex gap-3 justify-center">
-            <Link href="/" className="hover:text-text-primary">Trang chủ</Link>
-            <Link href="/about" className="hover:text-text-primary">Giới thiệu</Link>
-          </div>
-        </footer>
+        <Footer />
       </main>
     </>
   );

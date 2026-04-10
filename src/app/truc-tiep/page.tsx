@@ -4,6 +4,7 @@ import { Navbar } from "@/components/Navbar";
 import { useLiveMatches, useMatches } from "@/lib/hooks";
 import { LEAGUES } from "@/lib/constants";
 import { Match } from "@/lib/types";
+import { Footer } from "@/components/Footer";
 import Link from "next/link";
 import { useState, useEffect, useRef, useCallback } from "react";
 
@@ -453,18 +454,7 @@ export default function LivePage() {
           </ul>
         </div>
 
-        {/* Footer */}
-        <footer className="mt-8 py-4 border-t border-border text-center text-[10px] text-text-muted">
-          <p>MatchDay Analyst — Nhận định bóng đá trước trận</p>
-          <div className="mt-1 flex gap-3 justify-center">
-            <Link href="/" className="hover:text-text-primary">
-              Trang chủ
-            </Link>
-            <Link href="/about" className="hover:text-text-primary">
-              Giới thiệu
-            </Link>
-          </div>
-        </footer>
+        <Footer />
       </div>
     </>
   );

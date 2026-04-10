@@ -5,8 +5,10 @@ import { LEAGUES } from "@/lib/constants";
 import { getSlugByCode } from "@/lib/league-slugs";
 import { Standing } from "@/lib/types";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 export function StandingsCard({ league }: { league: (typeof LEAGUES)[number] }) {
+  const router = useRouter();
   const { data: standings, isLoading } = useStandings(league.code);
   const rows = (standings || []).slice(0, 5);
 
@@ -42,7 +44,7 @@ export function StandingsCard({ league }: { league: (typeof LEAGUES)[number] }) 
         </thead>
         <tbody className="text-text-secondary">
           {rows.map((r: Standing) => (
-            <tr key={r.team.id} className="border-t border-border/30">
+            <tr key={r.team.id} className="border-t border-border/30 hover:bg-bg-primary/30 transition-colors cursor-pointer" onClick={() => router.push(`/doi-bong/${r.team.id}`)}>
               <td className="py-1 text-text-muted">{r.position}</td>
               <td className="py-1">
                 <div className="flex items-center gap-1">

@@ -178,7 +178,7 @@ export default async function HomNayPage() {
     <>
       <Navbar />
 
-      <main className="max-w-6xl mx-auto px-3 py-6 xl:px-6">
+      <main id="main-content" className="max-w-6xl mx-auto px-3 py-6 xl:px-6">
         {/* SEO heading */}
         <h1 className="text-xl md:text-2xl font-bold mb-1">
           Nhận Định Bóng Đá Hôm Nay

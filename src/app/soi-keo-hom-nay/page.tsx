@@ -121,7 +121,7 @@ export default async function SoiKeoHomNayPage() {
       />
       <Navbar />
 
-      <main className="max-w-6xl mx-auto px-3 py-6 xl:px-6">
+      <main id="main-content" className="max-w-6xl mx-auto px-3 py-6 xl:px-6">
         {/* Breadcrumbs */}
         <div className="flex items-center gap-2 text-xs text-text-muted mb-4">
           <Link href="/" className="hover:text-text-primary transition-colors">

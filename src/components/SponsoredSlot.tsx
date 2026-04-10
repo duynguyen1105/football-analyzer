@@ -20,7 +20,7 @@ export function SponsoredSlot({ className = "" }: { className?: string }) {
   if (SPONSOR.name && SPONSOR.url) {
     return (
       <div className={`bg-bg-card rounded-xl border border-border/50 p-3 ${className}`}>
-        <p className="text-[8px] text-text-muted/50 uppercase tracking-wider mb-2">Tài trợ</p>
+        <p className="text-[9px] text-text-muted/50 uppercase tracking-wider mb-2">Tài trợ</p>
         <a
           href={SPONSOR.url}
           target="_blank"
@@ -44,7 +44,7 @@ export function SponsoredSlot({ className = "" }: { className?: string }) {
   // No sponsor configured — show contact CTA for potential advertisers
   return (
     <div className={`bg-bg-card/50 rounded-xl border border-dashed border-border/50 p-3 text-center ${className}`}>
-      <p className="text-[8px] text-text-muted/50 uppercase tracking-wider mb-1">Tài trợ</p>
+      <p className="text-[9px] text-text-muted/50 uppercase tracking-wider mb-1">Tài trợ</p>
       <p className="text-[10px] text-text-muted">
         Quảng cáo tại đây?{" "}
         <a href={`mailto:${CONTACT_EMAIL}`} className="text-accent hover:underline">

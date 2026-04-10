@@ -28,6 +28,7 @@ import {
 import { Standing } from "@/lib/types";
 import { OptImage } from "@/components/OptImage";
 import { MatchFaqSchema } from "@/components/MatchFaqSchema";
+import { Footer } from "@/components/Footer";
 import Link from "next/link";
 
 // Lazy-load heavy sections — only loaded when scrolled into view
@@ -782,13 +783,7 @@ export default function MatchPage({ params }: { params: Promise<{ id: string }> 
           <MatchComments matchId={match.id} />
         </div>
 
-        <footer className="mt-8 py-6 border-t border-border text-center text-xs text-text-muted">
-          <p>MatchDay Analyst — Nhận định bóng đá trước trận</p>
-          <div className="mt-2 flex gap-4 justify-center">
-            <Link href="/about" className="hover:text-text-primary transition-colors">Giới thiệu</Link>
-            <Link href="/privacy" className="hover:text-text-primary transition-colors">Chính sách bảo mật</Link>
-          </div>
-        </footer>
+        <Footer />
       </main>
     </>
   );

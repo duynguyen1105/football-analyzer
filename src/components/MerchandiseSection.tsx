@@ -61,7 +61,7 @@ export function MerchandiseSection({
           </a>
         ))}
       </div>
-      <p className="text-[8px] text-text-muted/60 mt-2">* Liên kết đối tác — chúng tôi có thể nhận hoa hồng từ các giao dịch mua hàng</p>
+      <p className="text-[9px] text-text-muted/60 mt-2">* Liên kết đối tác — chúng tôi có thể nhận hoa hồng từ các giao dịch mua hàng</p>
     </div>
   );
 }

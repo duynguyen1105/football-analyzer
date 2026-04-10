@@ -76,6 +76,7 @@ export function SearchBar() {
           onChange={(e) => setQuery(e.target.value)}
           onFocus={() => hasResults && setIsOpen(true)}
           placeholder="Tìm đội bóng..."
+          aria-label="Tìm kiếm đội bóng hoặc cầu thủ"
           className="bg-transparent text-xs text-text-primary placeholder:text-text-muted outline-none w-24 sm:w-32 focus:w-40 transition-all"
         />
         {isLoading && (
@@ -104,7 +105,7 @@ export function SearchBar() {
                   onClick={close}
                   className="flex items-center gap-2.5 px-3 py-2 hover:bg-accent/10 transition-colors"
                 >
-                  <img src={team.crest} alt="" className="w-6 h-6 object-contain" />
+                  <img src={team.crest} alt={team.name} className="w-6 h-6 object-contain" />
                   <div className="min-w-0">
                     <p className="text-xs font-medium truncate">{team.name}</p>
                     <p className="text-[10px] text-text-muted">{team.country}</p>
@@ -126,7 +127,7 @@ export function SearchBar() {
                   onClick={close}
                   className="flex items-center gap-2.5 px-3 py-2 hover:bg-accent/10 transition-colors"
                 >
-                  <img src={player.photo} alt="" className="w-6 h-6 rounded-full object-cover" />
+                  <img src={player.photo} alt={player.name} className="w-6 h-6 rounded-full object-cover" />
                   <div className="min-w-0">
                     <p className="text-xs font-medium truncate">{player.name}</p>
                     <p className="text-[10px] text-text-muted flex items-center gap-1">

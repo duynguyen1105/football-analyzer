@@ -50,6 +50,7 @@ export function Navbar() {
             <button
               onClick={() => setLeagueOpen(!leagueOpen)}
               className="hover:text-text-primary transition-colors flex items-center gap-0.5"
+              aria-expanded={leagueOpen}
             >
               Giải đấu
               <svg className={`w-3 h-3 transition-transform ${leagueOpen ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -101,6 +102,7 @@ export function Navbar() {
               onClick={() => setMenuOpen(!menuOpen)}
               className="p-1.5 text-text-secondary hover:text-text-primary transition-colors"
               aria-label="Menu"
+              aria-expanded={menuOpen}
             >
               {menuOpen ? (
                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
