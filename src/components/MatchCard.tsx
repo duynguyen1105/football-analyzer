@@ -53,14 +53,17 @@ export function MatchCard({ match }: { match: Match }) {
   return (
     <Link
       href={`/match/${match.id}`}
-      className="block bg-bg-card rounded-lg border border-border hover:border-accent/30 card-hover"
+      className="block bg-bg-card rounded-lg border border-border hover:border-accent/30 card-hover active:scale-[0.98] transition-transform"
       onMouseEnter={prefetch}
       onTouchStart={prefetch}
     >
       {/* League header */}
       <div className="px-3 py-1.5 border-b border-border/50 text-[10px] md:text-xs text-text-muted flex items-center gap-1.5">
         {league?.logo && <img src={league.logo} alt="" className="w-4 h-4 object-contain" />}
-        <span className="truncate flex-1">{match.competition.name}</span>
+        <span className="truncate flex-1">
+          {match.competition.name}
+          {match.round && <span className="text-text-muted/60"> · {match.round.replace("Regular Season - ", "V").replace("Round ", "V")}</span>}
+        </span>
         {live && <span className="text-[9px] font-semibold text-red-400 bg-red-400/10 px-1.5 py-0.5 rounded-full animate-pulse">LIVE</span>}
         {isHot && <span className="text-[9px]">🔥</span>}
         <FavoriteButton teamId={match.homeTeam.id} />

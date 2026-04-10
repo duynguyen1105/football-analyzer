@@ -168,7 +168,10 @@ export default function Home() {
             </button>
           )}
           {LEAGUES.map((l) => {
-            const count = (matches || []).filter((m: Match) => m.competition.code === l.code).length;
+            const base = selectedDate
+              ? (matches || []).filter((m: Match) => m.date === selectedDate)
+              : (matches || []);
+            const count = base.filter((m: Match) => m.competition.code === l.code).length;
             return (
               <button
                 key={l.code}
@@ -246,10 +249,13 @@ export default function Home() {
         )}
 
         {!isLoading && filtered.length > 0 && (
-          <div className="space-y-5">
+          <div className="space-y-5 animate-fade-in" key={`${selectedDate}-${leagueFilter}`}>
             {Object.entries(grouped).map(([date, dateMatches]) => (
               <section key={date}>
-                <h2 className="text-xs font-semibold text-text-secondary uppercase tracking-wide mb-2">{formatDateLabel(date)}</h2>
+                <div className="flex items-center gap-2 mb-2">
+                  <h2 className="text-xs font-semibold text-text-secondary uppercase tracking-wide">{formatDateLabel(date)}</h2>
+                  <span className="text-[10px] text-text-muted bg-border/30 px-1.5 py-0.5 rounded-full">{dateMatches.length}</span>
+                </div>
                 <div className="space-y-2 md:grid md:grid-cols-2 xl:grid-cols-3 md:gap-3 md:space-y-0">
                   {dateMatches.map((m: Match) => (
                     <MatchCard key={m.id} match={m} />

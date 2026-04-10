@@ -2,10 +2,24 @@
 
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { LEAGUES } from "@/lib/constants";
 import { getSlugByCode } from "@/lib/league-slugs";
 import { SearchBar } from "./SearchBar";
 import { ThemeToggle } from "./ThemeToggle";
+
+function NavLink({ href, children, className = "" }: { href: string; children: React.ReactNode; className?: string }) {
+  const pathname = usePathname();
+  const isActive = href === "/" ? pathname === "/" : pathname.startsWith(href);
+  return (
+    <Link
+      href={href}
+      className={`transition-colors ${isActive ? "text-accent font-medium" : "text-text-secondary hover:text-text-primary"} ${className}`}
+    >
+      {children}
+    </Link>
+  );
+}
 
 export function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -38,12 +52,12 @@ export function Navbar() {
 
         {/* Desktop nav */}
         <nav aria-label="Điều hướng chính" className="hidden sm:flex items-center gap-3 md:gap-4 text-xs text-text-secondary">
-          <Link href="/truc-tiep" className="hover:text-text-primary transition-colors flex items-center gap-1">
+          <NavLink href="/truc-tiep" className="flex items-center gap-1">
             <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
             Live
-          </Link>
-          <Link href="/hom-nay" className="hover:text-text-primary transition-colors">Hôm nay</Link>
-          <Link href="/ket-qua" className="hover:text-text-primary transition-colors">Kết quả</Link>
+          </NavLink>
+          <NavLink href="/hom-nay">Hôm nay</NavLink>
+          <NavLink href="/ket-qua">Kết quả</NavLink>
 
           {/* Giải đấu dropdown */}
           <div ref={leagueRef} className="relative">
@@ -77,12 +91,12 @@ export function Navbar() {
             )}
           </div>
 
-          <Link href="/soi-keo-hom-nay" className="hover:text-text-primary transition-colors">Soi kèo</Link>
-          <Link href="/lich-phat-song" className="hover:text-text-primary transition-colors hidden md:inline">Phát sóng</Link>
-          <Link href="/chuyen-nhuong" className="hover:text-text-primary transition-colors hidden md:inline">Chuyển nhượng</Link>
-          <Link href="/du-doan" className="hover:text-text-primary transition-colors hidden lg:inline">Dự đoán</Link>
-          <Link href="/bai-viet" className="hover:text-text-primary transition-colors hidden lg:inline">Bài viết</Link>
-          <Link href="/so-sanh" className="hover:text-text-primary transition-colors hidden lg:inline">So sánh</Link>
+          <NavLink href="/soi-keo-hom-nay">Soi kèo</NavLink>
+          <NavLink href="/lich-phat-song" className="hidden md:inline">Phát sóng</NavLink>
+          <NavLink href="/chuyen-nhuong" className="hidden md:inline">Chuyển nhượng</NavLink>
+          <NavLink href="/du-doan" className="hidden lg:inline">Dự đoán</NavLink>
+          <NavLink href="/bai-viet" className="hidden lg:inline">Bài viết</NavLink>
+          <NavLink href="/so-sanh" className="hidden lg:inline">So sánh</NavLink>
           <SearchBar />
           <ThemeToggle />
         </nav>
