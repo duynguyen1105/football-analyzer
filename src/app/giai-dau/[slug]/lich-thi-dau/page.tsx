@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { getMatches, getTournamentFixtures } from "@/lib/football-data";
+import { getVietnamDate } from "@/lib/timezone";
 import { getLeagueBySlug } from "@/lib/league-slugs";
 import { Match } from "@/lib/types";
 import Link from "next/link";
@@ -32,8 +33,8 @@ export default async function LeagueSchedulePage({ params }: Props) {
     matches = await getTournamentFixtures(league.code);
   } else {
     // Fetch next 10 days for domestic leagues
-    const today = new Date(Date.now() + 7 * 60 * 60 * 1000).toISOString().slice(0, 10);
-    const twoWeeks = new Date(Date.now() + 10 * 86400000 + 7 * 60 * 60 * 1000).toISOString().slice(0, 10);
+    const today = getVietnamDate();
+    const twoWeeks = getVietnamDate(10);
     const allMatches = await getMatches(today, twoWeeks);
     matches = allMatches.filter((m) => m.competition.code === league.code);
   }

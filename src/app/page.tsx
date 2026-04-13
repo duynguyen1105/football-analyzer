@@ -7,6 +7,7 @@ import { AdSlot } from "@/components/AdSlot";
 import { MatchCard, MatchSkeleton } from "@/components/MatchCard";
 import { StandingsCard } from "@/components/StandingsCard";
 import { useMatches } from "@/lib/hooks";
+import { getVietnamDate } from "@/lib/timezone";
 import { useAppStore } from "@/lib/store";
 import { LEAGUES } from "@/lib/constants";
 import { Match } from "@/lib/types";
@@ -27,10 +28,8 @@ function getGreeting(): string {
 }
 
 function formatDateLabel(dateStr: string): string {
-  const now = new Date();
-  const vnNow = new Date(now.getTime() + 7 * 60 * 60 * 1000);
-  const today = vnNow.toISOString().slice(0, 10);
-  const tomorrow = new Date(vnNow.getTime() + 86400000).toISOString().slice(0, 10);
+  const today = getVietnamDate();
+  const tomorrow = getVietnamDate(1);
 
   if (dateStr === today) return "Hôm nay";
   if (dateStr === tomorrow) return "Ngày mai";

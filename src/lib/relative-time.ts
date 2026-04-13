@@ -3,10 +3,10 @@
  * e.g. "2 giờ nữa", "30 phút nữa", "Ngày mai 22:00"
  */
 export function getRelativeTime(date: string, time: string): string | null {
-  const now = new Date();
-  const vnNow = new Date(now.getTime() + 7 * 60 * 60 * 1000);
+  // matchTime is anchored to GMT+7 with explicit offset, so it parses to a
+  // real epoch ms. Compare against Date.now() — no manual shift needed.
   const matchTime = new Date(`${date}T${time}:00+07:00`);
-  const diffMs = matchTime.getTime() - vnNow.getTime();
+  const diffMs = matchTime.getTime() - Date.now();
 
   if (diffMs < 0) return null; // past
 

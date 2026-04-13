@@ -2,21 +2,11 @@ import { getMatches, getStandings } from "@/lib/football-data";
 import { computePrediction } from "@/lib/prediction";
 import { LEAGUES } from "@/lib/constants";
 import { Match, Standing } from "@/lib/types";
-
-// ---------------------------------------------------------------------------
-// Date helpers (GMT+7)
-// ---------------------------------------------------------------------------
-function getVietnamDate(offsetDays = 0): string {
-  const now = new Date();
-  const vnTime = new Date(now.getTime() + 7 * 60 * 60 * 1000);
-  vnTime.setUTCDate(vnTime.getUTCDate() + offsetDays);
-  return vnTime.toISOString().slice(0, 10);
-}
+import { getVietnamDate, getVietnamNow } from "@/lib/timezone";
 
 /** Find the next Saturday & Sunday (or today if already Sat/Sun) */
 function getNextWeekendDates(): { saturday: string; sunday: string } {
-  const now = new Date();
-  const vnTime = new Date(now.getTime() + 7 * 60 * 60 * 1000);
+  const vnTime = getVietnamNow();
   const dayOfWeek = vnTime.getUTCDay(); // 0=Sun, 6=Sat
 
   let daysToSaturday: number;

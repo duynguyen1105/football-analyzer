@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Navbar } from "@/components/Navbar";
 import { getMatches, getMatchOdds } from "@/lib/football-data";
+import { getVietnamDate } from "@/lib/timezone";
 import { getLeagueBySlug, getAllLeagueSlugs, LEAGUE_SLUGS } from "@/lib/league-slugs";
 import { buildBreadcrumbSchema } from "@/lib/json-ld";
 import { Match, MatchOdds } from "@/lib/types";
@@ -37,8 +38,8 @@ export default async function SoiKeoPage({ params }: Props) {
   if (!league) notFound();
 
   const baseUrl = "https://nhandinhbongdavn.com";
-  const today = new Date(Date.now() + 7 * 60 * 60 * 1000).toISOString().slice(0, 10);
-  const nextWeek = new Date(Date.now() + 7 * 86400000 + 7 * 60 * 60 * 1000).toISOString().slice(0, 10);
+  const today = getVietnamDate();
+  const nextWeek = getVietnamDate(7);
 
   const allMatches = await getMatches(today, nextWeek);
   const matches = allMatches.filter((m) => m.competition.code === league.code && m.status === "SCHEDULED");

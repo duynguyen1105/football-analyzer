@@ -4,19 +4,10 @@ import { computePrediction } from "@/lib/prediction";
 import { setCached, getCached } from "@/lib/cache";
 import { LEAGUES } from "@/lib/constants";
 import { Match, Standing } from "@/lib/types";
+import { getVietnamDate, getVietnamNow } from "@/lib/timezone";
 
 // Allow up to 60s for this endpoint (fetches multiple leagues)
 export const maxDuration = 60;
-
-// ---------------------------------------------------------------------------
-// Date helpers (GMT+7)
-// ---------------------------------------------------------------------------
-function getVietnamDate(offsetDays = 0): string {
-  const now = new Date();
-  const vnTime = new Date(now.getTime() + 7 * 60 * 60 * 1000);
-  vnTime.setUTCDate(vnTime.getUTCDate() + offsetDays);
-  return vnTime.toISOString().slice(0, 10);
-}
 
 function formatVietnameseDate(dateStr: string): string {
   const d = new Date(dateStr + "T00:00:00");
@@ -401,8 +392,7 @@ ${prediction.homeWin > prediction.awayWin
 
   // Record last cron run time for admin dashboard
   try {
-    const now = new Date();
-    const vnTime = new Date(now.getTime() + 7 * 60 * 60 * 1000);
+    const vnTime = getVietnamNow();
     await setCached("auto-blog:last-run", vnTime.toISOString().replace("T", " ").slice(0, 19) + " (GMT+7)", TTL_30_DAYS);
   } catch { /* non-critical */ }
 

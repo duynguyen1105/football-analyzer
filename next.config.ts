@@ -15,6 +15,14 @@ const nextConfig: NextConfig = {
   },
   experimental: {
     optimizeCss: true,
+    // Keep rendered page segments in the App Router client cache so
+    // back/forward navigation reuses the previous render instead of
+    // re-rendering (which would flash loading.tsx skeletons and force
+    // React Query hooks to re-suspend).
+    staleTimes: {
+      dynamic: 60,   // 60s for dynamic pages (was 0 — caused skeleton flash)
+      static: 300,   // 5 min for prefetched / static pages
+    },
   },
   async redirects() {
     return [

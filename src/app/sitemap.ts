@@ -1,5 +1,5 @@
 import type { MetadataRoute } from "next";
-import { getMatches, getStandings } from "@/lib/football-data";
+import { getMatches, getStandings, getVietnamDate } from "@/lib/football-data";
 import { getAllLeagueSlugs, getLeagueBySlug } from "@/lib/league-slugs";
 import { generateMatchSlug } from "@/lib/match-slugs";
 import { LEAGUES } from "@/lib/constants";
@@ -88,8 +88,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   // Dynamic match pages — get upcoming matches
   try {
-    const today = new Date().toISOString().slice(0, 10);
-    const nextWeek = new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 10);
+    const today = getVietnamDate();
+    const nextWeek = getVietnamDate(7);
     const matches = await getMatches(today, nextWeek);
 
     const matchPages: MetadataRoute.Sitemap = matches.flatMap((match) => {

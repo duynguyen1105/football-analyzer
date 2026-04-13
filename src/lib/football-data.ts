@@ -2,9 +2,11 @@ import { Match, Standing, GroupStanding, TeamInfo, H2HMatch, MatchOdds, MatchInj
 import { LEAGUE_IDS, CURRENT_SEASON, getLeagueId, getLeagueCode, getSeasonForLeague } from "./constants";
 import { getCached as getRedis, setCached as setRedis } from "./cache";
 import { getShortName, getTla } from "./team-names";
+import { VIETNAM_TIMEZONE, getVietnamDate, utcToVietnam } from "./timezone";
+
+export { VIETNAM_TIMEZONE, getVietnamDate } from "./timezone";
 
 const BASE_URL = "https://v3.football.api-sports.io";
-const GMT_PLUS_7_OFFSET = 7 * 60 * 60 * 1000;
 
 // ---------------------------------------------------------------------------
 // Two-level cache: in-memory (fast) + Redis (persistent across deploys)
@@ -185,15 +187,10 @@ async function apiFetchRaw(path: string, params?: Record<string, string>): Promi
 }
 
 // ---------------------------------------------------------------------------
-// Date helpers — convert UTC ISO string to GMT+7
+// Date formatters — API-Football returns UTC, we display in GMT+7.
 // ---------------------------------------------------------------------------
-function utcToGmt7(utcDateStr: string): Date {
-  const utcMs = new Date(utcDateStr).getTime();
-  return new Date(utcMs + GMT_PLUS_7_OFFSET);
-}
-
 function formatDateGmt7(utcDateStr: string): string {
-  const d = utcToGmt7(utcDateStr);
+  const d = utcToVietnam(utcDateStr);
   const year = d.getUTCFullYear();
   const month = String(d.getUTCMonth() + 1).padStart(2, "0");
   const day = String(d.getUTCDate()).padStart(2, "0");
@@ -201,7 +198,7 @@ function formatDateGmt7(utcDateStr: string): string {
 }
 
 function formatTimeGmt7(utcDateStr: string): string {
-  const d = utcToGmt7(utcDateStr);
+  const d = utcToVietnam(utcDateStr);
   const hours = String(d.getUTCHours()).padStart(2, "0");
   const minutes = String(d.getUTCMinutes()).padStart(2, "0");
   return `${hours}:${minutes}`;
@@ -277,6 +274,7 @@ export async function getMatches(dateFrom: string, dateTo: string): Promise<Matc
           season: String(getSeasonForLeague(leagueId)),
           from: dateFrom,
           to: dateTo,
+          timezone: VIETNAM_TIMEZONE,
         })
       )
     );
@@ -1036,8 +1034,9 @@ export async function getLiveMatches(): Promise<Match[]> {
   const cached = await getCached<Match[]>(cacheKey);
   if (cached) return cached;
 
-  // Get today's date in UTC for the API query
-  const today = new Date().toISOString().slice(0, 10);
+  // Use Vietnam's calendar day so users in Vietnam see matches "today"
+  // even when UTC has rolled over to the previous/next day.
+  const today = getVietnamDate();
 
   try {
     const allFixtures = await Promise.all(
@@ -1046,6 +1045,7 @@ export async function getLiveMatches(): Promise<Match[]> {
         apiFetch<any[]>("/fixtures", {
           league: String(leagueId),
           date: today,
+          timezone: VIETNAM_TIMEZONE,
         })
       )
     );

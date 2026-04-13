@@ -1,5 +1,6 @@
 import { Navbar } from "@/components/Navbar";
 import { getMatches, getStandings } from "@/lib/football-data";
+import { getVietnamDate } from "@/lib/timezone";
 import { computePrediction } from "@/lib/prediction";
 import { computeImportance } from "@/lib/importance";
 import { LEAGUES } from "@/lib/constants";
@@ -13,11 +14,6 @@ export const metadata = {
 };
 
 export const revalidate = 300;
-
-function getVietnamToday(): string {
-  const d = new Date(Date.now() + 7 * 60 * 60 * 1000);
-  return d.toISOString().slice(0, 10);
-}
 
 function formatVietnameseDate(dateStr: string): string {
   const d = new Date(dateStr + "T00:00:00");
@@ -147,7 +143,7 @@ function MatchDigestCard({
 }
 
 export default async function HomNayPage() {
-  const today = getVietnamToday();
+  const today = getVietnamDate();
   const matches = await getMatches(today, today);
 
   // Fetch standings for all leagues that have matches today

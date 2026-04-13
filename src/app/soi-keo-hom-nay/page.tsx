@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Navbar } from "@/components/Navbar";
 import { getMatches, getMatchOdds, getStandings } from "@/lib/football-data";
+import { getVietnamDate } from "@/lib/timezone";
 import { computePrediction } from "@/lib/prediction";
 import { buildBreadcrumbSchema } from "@/lib/json-ld";
 import { LEAGUES } from "@/lib/constants";
@@ -31,11 +32,6 @@ export const metadata: Metadata = {
 
 export const revalidate = 1800;
 
-function getVietnamToday(): string {
-  const d = new Date(Date.now() + 7 * 60 * 60 * 1000);
-  return d.toISOString().slice(0, 10);
-}
-
 function formatVietnameseDate(dateStr: string): string {
   const d = new Date(dateStr + "T00:00:00");
   return d.toLocaleDateString("vi-VN", {
@@ -54,7 +50,7 @@ type MatchWithOddsAndPrediction = {
 
 export default async function SoiKeoHomNayPage() {
   const baseUrl = "https://nhandinhbongdavn.com";
-  const today = getVietnamToday();
+  const today = getVietnamDate();
 
   const allMatches = await getMatches(today, today);
   const scheduled = allMatches.filter((m) => m.status === "SCHEDULED");

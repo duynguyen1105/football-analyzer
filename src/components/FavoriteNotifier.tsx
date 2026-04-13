@@ -36,8 +36,7 @@ export function FavoriteNotifier() {
 
     checkedRef.current = true;
     const notified = getNotified();
-    const now = new Date();
-    const vnNow = new Date(now.getTime() + 7 * 60 * 60 * 1000);
+    const nowMs = Date.now();
 
     for (const m of matches as Match[]) {
       if (m.status !== "SCHEDULED") continue;
@@ -47,7 +46,7 @@ export function FavoriteNotifier() {
       if (!isFav) continue;
 
       const matchTime = new Date(`${m.date}T${m.time}:00+07:00`);
-      const diffMin = (matchTime.getTime() - vnNow.getTime()) / 60000;
+      const diffMin = (matchTime.getTime() - nowMs) / 60000;
 
       // Notify if match is within 30 minutes
       if (diffMin > 0 && diffMin <= 30) {

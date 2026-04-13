@@ -1,6 +1,7 @@
 import { Metadata } from "next";
 import { Navbar } from "@/components/Navbar";
 import { getMatches } from "@/lib/football-data";
+import { getVietnamDate } from "@/lib/timezone";
 import { LEAGUES } from "@/lib/constants";
 import { Match } from "@/lib/types";
 import Link from "next/link";
@@ -53,11 +54,6 @@ const TV_CHANNELS: Record<string, { channel: string; color: string }[]> = {
   ],
 };
 
-function getVietnamToday(): string {
-  const d = new Date(Date.now() + 7 * 60 * 60 * 1000);
-  return d.toISOString().slice(0, 10);
-}
-
 function formatVietnameseDate(dateStr: string): string {
   const d = new Date(dateStr + "T00:00:00");
   return d.toLocaleDateString("vi-VN", {
@@ -82,7 +78,7 @@ function getTimeSlotOrder(slot: string): number {
 }
 
 export default async function LichPhatSongPage() {
-  const today = getVietnamToday();
+  const today = getVietnamDate();
   const allMatches = await getMatches(today, today);
 
   // Filter to scheduled/live matches

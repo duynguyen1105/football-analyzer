@@ -1,6 +1,7 @@
 import { Metadata } from "next";
 import { Navbar } from "@/components/Navbar";
 import { getMatches } from "@/lib/football-data";
+import { getVietnamDate } from "@/lib/timezone";
 import { LEAGUES } from "@/lib/constants";
 import { Match } from "@/lib/types";
 import Link from "next/link";
@@ -19,13 +20,6 @@ export const metadata: Metadata = {
 
 export const revalidate = 300;
 
-function getVietnamYesterday(): string {
-  const now = new Date();
-  const vnTime = new Date(now.getTime() + 7 * 60 * 60 * 1000);
-  vnTime.setUTCDate(vnTime.getUTCDate() - 1);
-  return vnTime.toISOString().slice(0, 10);
-}
-
 function formatVietnameseDate(dateStr: string): string {
   const d = new Date(dateStr + "T00:00:00");
   return d.toLocaleDateString("vi-VN", {
@@ -37,7 +31,7 @@ function formatVietnameseDate(dateStr: string): string {
 }
 
 export default async function KetQuaPage() {
-  const yesterday = getVietnamYesterday();
+  const yesterday = getVietnamDate(-1);
   const allMatches = await getMatches(yesterday, yesterday);
 
   // Filter to finished matches only

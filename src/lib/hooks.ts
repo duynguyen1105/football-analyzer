@@ -1,14 +1,8 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, keepPreviousData } from "@tanstack/react-query";
 import { Match, Standing } from "./types";
-
-function getVietnamDate(offsetDays = 0): string {
-  const now = new Date();
-  const vnTime = new Date(now.getTime() + 7 * 60 * 60 * 1000);
-  vnTime.setUTCDate(vnTime.getUTCDate() + offsetDays);
-  return vnTime.toISOString().slice(0, 10);
-}
+import { getVietnamDate } from "./timezone";
 
 export function useMatches(customDate?: string) {
   const dateFrom = customDate || getVietnamDate();
@@ -19,6 +13,9 @@ export function useMatches(customDate?: string) {
     queryFn: () =>
       fetch(`/api/matches?dateFrom=${dateFrom}&dateTo=${dateTo}`).then((r) => r.json()),
     staleTime: 30 * 60 * 1000, // 30 min — matches don't change often
+    // Keep showing previous matches while a new date range loads — avoids
+    // a full skeleton flash when the user switches days in DatePicker.
+    placeholderData: keepPreviousData,
   });
 }
 

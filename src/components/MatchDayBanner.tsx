@@ -11,15 +11,15 @@ export function MatchDayBanner({ matches }: { matches: Match[] }) {
   const nextBig = useMemo(() => {
     if (!matches) return null;
 
-    const now = new Date();
-    const vnNow = new Date(now.getTime() + 7 * 60 * 60 * 1000);
+    // Compare epoch ms directly. matchTime is a real GMT+7-anchored timestamp;
+    // Date.now() is real epoch ms. No offset shifting needed.
+    const nowMs = Date.now();
 
-    // Find the highest-priority match starting within 6 hours
     const upcoming = matches
       .filter((m) => m.status === "SCHEDULED")
       .map((m) => {
         const matchTime = new Date(`${m.date}T${m.time}:00+07:00`);
-        const diffMin = (matchTime.getTime() - vnNow.getTime()) / 60000;
+        const diffMin = (matchTime.getTime() - nowMs) / 60000;
         return { match: m, diffMin, priority: LEAGUE_PRIORITY[m.competition.code] || 1 };
       })
       .filter((m) => m.diffMin > 0 && m.diffMin <= 360) // within 6 hours

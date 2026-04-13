@@ -1,12 +1,12 @@
-import { getMatches } from "@/lib/football-data";
+import { getMatches, getVietnamDate } from "@/lib/football-data";
 import { generateMatchSlug } from "@/lib/match-slugs";
 
 export const revalidate = 3600;
 
 export async function GET() {
   const baseUrl = "https://nhandinhbongdavn.com";
-  const today = new Date().toISOString().slice(0, 10);
-  const nextWeek = new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 10);
+  const today = getVietnamDate();
+  const nextWeek = getVietnamDate(7);
 
   let matches: Awaited<ReturnType<typeof getMatches>> = [];
   try {

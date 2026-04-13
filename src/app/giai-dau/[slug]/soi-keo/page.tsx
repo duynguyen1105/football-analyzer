@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { getMatches, getMatchOdds } from "@/lib/football-data";
+import { getVietnamDate } from "@/lib/timezone";
 import { getLeagueBySlug } from "@/lib/league-slugs";
 import { Match, MatchOdds } from "@/lib/types";
 import Link from "next/link";
@@ -25,8 +26,8 @@ export default async function LeagueOddsPage({ params }: Props) {
   const league = getLeagueBySlug(slug);
   if (!league) notFound();
 
-  const today = new Date(Date.now() + 7 * 60 * 60 * 1000).toISOString().slice(0, 10);
-  const nextWeek = new Date(Date.now() + 7 * 86400000 + 7 * 60 * 60 * 1000).toISOString().slice(0, 10);
+  const today = getVietnamDate();
+  const nextWeek = getVietnamDate(7);
 
   const allMatches = await getMatches(today, nextWeek);
   const matches = allMatches.filter((m) => m.competition.code === league.code && m.status === "SCHEDULED");

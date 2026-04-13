@@ -1,6 +1,7 @@
 import { ImageResponse } from "next/og";
 import { readFile } from "fs/promises";
 import { join } from "path";
+import { getVietnamNow } from "@/lib/timezone";
 
 export const runtime = "nodejs";
 export const alt = "Soi Kèo Hôm Nay — Nhận Định Bóng Đá VN";
@@ -8,8 +9,7 @@ export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
 function getVietnamToday(): string {
-  const d = new Date(Date.now() + 7 * 60 * 60 * 1000);
-  return d.toLocaleDateString("vi-VN", {
+  return getVietnamNow().toLocaleDateString("vi-VN", {
     weekday: "long",
     day: "numeric",
     month: "long",

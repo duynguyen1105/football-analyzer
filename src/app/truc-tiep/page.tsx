@@ -2,6 +2,7 @@
 
 import { Navbar } from "@/components/Navbar";
 import { useLiveMatches, useMatches } from "@/lib/hooks";
+import { getVietnamDate } from "@/lib/timezone";
 import { LEAGUES } from "@/lib/constants";
 import { Match } from "@/lib/types";
 import { Footer } from "@/components/Footer";
@@ -409,7 +410,7 @@ export default function LivePage() {
 
         {/* Upcoming today */}
         {allMatches && (() => {
-          const today = new Date(Date.now() + 7 * 60 * 60 * 1000).toISOString().slice(0, 10);
+          const today = getVietnamDate();
           const upcoming = allMatches.filter(
             (m: Match) => m.date === today && m.status === "SCHEDULED"
           );

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Navbar } from "@/components/Navbar";
 import { getMatches } from "@/lib/football-data";
+import { getVietnamDate } from "@/lib/timezone";
 import { getLeagueBySlug, getAllLeagueSlugs, LEAGUE_SLUGS } from "@/lib/league-slugs";
 import { buildBreadcrumbSchema } from "@/lib/json-ld";
 import { Match } from "@/lib/types";
@@ -39,8 +40,8 @@ export default async function SchedulePage({ params }: Props) {
   const baseUrl = "https://nhandinhbongdavn.com";
 
   // Fetch next 10 days of matches for this league (API limit: max 10 days)
-  const today = new Date(Date.now() + 7 * 60 * 60 * 1000).toISOString().slice(0, 10);
-  const twoWeeks = new Date(Date.now() + 10 * 86400000 + 7 * 60 * 60 * 1000).toISOString().slice(0, 10);
+  const today = getVietnamDate();
+  const twoWeeks = getVietnamDate(10);
 
   const allMatches = await getMatches(today, twoWeeks);
   const matches = allMatches.filter((m) => m.competition.code === league.code);

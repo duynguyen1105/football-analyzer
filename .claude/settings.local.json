@@ -22,7 +22,9 @@
       "Bash(npx vitest:*)",
       "WebFetch(domain:bongda24h.vn)",
       "Bash(openssl rand:*)",
-      "WebFetch(domain:nhandinhbongdavn.com)"
+      "WebFetch(domain:nhandinhbongdavn.com)",
+      "Bash(read dir:*)",
+      "Bash([ ! -f \"$dir/page.tsx\" ])"
     ]
   }
 }

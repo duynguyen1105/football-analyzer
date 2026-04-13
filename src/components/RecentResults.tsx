@@ -2,6 +2,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
+import { utcToVietnam } from "@/lib/timezone";
 
 interface RecentResultsProps {
   matchId: string;
@@ -65,8 +66,7 @@ function parseResults(teamId: number, matches: RawMatch[]): ParsedResult[] {
       if (teamGoals > opponentGoals) result = "W";
       else if (teamGoals < opponentGoals) result = "L";
 
-      const utcMs = new Date(m.utcDate).getTime();
-      const gmt7 = new Date(utcMs + 7 * 60 * 60 * 1000);
+      const gmt7 = utcToVietnam(m.utcDate);
       const day = String(gmt7.getUTCDate()).padStart(2, "0");
       const month = String(gmt7.getUTCMonth() + 1).padStart(2, "0");
 

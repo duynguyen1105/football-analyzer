@@ -1,13 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
-
-function getVietnamDate(offsetDays = 0): string {
-  const now = new Date();
-  const vnTime = new Date(now.getTime() + 7 * 60 * 60 * 1000);
-  vnTime.setUTCDate(vnTime.getUTCDate() + offsetDays);
-  return vnTime.toISOString().slice(0, 10);
-}
+import { getVietnamDate } from "@/lib/timezone";
 
 function formatShortDate(dateStr: string): { day: string; weekday: string; isToday: boolean; isTomorrow: boolean } {
   const today = getVietnamDate();
