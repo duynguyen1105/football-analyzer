@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { LEAGUES } from "@/lib/constants";
 import { getSlugByCode } from "@/lib/league-slugs";
 import { SearchBar } from "./SearchBar";
+import { StandingsModal } from "./StandingsModal";
 import { ThemeToggle } from "./ThemeToggle";
 
 function NavLink({ href, children, className = "" }: { href: string; children: React.ReactNode; className?: string }) {
@@ -24,6 +25,7 @@ function NavLink({ href, children, className = "" }: { href: string; children: R
 export function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [leagueOpen, setLeagueOpen] = useState(false);
+  const [bxhOpen, setBxhOpen] = useState(false);
   const leagueRef = useRef<HTMLDivElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -58,6 +60,14 @@ export function Navbar() {
           </NavLink>
           <NavLink href="/hom-nay">Hôm nay</NavLink>
           <NavLink href="/ket-qua">Kết quả</NavLink>
+
+          <button
+            onClick={() => setBxhOpen(true)}
+            className="text-text-secondary hover:text-text-primary transition-colors"
+            aria-label="Mở bảng xếp hạng"
+          >
+            BXH
+          </button>
 
           {/* Giải đấu dropdown */}
           <div ref={leagueRef} className="relative">
@@ -107,6 +117,13 @@ export function Navbar() {
             <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
             <span>Live</span>
           </Link>
+          <button
+            onClick={() => setBxhOpen(true)}
+            className="p-1.5 text-xs text-text-secondary hover:text-text-primary transition-colors"
+            aria-label="Mở bảng xếp hạng"
+          >
+            BXH
+          </button>
           <SearchBar />
           <ThemeToggle />
 
@@ -165,6 +182,8 @@ export function Navbar() {
           </div>
         </div>
       </div>
+
+      <StandingsModal open={bxhOpen} onClose={() => setBxhOpen(false)} />
     </header>
   );
 }
