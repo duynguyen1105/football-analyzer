@@ -94,6 +94,12 @@ export interface MatchDetail {
     over25: number;
   };
   isKnockout?: boolean;
+  firstLeg?: {
+    homeTeam: string;
+    awayTeam: string;
+    score: { home: number | null; away: number | null } | null | undefined;
+    date: string;
+  } | null;
 }
 
 export interface League {

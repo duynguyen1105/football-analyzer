@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
-import { getMatch, getStandings, getTeamRecentMatches, computeForm } from "@/lib/football-data";
-import { isKnockoutRound, isTournamentLeague } from "@/lib/constants";
+import { getMatch, getStandings, getTeamRecentMatches, computeForm, getFirstLegMatch } from "@/lib/football-data";
+import { isKnockoutRound, isTournamentLeague, isSecondLeg } from "@/lib/constants";
 import { getCached, setCached } from "@/lib/cache";
 import { quickSummarySchema, parseSearchParams } from "@/lib/api-validation";
 
@@ -35,17 +35,31 @@ export async function GET(request: NextRequest) {
     let prompt: string;
 
     if (knockout) {
-      const [homeRecent, awayRecent] = await Promise.all([
+      const is2ndLeg = isSecondLeg(match.round);
+      const [homeRecent, awayRecent, firstLeg] = await Promise.all([
         getTeamRecentMatches(match.homeTeam.id, 5),
         getTeamRecentMatches(match.awayTeam.id, 5),
+        is2ndLeg && match.round
+          ? getFirstLegMatch(match.competition.code, match.homeTeam.id, match.awayTeam.id, match.round)
+          : Promise.resolve(null),
       ]);
       const homeForm = computeForm(match.homeTeam.id, homeRecent);
       const awayForm = computeForm(match.awayTeam.id, awayRecent);
 
+      let firstLegBlock = "";
+      if (firstLeg?.score) {
+        const aggHome = firstLeg.score.away ?? 0;
+        const aggAway = firstLeg.score.home ?? 0;
+        let leadText = "hòa tổng tỷ số";
+        if (aggHome > aggAway) leadText = `${match.homeTeam.shortName} dẫn tổng tỷ số`;
+        else if (aggAway > aggHome) leadText = `${match.awayTeam.shortName} dẫn tổng tỷ số`;
+        firstLegBlock = `\nLượt đi: ${firstLeg.homeTeam.shortName} ${firstLeg.score.home}-${firstLeg.score.away} ${firstLeg.awayTeam.shortName}\nTổng tỷ số trước lượt về: ${match.homeTeam.shortName} ${aggHome}-${aggAway} ${match.awayTeam.shortName} (${leadText})\nBẮT BUỘC một trong 3 điểm phải nhắc đến kết quả lượt đi và ảnh hưởng của nó.`;
+      }
+
       prompt = `Viết 3 điểm nhận định nhanh (mỗi điểm 1 câu ngắn) cho trận ${match.homeTeam.name} vs ${match.awayTeam.name}.
 Giải: ${match.competition.name} — ${match.round} (vòng loại trực tiếp, thua là bị loại)
 Phong độ ${match.homeTeam.shortName}: ${homeForm.join("-") || "N/A"}
-Phong độ ${match.awayTeam.shortName}: ${awayForm.join("-") || "N/A"}
+Phong độ ${match.awayTeam.shortName}: ${awayForm.join("-") || "N/A"}${firstLegBlock}
 KHÔNG nhắc đến thứ hạng hay bảng xếp hạng vòng bảng. Tập trung vào phong độ, lịch sử đối đầu, và áp lực loại trực tiếp.
 Chỉ trả về 3 dòng, mỗi dòng bắt đầu bằng "•". Không cần tiêu đề.`;
     } else {

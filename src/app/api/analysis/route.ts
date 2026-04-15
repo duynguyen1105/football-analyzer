@@ -7,11 +7,12 @@ import {
   getTeamRecentMatches,
   getTopScorers,
   getH2H,
+  getFirstLegMatch,
   computeH2H,
   computeForm,
 } from "@/lib/football-data";
 import { computePrediction, computeKnockoutPrediction } from "@/lib/prediction";
-import { isKnockoutRound, isTournamentLeague } from "@/lib/constants";
+import { isKnockoutRound, isTournamentLeague, isSecondLeg } from "@/lib/constants";
 import { MatchDetail } from "@/lib/types";
 import { analysisSchema, parseSearchParams } from "@/lib/api-validation";
 
@@ -29,8 +30,9 @@ export async function GET(request: NextRequest) {
     }
 
     const knockout = isTournamentLeague(match.competition.code) && isKnockoutRound(match.round);
+    const is2ndLeg = knockout && isSecondLeg(match.round);
 
-    const [standings, homeTeamInfo, awayTeamInfo, homeRecent, awayRecent, h2h, topScorers] =
+    const [standings, homeTeamInfo, awayTeamInfo, homeRecent, awayRecent, h2h, topScorers, firstLeg] =
       await Promise.all([
         knockout ? Promise.resolve([]) : getStandings(match.competition.code),
         getTeamInfo(match.homeTeam.id),
@@ -39,6 +41,9 @@ export async function GET(request: NextRequest) {
         getTeamRecentMatches(match.awayTeam.id, 10),
         getH2H(parseInt(matchId, 10)).then(r => r || computeH2H(match.homeTeam.id, match.awayTeam.id)),
         getTopScorers(match.competition.code),
+        is2ndLeg && match.round
+          ? getFirstLegMatch(match.competition.code, match.homeTeam.id, match.awayTeam.id, match.round)
+          : Promise.resolve(null),
       ]);
 
     const homeForm = computeForm(match.homeTeam.id, homeRecent);
@@ -48,12 +53,16 @@ export async function GET(request: NextRequest) {
 
     let prediction;
     if (knockout) {
+      const firstLegData = firstLeg?.score
+        ? { homeTeamId: firstLeg.homeTeam.id, homeGoals: firstLeg.score.home ?? 0, awayGoals: firstLeg.score.away ?? 0 }
+        : null;
       prediction = computeKnockoutPrediction(
         match.homeTeam.id,
         match.awayTeam.id,
         homeRecent,
         awayRecent,
-        h2h
+        h2h,
+        firstLegData
       );
     } else {
       const homeStanding = standings.find((s) => s.team.id === match.homeTeam.id) || null;
@@ -70,6 +79,14 @@ export async function GET(request: NextRequest) {
       topScorers,
       prediction,
       isKnockout: knockout,
+      firstLeg: firstLeg
+        ? {
+            homeTeam: firstLeg.homeTeam.shortName,
+            awayTeam: firstLeg.awayTeam.shortName,
+            score: firstLeg.score,
+            date: firstLeg.date,
+          }
+        : null,
     };
 
     const analysis = await generateMatchAnalysis(matchDetail, lang);

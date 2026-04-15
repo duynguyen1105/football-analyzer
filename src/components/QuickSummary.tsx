@@ -13,7 +13,7 @@ export function QuickSummary({ matchId }: QuickSummaryProps) {
 
   if (isLoading) {
     return (
-      <div className="rounded-xl border border-accent/20 bg-accent/5 p-4">
+      <div className="rounded-xl border border-accent/20 bg-accent/5 p-4 mb-6">
         <div className="flex items-center gap-2 mb-3">
           <span className="text-accent text-lg">⚡</span>
           <h3 className="text-sm font-semibold text-text-primary">
@@ -38,7 +38,7 @@ export function QuickSummary({ matchId }: QuickSummaryProps) {
   if (bullets.length === 0) return null;
 
   return (
-    <div className="rounded-xl border border-accent/20 bg-accent/5 p-4">
+    <div className="rounded-xl border border-accent/20 bg-accent/5 p-4 mb-6">
       <div className="flex items-center gap-2 mb-3">
         <span className="text-accent text-lg">⚡</span>
         <h3 className="text-sm font-semibold text-text-primary">

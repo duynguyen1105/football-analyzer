@@ -45,17 +45,16 @@ VENUE: ${match.venue}`;
 
   if (isKnockout) {
     block += `\nFORMAT: Knockout stage — direct elimination. DO NOT reference group stage standings or league positions. Focus on recent form, H2H, and elimination pressure.`;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const firstLeg = (data as any).firstLeg;
+    const firstLeg = data.firstLeg;
     if (firstLeg?.score) {
-      block += `\nFIRST LEG RESULT: ${firstLeg.homeTeam} ${firstLeg.score.home} - ${firstLeg.score.away} ${firstLeg.awayTeam}`;
-      const aggHome = firstLeg.score.away; // 2nd leg home was away in 1st
-      const aggAway = firstLeg.score.home; // 2nd leg away was home in 1st
+      block += `\nFIRST LEG RESULT: ${firstLeg.homeTeam} ${firstLeg.score.home} - ${firstLeg.score.away} ${firstLeg.awayTeam} (played ${firstLeg.date})`;
+      const aggHome = firstLeg.score.away ?? 0; // 2nd leg home was away in 1st
+      const aggAway = firstLeg.score.home ?? 0; // 2nd leg away was home in 1st
       block += `\nAGGREGATE before 2nd leg: ${match.homeTeam.name} ${aggHome} - ${aggAway} ${match.awayTeam.name}`;
       if (aggHome > aggAway) block += ` (${match.homeTeam.name} leads)`;
       else if (aggAway > aggHome) block += ` (${match.awayTeam.name} leads)`;
       else block += ` (level on aggregate)`;
-      block += `\nIMPORTANT: Analyze how the first leg result affects each team's approach. The trailing team MUST attack. The leading team can play conservatively or on the counter.`;
+      block += `\nIMPORTANT: You MUST explicitly reference the first leg result and its storyline in your analysis. Describe how the first leg unfolded and how it shapes each team's approach in this 2nd leg. The trailing team MUST attack. The leading team can play conservatively or on the counter.`;
     }
   } else {
     const homeStanding = standings.find((s) => s.team.id === match.homeTeam.id);
@@ -121,8 +120,13 @@ function buildEnglishPrompt(data: MatchDetail): string {
     ? "3. Elimination pressure — how knockout stakes affect each team's approach and mentality"
     : "3. Motivation assessment — which team has more at stake (title race, relegation, European spots)";
 
-  return `You are a football analyst writing an actionable pre-match preview for informed readers. Write a concise, insightful analysis (5-6 short paragraphs) based on the data below. Your analysis must cover:
+  const is2ndLeg = Boolean(data.firstLeg?.score);
+  const firstLegLine = is2ndLeg
+    ? "\n0. First leg recap — explicitly mention the first leg result and how it unfolded, and how that storyline shapes each team's approach tonight"
+    : "";
 
+  return `You are a football analyst writing an actionable pre-match preview for informed readers. Write a concise, insightful analysis (5-6 short paragraphs) based on the data below. Your analysis must cover:
+${firstLegLine}
 1. Key tactical matchups and how each manager is likely to set up
 2. Current form and momentum — which team is on the rise or declining
 ${motivationLine}
@@ -142,8 +146,13 @@ function buildVietnamesePrompt(data: MatchDetail): string {
     ? "3. Áp lực loại trực tiếp — thể thức knockout ảnh hưởng thế nào đến lối chơi và tâm lý mỗi đội"
     : "3. Đánh giá động lực — đội nào có nhiều lý do để chiến đấu hơn (đua vô địch, trụ hạng, suất châu Âu)";
 
-  return `Bạn là một nhà phân tích bóng đá chuyên nghiệp viết bài nhận định trước trận cho người đọc muốn đưa ra quyết định sáng suốt. Viết bài phân tích ngắn gọn, sâu sắc (5-6 đoạn ngắn) dựa trên dữ liệu bên dưới. Bài phân tích phải bao gồm:
+  const is2ndLeg = Boolean(data.firstLeg?.score);
+  const firstLegLine = is2ndLeg
+    ? "\n0. Tóm tắt lượt đi — BẮT BUỘC nhắc rõ tỷ số và diễn biến lượt đi, và cách kết quả đó định hình lối chơi, tâm lý của hai đội trong trận lượt về này"
+    : "";
 
+  return `Bạn là một nhà phân tích bóng đá chuyên nghiệp viết bài nhận định trước trận cho người đọc muốn đưa ra quyết định sáng suốt. Viết bài phân tích ngắn gọn, sâu sắc (5-6 đoạn ngắn) dựa trên dữ liệu bên dưới. Bài phân tích phải bao gồm:
+${firstLegLine}
 1. Đối đầu chiến thuật quan trọng — cách mỗi HLV có thể bố trí đội hình
 2. Phong độ hiện tại — đội nào đang trên đà thăng tiến hay sa sút
 ${motivationLine}
