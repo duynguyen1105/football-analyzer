@@ -89,6 +89,7 @@ export function PredictionWidget({
         ["user-prediction", visitorId, matchId],
         data,
       );
+      queryClient.invalidateQueries({ queryKey: ["match-predictions", matchId] });
       if (nickname) saveNickname(nickname);
     },
   });

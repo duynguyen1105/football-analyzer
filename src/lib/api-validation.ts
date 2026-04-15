@@ -105,6 +105,10 @@ export const userPredictionGetSchema = z.object({
   visitorId: z.string().min(8).max(40),
 });
 
+export const userPredictionMatchSchema = z.object({
+  matchId: numericString,
+});
+
 // --- Helper ---
 
 type ParseResult<T> = { data: T; error: null } | { data: null; error: Response };

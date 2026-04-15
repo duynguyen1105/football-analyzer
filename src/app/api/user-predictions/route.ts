@@ -71,6 +71,19 @@ export async function POST(request: Request) {
       await setCached(indexKey, JSON.stringify(matchIds), TTL_30_DAYS);
     }
 
+    // Update per-match visitor index (for community summary on match page)
+    const matchIndexKey = `pred-match:${matchId}`;
+    const rawMatchIndex = await getCached(matchIndexKey);
+    const matchVisitors: string[] = rawMatchIndex
+      ? typeof rawMatchIndex === "string"
+        ? JSON.parse(rawMatchIndex)
+        : rawMatchIndex
+      : [];
+    if (!matchVisitors.includes(visitorId)) {
+      matchVisitors.push(visitorId);
+      await setCached(matchIndexKey, JSON.stringify(matchVisitors), TTL_30_DAYS);
+    }
+
     // Update visitor stats
     const statsKey = `pred-stats:${visitorId}`;
     const rawStats = await getCached(statsKey);

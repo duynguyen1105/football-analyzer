@@ -43,6 +43,7 @@ const MatchStatistics = dynamic(() => import("@/components/MatchStatistics").the
 const RelatedMatches = dynamic(() => import("@/components/RelatedMatches").then((m) => m.RelatedMatches));
 const SharePrediction = dynamic(() => import("@/components/SharePrediction").then((m) => m.SharePrediction));
 const PredictionWidget = dynamic(() => import("@/components/PredictionWidget").then((m) => m.PredictionWidget));
+const PredictionSummary = dynamic(() => import("@/components/PredictionSummary").then((m) => m.PredictionSummary));
 const MatchComments = dynamic(() => import("@/components/MatchComments").then((m) => m.MatchComments));
 
 function FormBadge({ result }: { result: string }) {
@@ -521,6 +522,13 @@ export default function MatchPage({ params }: { params: Promise<{ id: string }> 
             date={match.date}
           />
         )}
+
+        {/* Community Prediction Summary */}
+        <PredictionSummary
+          matchId={match.id}
+          homeTeam={{ shortName: match.homeTeam.shortName, tla: match.homeTeam.tla }}
+          awayTeam={{ shortName: match.awayTeam.shortName, tla: match.awayTeam.tla }}
+        />
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
           <div className="lg:col-span-2 space-y-6">
