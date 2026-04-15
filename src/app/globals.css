@@ -49,6 +49,19 @@
 
 *, *::before, *::after { box-sizing: border-box; }
 
+/* Sticky-footer pattern: when a page <main> contains an in-page <footer>,
+   grow <main> to fill the flex column (root layout wrapper) and push the
+   <footer> down. Prevents in-page footers from floating mid-viewport on
+   short pages. */
+main:has(> footer) {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+}
+main:has(> footer) > footer {
+  margin-top: auto;
+}
+
 html {
   overflow-x: hidden;
   -webkit-text-size-adjust: 100%;

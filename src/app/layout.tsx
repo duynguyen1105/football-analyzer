@@ -62,7 +62,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
           <NavigationProgress />
         </Suspense>
         <Providers>
-          <div className="pb-20 md:pb-0">{children}</div>
+          <div className="min-h-dvh flex flex-col pb-20 md:pb-0">{children}</div>
           <MobileNav />
           <BackToTop />
           <KeyboardShortcuts />
