@@ -5,13 +5,25 @@ export function buildWebSiteSchema() {
     "@context": "https://schema.org",
     "@type": "WebSite",
     name: "Nhận Định Bóng Đá VN",
+    alternateName: [
+      "Nhan Dinh Bong Da VN",
+      "nhandinhbongdavn",
+      "MatchDay Analyst",
+      "Nhận Định Bóng Đá",
+    ],
     url: "https://nhandinhbongdavn.com",
-    description: "Nhận định bóng đá trước trận với AI.",
-    inLanguage: "vi",
+    description:
+      "Nhận định bóng đá (nhan dinh bong da) trước trận với AI: phong độ, đối đầu, thống kê, dự đoán tỷ số và soi kèo hôm nay.",
+    inLanguage: "vi-VN",
     publisher: {
       "@type": "Organization",
       name: "MatchDay Analyst",
+      alternateName: ["Nhận Định Bóng Đá VN", "nhandinhbongdavn"],
       url: "https://nhandinhbongdavn.com",
+      logo: {
+        "@type": "ImageObject",
+        url: "https://nhandinhbongdavn.com/icons/icon-512.png",
+      },
     },
   };
 }

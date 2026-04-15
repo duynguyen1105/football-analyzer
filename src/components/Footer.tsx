@@ -13,6 +13,7 @@ export function Footer() {
             <ul className="space-y-1.5">
               <li><Link href="/" className="hover:text-text-primary transition-colors">Trang chủ</Link></li>
               <li><Link href="/hom-nay" className="hover:text-text-primary transition-colors">Hôm nay</Link></li>
+              <li><Link href="/nhan-dinh-bong-da-hom-nay" className="hover:text-text-primary transition-colors">Nhận định bóng đá hôm nay</Link></li>
               <li><Link href="/truc-tiep" className="hover:text-text-primary transition-colors">Trực tiếp</Link></li>
               <li><Link href="/soi-keo-hom-nay" className="hover:text-text-primary transition-colors">Soi kèo hôm nay</Link></li>
               <li><Link href="/du-doan" className="hover:text-text-primary transition-colors">Dự đoán</Link></li>

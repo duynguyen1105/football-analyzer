@@ -3,6 +3,7 @@ import { getMatch, getStandings } from "@/lib/football-data";
 import { computePrediction } from "@/lib/prediction";
 import { extractMatchIdFromSlug } from "@/lib/match-slugs";
 import { buildBreadcrumbSchema, buildSportsEventSchema } from "@/lib/json-ld";
+import { MatchFaqSchema } from "@/components/MatchFaqSchema";
 import { Navbar } from "@/components/Navbar";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -21,11 +22,23 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (!match) return { title: "Nhận định bóng đá" };
 
   const title = `Nhận định ${match.homeTeam.shortName} vs ${match.awayTeam.shortName} — ${match.competition.name}`;
-  const description = `Nhận định bóng đá ${match.homeTeam.name} vs ${match.awayTeam.name}. Phân tích phong độ, đối đầu, thống kê mùa giải và dự đoán tỷ số.`;
+  const description = `Nhận định bóng đá ${match.homeTeam.name} vs ${match.awayTeam.name} (nhan dinh ${match.homeTeam.shortName} vs ${match.awayTeam.shortName}). Phân tích phong độ, đối đầu, thống kê mùa giải, dự đoán tỷ số và soi kèo ${match.competition.name}.`;
+  const keywords = [
+    `nhận định ${match.homeTeam.name} vs ${match.awayTeam.name}`,
+    `nhan dinh ${match.homeTeam.shortName} vs ${match.awayTeam.shortName}`,
+    `dự đoán ${match.homeTeam.shortName} vs ${match.awayTeam.shortName}`,
+    `soi kèo ${match.homeTeam.shortName} vs ${match.awayTeam.shortName}`,
+    `${match.homeTeam.name} vs ${match.awayTeam.name}`,
+    `nhận định ${match.competition.name}`,
+    "nhận định bóng đá",
+    "nhan dinh bong da",
+    "soi kèo hôm nay",
+  ];
 
   return {
     title,
     description,
+    keywords,
     openGraph: { title, description },
     alternates: { canonical: `https://nhandinhbongdavn.com/nhan-dinh/${slug}` },
   };
@@ -58,6 +71,7 @@ export default async function MatchPreviewPage({ params }: Props) {
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumb).replace(/</g, "\\u003c") }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(buildSportsEventSchema(match)).replace(/</g, "\\u003c") }} />
+      <MatchFaqSchema match={match} prediction={prediction} venue={match.venue} />
       <Navbar />
 
       <main className="max-w-3xl mx-auto px-4 py-6">
