@@ -62,6 +62,15 @@ export function getAllPosts(): BlogPost[] {
     .sort((a, b) => (b.date > a.date ? 1 : -1));
 }
 
+/** Safely decode a Redis value that may already be JSON-parsed by the client */
+function decodeRedisJson<T>(raw: unknown): T | null {
+  if (raw == null) return null;
+  if (typeof raw === "string") {
+    try { return JSON.parse(raw) as T; } catch { return null; }
+  }
+  return raw as T;
+}
+
 /** Get all posts including Redis-stored auto-generated ones */
 export async function getAllPostsWithRedis(): Promise<BlogPost[]> {
   const filePosts = getAllPosts();
@@ -70,15 +79,15 @@ export async function getAllPostsWithRedis(): Promise<BlogPost[]> {
   try {
     const { getCached } = await import("./cache");
     const indexRaw = await getCached("blog:index");
-    if (indexRaw) {
-      let slugs: string[] = [];
-      try { const parsed = JSON.parse(indexRaw); slugs = Array.isArray(parsed) ? parsed : []; } catch { /* corrupted index */ }
+    const slugs = decodeRedisJson<string[]>(indexRaw) ?? [];
+    if (slugs.length > 0) {
       const redisPosts: BlogPost[] = [];
       for (const slug of slugs) {
         // Skip if we already have this from filesystem
         if (filePosts.some((p) => p.slug === slug)) continue;
         const raw = await getCached(`blog:post:${slug}`);
-        if (raw) redisPosts.push(JSON.parse(raw));
+        const post = decodeRedisJson<BlogPost>(raw);
+        if (post) redisPosts.push(post);
       }
       return [...filePosts, ...redisPosts].sort((a, b) => (b.date > a.date ? 1 : -1));
     }
@@ -105,7 +114,7 @@ export async function getPostBySlugWithRedis(slug: string): Promise<BlogPost | n
   try {
     const { getCached } = await import("./cache");
     const raw = await getCached(`blog:post:${slug}`);
-    if (raw) return JSON.parse(raw);
+    return decodeRedisJson<BlogPost>(raw);
   } catch { /* ignore */ }
 
   return null;

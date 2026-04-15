@@ -15,15 +15,19 @@ export async function GET(request: NextRequest) {
     const cacheStats = getCacheStats();
     const apiCacheStats = getApiCacheStats();
 
-    // 2. Blog index
+    // 2. Blog index — Upstash may auto-parse JSON, so handle both shapes
     let blogSlugs: string[] = [];
     const rawBlogIndex = await getCached("blog:index");
     if (rawBlogIndex) {
-      try {
-        const parsed = JSON.parse(rawBlogIndex);
-        blogSlugs = Array.isArray(parsed) ? parsed : [];
-      } catch {
-        // corrupted index
+      if (typeof rawBlogIndex === "string") {
+        try {
+          const parsed = JSON.parse(rawBlogIndex);
+          blogSlugs = Array.isArray(parsed) ? parsed : [];
+        } catch {
+          /* corrupted index */
+        }
+      } else if (Array.isArray(rawBlogIndex)) {
+        blogSlugs = rawBlogIndex as string[];
       }
     }
 

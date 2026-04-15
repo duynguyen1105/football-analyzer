@@ -364,12 +364,16 @@ ${prediction.homeWin > prediction.awayWin
     const existingIndex = await getCached("blog:index");
     let existingSlugs: string[] = [];
     if (existingIndex) {
-      try {
-        const parsed = JSON.parse(existingIndex);
-        existingSlugs = Array.isArray(parsed) ? parsed : [];
-      } catch {
-        // Index corrupted — reset it
-        existingSlugs = [];
+      // Upstash may auto-parse JSON values, so guard both shapes
+      if (typeof existingIndex === "string") {
+        try {
+          const parsed = JSON.parse(existingIndex);
+          existingSlugs = Array.isArray(parsed) ? parsed : [];
+        } catch {
+          existingSlugs = [];
+        }
+      } else if (Array.isArray(existingIndex)) {
+        existingSlugs = existingIndex as string[];
       }
     }
     const mergedSlugs = [...new Set([...existingSlugs, ...generatedSlugs])];
