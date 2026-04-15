@@ -76,57 +76,64 @@ export function PredictionSummary({ matchId, homeTeam, awayTeam }: Props) {
 
       {/* Stacked bar */}
       <div
-        className="flex h-8 rounded-lg overflow-hidden bg-bg-primary border border-border/60"
+        className="flex h-7 rounded-lg overflow-hidden bg-bg-primary border border-border/60"
         role="img"
         aria-label={`${summary.home} dự đoán ${homeTeam.shortName} thắng, ${summary.draw} dự đoán hòa, ${summary.away} dự đoán ${awayTeam.shortName} thắng`}
       >
         {summary.home > 0 && (
           <div
-            className="bg-accent/80 flex items-center justify-center text-[10px] font-semibold text-white"
+            className="bg-accent/80 flex items-center justify-center text-[10px] font-semibold text-white min-w-0"
             style={{ width: `${homePct}%` }}
           >
-            {homePct >= 10 ? `${homePct}%` : ""}
+            {homePct >= 18 ? `${homePct}%` : ""}
           </div>
         )}
         {summary.draw > 0 && (
           <div
-            className="bg-accent-yellow/70 flex items-center justify-center text-[10px] font-semibold text-white"
+            className="bg-accent-yellow/70 flex items-center justify-center text-[10px] font-semibold text-white min-w-0"
             style={{ width: `${drawPct}%` }}
           >
-            {drawPct >= 10 ? `${drawPct}%` : ""}
+            {drawPct >= 18 ? `${drawPct}%` : ""}
           </div>
         )}
         {summary.away > 0 && (
           <div
-            className="bg-accent-2/80 flex items-center justify-center text-[10px] font-semibold text-white"
+            className="bg-accent-2/80 flex items-center justify-center text-[10px] font-semibold text-white min-w-0"
             style={{ width: `${awayPct}%` }}
           >
-            {awayPct >= 10 ? `${awayPct}%` : ""}
+            {awayPct >= 18 ? `${awayPct}%` : ""}
           </div>
         )}
       </div>
 
-      {/* Legend */}
-      <div className="grid grid-cols-3 gap-2 mt-2 text-[11px] text-text-muted">
-        <div className="flex items-center gap-1.5">
-          <span className="w-2 h-2 rounded-sm bg-accent/80" />
-          <span className="truncate">{homeTeam.tla} thắng</span>
-          <span className="ml-auto font-semibold text-text-secondary">
+      {/* Legend — stacks vertically on narrow mobile, 3 cols from sm+ */}
+      <div className="mt-3 grid grid-cols-1 sm:grid-cols-3 gap-x-3 gap-y-1.5 text-xs text-text-muted">
+        <div className="flex items-center gap-2 min-w-0">
+          <span className="w-2 h-2 rounded-sm bg-accent/80 shrink-0" />
+          <span className="truncate">
+            {homeTeam.shortName} thắng
+          </span>
+          <span className="ml-auto font-semibold text-text-secondary tabular-nums">
             {summary.home}
+            <span className="text-text-muted font-normal"> · {homePct}%</span>
           </span>
         </div>
-        <div className="flex items-center gap-1.5">
-          <span className="w-2 h-2 rounded-sm bg-accent-yellow/70" />
-          <span>Hòa</span>
-          <span className="ml-auto font-semibold text-text-secondary">
+        <div className="flex items-center gap-2 min-w-0">
+          <span className="w-2 h-2 rounded-sm bg-accent-yellow/70 shrink-0" />
+          <span className="truncate">Hòa</span>
+          <span className="ml-auto font-semibold text-text-secondary tabular-nums">
             {summary.draw}
+            <span className="text-text-muted font-normal"> · {drawPct}%</span>
           </span>
         </div>
-        <div className="flex items-center gap-1.5">
-          <span className="w-2 h-2 rounded-sm bg-accent-2/80" />
-          <span className="truncate">{awayTeam.tla} thắng</span>
-          <span className="ml-auto font-semibold text-text-secondary">
+        <div className="flex items-center gap-2 min-w-0">
+          <span className="w-2 h-2 rounded-sm bg-accent-2/80 shrink-0" />
+          <span className="truncate">
+            {awayTeam.shortName} thắng
+          </span>
+          <span className="ml-auto font-semibold text-text-secondary tabular-nums">
             {summary.away}
+            <span className="text-text-muted font-normal"> · {awayPct}%</span>
           </span>
         </div>
       </div>
@@ -144,7 +151,7 @@ export function PredictionSummary({ matchId, homeTeam, awayTeam }: Props) {
       </button>
 
       {expanded && (
-        <ul className="mt-3 space-y-2 max-h-72 overflow-y-auto">
+        <ul className="mt-3 divide-y divide-border/50 max-h-72 overflow-y-auto -mx-1">
           {predictions.map((p, i) => {
             const name = p.nickname || `Khách #${p.visitorIdShort}`;
             const outcome =
@@ -162,16 +169,18 @@ export function PredictionSummary({ matchId, homeTeam, awayTeam }: Props) {
             return (
               <li
                 key={`${p.visitorIdShort}-${i}`}
-                className="flex items-center gap-3 text-xs py-1"
+                className="flex items-center gap-2 py-2 px-1"
               >
-                <span className="flex-1 truncate font-medium text-text-secondary">
-                  {name}
-                </span>
-                <span className={`font-bold tabular-nums ${tint}`}>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-medium text-text-secondary truncate">
+                    {name}
+                  </p>
+                  <p className="text-[10px] text-text-muted mt-0.5">
+                    {formatRelative(p.createdAt)}
+                  </p>
+                </div>
+                <span className={`font-bold text-sm tabular-nums shrink-0 ${tint}`}>
                   {p.homeScore} - {p.awayScore}
-                </span>
-                <span className="text-[10px] text-text-muted w-20 text-right">
-                  {formatRelative(p.createdAt)}
                 </span>
               </li>
             );
